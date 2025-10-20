@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DART Meadow - Aerospace Engineering</title>
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset & Global Styles */
         * {
@@ -22,9 +22,9 @@
         body {
             font-family: 'Roboto', sans-serif; /* Modern, clean font for body */
             line-height: 1.6;
-            color: #cccccc; /* Light gray text for readability on dark backgrounds */
+            color: #b0b0b0; /* Lighter gray text for readability */
             scroll-behavior: smooth; /* Smooth scrolling for anchor links */
-            background-color: #0a0e12; /* Deep space black/dark gray background */
+            background-color: #000000; /* Black background */
             overflow-x: hidden; /* Prevent horizontal scrollbars */
         }
 
@@ -37,7 +37,7 @@
         }
 
         h1, h2, h3, h4 {
-            font-family: 'Exo 2', sans-serif; /* Geometric, futuristic font for headings */
+            font-family: 'Orbitron', sans-serif; /* Futuristic font for headings */
             margin-bottom: 15px;
             color: #ffffff; /* White for prominent headings */
         }
@@ -47,8 +47,8 @@
             margin-top: 40px;
             margin-bottom: 30px;
             font-size: 2.8em; /* Larger headings for impact */
-            color: #344d67; /* Muted steel blue for section titles */
-            text-shadow: 0 0 10px rgba(52, 77, 103, 0.8); /* Subtle glow effect */
+            color: #00aaff; /* Bright blue for section titles */
+            text-shadow: 0 0 10px rgba(0, 170, 255, 0.8); /* Subtle glow effect */
         }
 
         /* Sections Styling */
@@ -70,15 +70,15 @@
 
         /* Header & Navigation */
         .site-header {
-            background-color: #0a0e12; /* Dark header */
-            color: #cccccc;
+            background-color: #000000; /* Black header */
+            color: #b0b0b0;
             padding: 15px 0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); /* Subtle dark shadow */
+            box-shadow: 0 2px 8px rgba(0, 170, 255, 0.3); /* Blue shadow */
             position: sticky;
             top: 0;
             z-index: 1000;
             width: 100%;
-            border-bottom: 1px solid rgba(200, 200, 200, 0.1); /* Very subtle border */
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2); /* Subtle blue border */
         }
 
         .site-header .container {
@@ -91,7 +91,7 @@
         .logo {
             font-size: 2em;
             font-weight: 700;
-            font-family: 'Exo 2', sans-serif;
+            font-family: 'Orbitron', sans-serif;
             color: #ffffff; /* White logo */
             letter-spacing: 1px;
             flex-shrink: 0; /* Prevent logo from shrinking */
@@ -116,17 +116,16 @@
         #main-nav a {
             
             text-decoration: none;
-            color: #cccccc; /* Light gray links */
+            color: #b0b0b0; /* Light gray links */
             font-weight: 700; /* Bold links */
             padding: 5px 10px;
             transition: color 0.3s ease, text-shadow 0.3s ease;
         }
 
-        #main-nav a:hover
-       #main-nav a.active  {
-           
-            color: #3498db; /* Muted blue accent for hover/active */
-            text-shadow: 0 0 8px rgba(52, 152, 219, 0.7); /* Subtle glow */
+        #main-nav a:hover,
+        #main-nav a.active {
+            color: #00aaff; /* Bright blue accent for hover/active */
+            text-shadow: 0 0 8px rgba(0, 170, 255, 0.7); /* Subtle glow */
         }
 
         /* Dropdown Menu Styles */
@@ -135,13 +134,13 @@
             position: absolute; /* Positioned relative to its parent li */
             top: 100%; /* Aligns the top of the dropdown with the bottom of the parent li */
             left: 0; /* Aligns the left edge of the dropdown with the left edge of the parent li */
-            background-color: #0a0e12; /* Dark background for dropdown */
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* Dark shadow */
+            background-color: #000000; /* Black background for dropdown */
+            box-shadow: 0 8px 20px rgba(0, 170, 255, 0.3); /* Blue shadow */
             border-radius: 5px;
             min-width: 220px; /* Slightly wider for more text */
             z-index: 1001; /* Ensure dropdown is above other content */
             padding: 10px 0;
-            border: 1px solid rgba(200, 200, 200, 0.1); /* Subtle border */
+            border: 1px solid rgba(0, 170, 255, 0.2); /* Subtle blue border */
         }
 
         .dropdown li {
@@ -217,7 +216,7 @@
 
         .cta-button {
             display: inline-block;
-            background-color: #3498db; /* Muted blue CTA button */
+            background-color: #00aaff; /* Bright blue CTA button */
             color: #ffffff; /* White text on button */
             padding: 18px 35px;
             border-radius: 5px;
@@ -225,13 +224,13 @@
             font-size: 1.2em;
             font-weight: 700;
             transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); /* Button glow */
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.5); /* Button glow */
         }
 
         .cta-button:hover {
-            background-color: #2980b9; /* Darker blue on hover */
+            background-color: #0077cc; /* Darker blue on hover */
             transform: translateY(-3px);
-            box-shadow: 0 0 25px rgba(41, 128, 185, 0.7); /* Brighter glow on hover */
+            box-shadow: 0 0 25px rgba(0, 136, 204, 0.7); /* Brighter glow on hover */
         }
 
         /* About Section */
@@ -391,18 +390,18 @@
             width: 100%;
             padding: 15px 20px;
             margin-bottom: 20px;
-            border: 1px solid #344d67; /* Muted blue border */
+            border: 1px solid #00aaff; /* Bright blue border */
             border-radius: 4px;
             font-size: 1em;
             font-family: 'Roboto', sans-serif;
-            background-color: #0a0e12; /* Dark background for input fields */
+            background-color: #000000; /* Black background for input fields */
             color: #ffffff; /* White text in input fields */
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         .contact-form input:focus,
         .contact-form textarea:focus {
-            border-color: #3498db; /* Muted blue on focus */
-            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Glow on focus */
+            border-color: #0077cc; /* Darker blue on focus */
+            box-shadow: 0 0 10px rgba(0, 136, 204, 0.5); /* Glow on focus */
             outline: none; /* Remove default outline */
         }
 
@@ -612,18 +611,23 @@
                 <button id="menu-toggle" class="menu-toggle">&#9776;</button>
                 <ul id="nav-list">
                     <li><a href="#home" class="nav-link">Home</a></li>
-                    <li><a href="#about" class="nav-link">About Us</a></li>
+                    <li id="about-menu">
+                        <a href="#about" class="nav-link">About Us</a>
+                        <ul class="dropdown" id="about-dropdown">
+                            <li><a href="#about-mission" class="nav-link">Our Mission</a></li>
+                            <li><a href="#about-team" class="nav-link">Our Team</a></li>
+                        </ul>
+                    </li>
                     <li id="services-menu">
                         <a href="#services" class="nav-link">Services</a>
                         <ul class="dropdown" id="services-dropdown">
-                            <li><a href="#service-rnd" class="nav-link">Research & Development</a></li>
-                            <li><a href="#service-analysis" class="nav-link">Analysis</a></li>
-                            <li><a href="#service-simulation" class="nav-link">Simulation</a></li>
-                            <li><a href="#service-measurement" class="nav-link">Measurement</a></li>
-                            <li><a href="#service-space-trans" class="nav-link">Space Transportation Vehicles & Equipment Engineering</a></li>
+                            <li><a href="#service-launch" class="nav-link">Launch Systems</a></li>
+                            <li><a href="#service-satellite" class="nav-link">Satellite Technology</a></li>
+                            <li><a href="#service-propulsion" class="nav-link">Propulsion</a></li>
+                            <li><a href="#service-software" class="nav-link">Software</a></li>
                         </ul>
                     </li>
-                    <li><a href="#gallery" class="nav-link">Gallery</a></li>
+                    <li><a href="#portfolio" class="nav-link">Portfolio</a></li>
                     <li><a href="#contact" class="nav-link">Contact Us</a></li>
                 </ul>
             </nav>
@@ -633,134 +637,129 @@
     <main>
         <section id="home">
             <div class="container">
-                <h1>Navigate Your Universe <h3>(New Site in Development)</h3></h1>
-                <p>DART Meadow provides cutting-edge engineering and tooling solutions, guiding your business through the complexities of function optimization with precision and expertise.</p>
-                <a href="#contact" class="cta-button">Initiate Mission</a>
+                <h1>Engineering the Future of Aerospace</h1>
+                <p>DART Meadow provides cutting-edge aerospace engineering, software, and hardware services, guiding your mission from concept to completion with precision and expertise.</p>
+                <a href="#contact" class="cta-button">Contact Us</a>
             </div>
         </section>
 
         <section id="about">
             <div class="container">
-                <h2>About Our Command Center</h2>
-                <p>Welcome to DART Meadow, your strategic partner in Tooling. We are a dedicated team of innovators and engineers, committed to delivering advanced solutions that propel your enterprise forward. Our mission is to equip your business unique capabilities through tooling and engineering to achieve unparalleled success.</p>
-                <p>We operate with a philosophy of collaboration and transparency, ensuring every project is aligned with your ultimate objectives. Our extensive experience in the math and science domains allows us to navigate challenging landscapes, providing you with reliable, effective, and state-of-the-art services.</p>
-                <p class="team-highlight">Let us chart your course to Aerospace Engineering and Tooling.</p>
+                <h2>About DART Meadow</h2>
+                <p>DART Meadow is a premier aerospace engineering firm, specializing in the design, development, and deployment of advanced hardware and software solutions. Our team of experienced engineers and technicians is dedicated to pushing the boundaries of what's possible in aerospace technology.</p>
+            </div>
+        </section>
+
+        <section id="about-mission" class="sub-page-section">
+            <div class="container">
+                <h3>Our Mission</h3>
+                <p>Our mission is to provide innovative, reliable, and cost-effective solutions to the most challenging problems in the aerospace industry. We are committed to delivering excellence in everything we do, from initial concept to final implementation.</p>
+            </div>
+        </section>
+
+        <section id="about-team" class="sub-page-section">
+            <div class="container">
+                <h3>Our Team</h3>
+                <p>Our team is comprised of industry veterans with decades of combined experience in aerospace engineering, software development, and project management. We are passionate about what we do and are dedicated to helping our clients succeed.</p>
             </div>
         </section>
 
         <section id="services">
             <div class="container">
-                <h2>Our Service Modules</h2>
+                <h2>Our Services</h2>
                 <div class="services-grid">
-                    <a href="#service-rnd" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/344d67/0a0e12?text=R&D" alt="Research & Development Icon">
-                        <h3>Research & Development</h3>
-                        <p>Pioneering new frontiers, driving innovation and developing groundbreaking solutions.</p>
+                    <a href="#service-launch" class="service-item">
+                        <img src="https://via.placeholder.com/80x80/344d67/0a0e12?text=LS" alt="Launch Systems Icon">
+                        <h3>Launch Systems</h3>
+                        <p>Design, analysis, and optimization of launch vehicle systems and components.</p>
                     </a>
-                    <a href="#service-analysis" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/3498db/0a0e12?text=AN" alt="Analysis Icon">
-                        <h3>Data Analysis</h3>
-                        <p>Extracting critical insights from complex data to inform strategic decisions and optimize performance.</p>
+                    <a href="#service-satellite" class="service-item">
+                        <img src="https://via.placeholder.com/80x80/3498db/0a0e12?text=ST" alt="Satellite Technology Icon">
+                        <h3>Satellite Technology</h3>
+                        <p>Development of satellite platforms, payloads, and ground station equipment.</p>
                     </a>
-                    <a href="#service-simulation" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/2ecc71/0a0e12?text=SIM" alt="Simulation Icon">
-                        <h3>Advanced Simulation</h3>
-                        <p>Modeling and simulating complex systems to test scenarios, predict outcomes, and refine designs.</p>
+                    <a href="#service-propulsion" class="service-item">
+                        <img src="https://via.placeholder.com/80x80/2ecc71/0a0e12?text=P" alt="Propulsion Icon">
+                        <h3>Propulsion</h3>
+                        <p>Advanced propulsion systems for launch vehicles, satellites, and spacecraft.</p>
                     </a>
-                    <a href="#service-measurement" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/f39c12/0a0e12?text=MEAS" alt="Measurement Icon">
-                        <h3>Precision Measurement</h3>
-                        <p>Ensuring accuracy and reliability through meticulous data capture and validation processes.</p>
-                    </a>
-                    <a href="#service-space-trans" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/e74c3c/0a0e12?text=STVE" alt="Space Transport Icon">
-                        <h3>Space Transportation Vehicles & Equipment Engineering</h3>
-                        <p>Engineering robust vehicles and critical equipment for space exploration and transport missions.</p>
+                    <a href="#service-software" class="service-item">
+                        <img src="https://via.placeholder.com/80x80/f39c12/0a0e12?text=S" alt="Software Icon">
+                        <h3>Software</h3>
+                        <p>Custom software solutions for mission planning, data analysis, and flight control.</p>
                     </a>
                 </div>
             </div>
         </section>
 
-        <section id="service-rnd" class="sub-page-section">
+        <section id="service-launch" class="sub-page-section">
             <div class="container">
-                <h3>Research & Development</h3>
-                <p>DART Meadow is at the forefront of innovation, dedicated to pioneering new technologies and methodologies. Our Research and Development initiatives focus on exploring emerging trends, solving complex challenges, and creating novel digital solutions that can revolutionize industries. We invest heavily in understanding future possibilities to ensure our clients gain a significant competitive advantage.</p>
-                <p>We are driven by a passion for discovery and a commitment to pushing the boundaries of what's possible in the digital realm.</p>
+                <h3>Launch Systems</h3>
+                <p>We offer a comprehensive suite of services for the design, analysis, and optimization of launch vehicle systems and components. Our expertise includes structural analysis, aerodynamics, and trajectory optimization.</p>
             </div>
         </section>
 
-        <section id="service-analysis" class="sub-page-section">
+        <section id="service-satellite" class="sub-page-section">
             <div class="container">
-                <h3>Data Analysis</h3>
-                <p>Leveraging advanced analytical tools and techniques, Dart Meadow transforms raw data into actionable intelligence. We provide comprehensive analysis services that uncover hidden patterns, identify key trends, and offer deep insights into your operations, markets, and customer behavior. Our data-driven approach empowers you to make informed strategic decisions, optimize resource allocation, and drive measurable business growth.</p>
-                <p>We help you understand your data so you can achieve your mission objectives more effectively.</p>
+                <h3>Satellite Technology</h3>
+                <p>We specialize in the development of satellite platforms, payloads, and ground station equipment. Our capabilities include mission design, payload integration, and satellite operations.</p>
             </div>
         </section>
 
-        <section id="service-simulation" class="sub-page-section">
+        <section id="service-propulsion" class="sub-page-section">
             <div class="container">
-                <h3>Advanced Simulation</h3>
-                <p>Dart Meadow excels in developing sophisticated simulation models that replicate real-world environments and complex systems. Our simulation services enable you to test hypotheses, predict the performance of new designs, train personnel in critical scenarios, and optimize processes without the risks or costs associated with physical testing. We create virtual environments that provide invaluable data and foresight for your most critical projects.</p>
-                <p>From mission planning to equipment testing, our simulations offer a safe and effective path to validation.</p>
+                <h3>Propulsion</h3>
+                <p>We design and analyze advanced propulsion systems for launch vehicles, satellites, and spacecraft. Our areas of expertise include chemical, electric, and nuclear propulsion.</p>
             </div>
         </section>
 
-        <section id="service-measurement" class="sub-page-section">
+        <section id="service-software" class="sub-page-section">
             <div class="container">
-                <h3>Precision Measurement</h3>
-                <p>Accuracy is paramount in aerospace. Dart Meadow offers meticulous measurement services, employing state-of-the-art tools and rigorous methodologies to ensure the highest levels of precision and reliability. Whether for critical component validation, performance monitoring, or quality assurance, our measurement expertise guarantees that your projects meet the most stringent standards and specifications.</p>
-                <p>We provide the certainty you need through precise, verifiable data.</p>
-            </div>
-        </section>
-        
-        <section id="service-space-trans" class="sub-page-section">
-            <div class="container">
-                <h3>Space Transportation Vehicles & Equipment Engineering</h3>
-                <p>Dart Meadow is your trusted partner for the engineering of space transportation vehicles and critical equipment. Our team possesses deep expertise in designing, developing, and testing systems for launch vehicles, spacecraft, and associated support infrastructure. We are committed to delivering solutions that are safe, reliable, and perform optimally in the extreme conditions of space, supporting your most ambitious missions.</p>
-                <p>We engineer the future of space travel and exploration.</p>
+                <h3>Software</h3>
+                <p>We develop custom software solutions for mission planning, data analysis, and flight control. Our software is designed to be reliable, efficient, and user-friendly.</p>
             </div>
         </section>
 
-        <section id="gallery">
+        <section id="portfolio">
             <div class="container">
-                <h2>Project Showcase</h2>
-                <p>Explore a curated selection of our deployments, highlighting our dedication to excellence, design integrity, and client triumph.</p>
+                <h2>Our Portfolio</h2>
+                <p>Explore a selection of our successful projects, showcasing our commitment to excellence and innovation in aerospace engineering.</p>
                 <div class="gallery-grid">
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1477414847939-04035c5c46d0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Alpha Showcase">
-                        <div class="caption">Advanced Propulsion System UI</div>
+                        <img src="https://images.unsplash.com/photo-1581094794329-c8112a89af10?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Launch Vehicle">
+                        <div class="caption">Launch Vehicle Design</div>
                     </div>
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1518770660439-46361701d979?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Beta Showcase">
-                        <div class="caption">Satellite Communication Platform</div>
+                        <img src="https://images.unsplash.com/photo-1541185934-01b604ea079b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Satellite">
+                        <div class="caption">Satellite Payload Integration</div>
                     </div>
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1501386704289-8d794c47380a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Gamma Showcase">
-                        <div class="caption">Aerospace Manufacturing Portal</div>
+                        <img src="https://images.unsplash.com/photo-1614728263952-84ea256ec346?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Propulsion System">
+                        <div class="caption">Advanced Propulsion System</div>
                     </div>
                     <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Delta Showcase">
-                        <div class="caption">Flight Simulation Interface</div>
+                        <img src="https://images.unsplash.com/photo-1526402380413-5afb7f5c568e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Flight Software">
+                        <div class="caption">Flight Control Software</div>
                     </div>
-                    </div>
+                </div>
             </div>
         </section>
 
         <section id="contact">
             <div class="container">
-                <h2>Initiate Contact Protocol</h2>
-                <p>Have a mission critical project or inquiry? We're ready to receive your transmission.</p>
+                <h2>Contact Us</h2>
+                <p>Have a project or inquiry? We're ready to help.</p>
                 <form id="contact-form" class="contact-form">
-                    <input type="text" id="name" placeholder="Your Designation (Name)" required>
-                    <input type="email" id="email" placeholder="Your Comms Channel (Email)" required>
-                    <input type="tel" id="phone" placeholder="Your Frequency (Phone Number)">
-                    <textarea id="message" placeholder="Your Transmission (Message)" required></textarea>
-                    <button type="submit">Send Transmission</button>
+                    <input type="text" id="name" placeholder="Your Name" required>
+                    <input type="email" id="email" placeholder="Your Email" required>
+                    <input type="tel" id="phone" placeholder="Your Phone Number">
+                    <textarea id="message" placeholder="Your Message" required></textarea>
+                    <button type="submit">Send Message</button>
                 </form>
                 <div class="contact-info">
-                    <p>Orbital Comms: <a href="mailto:justin@dartmeadow.com">justin@dartmeadow.com</a></p>
-                    <p>Subspace Channel: <a href="tel:+17473734090">+1 (747) 373-4090</a></p>
-                    <p>Galactic Hub: 123 Orbit Avenue, Sector 7G, Innovation City, IC 98765</p>
+                    <p>Email: <a href="mailto:contact@dartmeadow.com">contact@dartmeadow.com</a></p>
+                    <p>Phone: <a href="tel:+1-800-555-1234">+1 (800) 555-1234</a></p>
+                    <p>Address: 123 Aerospace Avenue, Innovation City, 98765</p>
                 </div>
             </div>
         </section>
@@ -768,7 +767,7 @@
 
     <footer class="site-footer">
         <div class="container">
-            &copy; 2025 DART Meadow. All Rights Reserved. Mission Accomplished.
+            &copy; 2024 DART Meadow. All Rights Reserved.
         </div>
     </footer>
 
@@ -778,8 +777,14 @@
             const menuToggle = document.getElementById('menu-toggle');
             const navList = document.getElementById('nav-list');
             const sections = document.querySelectorAll('section');
-            const servicesMenu = document.getElementById('services-menu');
-            const servicesDropdown = document.getElementById('services-dropdown');
+            const dropdownMenus = document.querySelectorAll('#main-nav .dropdown');
+            const menuItemsWithDropdown = document.querySelectorAll('#main-nav li:has(.dropdown)');
+
+            function closeAllDropdowns() {
+                dropdownMenus.forEach(dropdown => {
+                    dropdown.style.display = 'none';
+                });
+            }
 
             function setActiveSection(hash) {
                 sections.forEach(section => {
@@ -799,18 +804,17 @@
                     }
                 });
 
-                // Hide dropdown when switching sections on mobile
                 if (window.innerWidth <= 768) {
-                    servicesDropdown.style.display = 'none';
+                    closeAllDropdowns();
                 }
             }
 
             navLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     if (this.getAttribute('href').startsWith('#')) {
-                        // Allow the services link to toggle the dropdown on mobile
-                        if (window.innerWidth <= 768 && this.parentElement.id === 'services-menu') {
-                            return; // Let the other event listener handle it
+                        const parentLi = this.parentElement;
+                        if (window.innerWidth <= 768 && Array.from(menuItemsWithDropdown).includes(parentLi)) {
+                            return;
                         }
                         
                         e.preventDefault();
@@ -826,53 +830,59 @@
                 });
             });
 
-            // Toggle mobile menu
             menuToggle.addEventListener('click', function() {
                 navList.classList.toggle('menu-open');
-                // Ensure dropdown is closed when main menu is closed
                 if (!navList.classList.contains('menu-open')) {
-                    servicesDropdown.style.display = 'none';
+                    closeAllDropdowns();
                 }
             });
 
-            // Services dropdown toggle on click for mobile
-            servicesMenu.querySelector('a').addEventListener('click', function(e) {
-                if (window.innerWidth <= 768) {
-                    e.preventDefault(); // Prevent navigating to #services
-                    const isVisible = servicesDropdown.style.display === 'block';
-                    servicesDropdown.style.display = isVisible ? 'none' : 'block';
+            menuItemsWithDropdown.forEach(menuItem => {
+                const link = menuItem.querySelector('a');
+                const dropdown = menuItem.querySelector('.dropdown');
+
+                link.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 768) {
+                        e.preventDefault();
+                        const isVisible = dropdown.style.display === 'block';
+                        closeAllDropdowns();
+                        dropdown.style.display = isVisible ? 'none' : 'block';
+                    }
+                });
+
+                if (window.innerWidth > 768) {
+                    menuItem.addEventListener('mouseenter', () => {
+                        dropdown.style.display = 'block';
+                    });
+
+                    menuItem.addEventListener('mouseleave', () => {
+                        dropdown.style.display = 'none';
+                    });
                 }
             });
 
-            // Hover show/hide for desktop
-            if (window.innerWidth > 768) {
-                servicesMenu.addEventListener('mouseenter', () => {
-                    servicesDropdown.style.display = 'block';
-                });
-
-                servicesMenu.addEventListener('mouseleave', () => {
-                    servicesDropdown.style.display = 'none';
-                });
-            }
-
-            // Click outside to close (useful for desktop if a click opens it)
             document.addEventListener('click', (e) => {
-                if (!servicesMenu.contains(e.target) && window.innerWidth > 768) {
-                    servicesDropdown.style.display = 'none';
+                if (window.innerWidth > 768) {
+                    let isClickInsideMenu = false;
+                    menuItemsWithDropdown.forEach(menuItem => {
+                        if (menuItem.contains(e.target)) {
+                            isClickInsideMenu = true;
+                        }
+                    });
+                    if (!isClickInsideMenu) {
+                        closeAllDropdowns();
+                    }
                 }
             });
 
-            // Initial load
             const initialHash = window.location.hash || '#home';
             setActiveSection(initialHash);
 
-            // Hash change handling
             window.addEventListener('hashchange', function() {
                 const newHash = window.location.hash || '#home';
                 setActiveSection(newHash);
             });
 
-            // Contact form validation (unchanged)
             const contactForm = document.getElementById('contact-form');
             if (contactForm) {
                 contactForm.addEventListener('submit', function(e) {
@@ -884,20 +894,20 @@
                     let isValid = true;
 
                     if (!name.trim()) {
-                        alert('Please enter your designation.');
+                        alert('Please enter your name.');
                         isValid = false;
                     }
                     if (!email.trim() || !emailRegex.test(email)) {
-                        alert('Please enter a valid communication channel (email).');
+                        alert('Please enter a valid email address.');
                         isValid = false;
                     }
                     if (!message.trim()) {
-                        alert('Please enter your transmission (message).');
+                        alert('Please enter your message.');
                         isValid = false;
                     }
 
                     if (isValid) {
-                        alert('Transmission received successfully! We will respond shortly.');
+                        alert('Message sent successfully! We will respond shortly.');
                         contactForm.reset();
                     }
                 });
