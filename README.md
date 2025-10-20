@@ -1,5 +1,6 @@
 # dartmeadow
-<img width="1080" height="1080" alt="dmlogo (20250726055056) (20251017102302)" src="https://github.com/user-attachments/assets/e40d5fea-420b-43e3-8a05-1f8b8e6f1c00" />
+<img width="300" height="300" alt="1000024199" src="https://github.com/user-attachments/assets/f0e9a60e-e2c7-43fc-94b6-d1bb2aea5044" />
+
 
 
 DART Meadow - Aerospace Tooling and Engineering 
