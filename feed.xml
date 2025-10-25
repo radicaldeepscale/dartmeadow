@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>DART Meadow | Aerospace &amp; Tooling and Engineering</title>
+  <link>https://dartmeadow.com</link>
+  <description>The latest news and updates from DART Meadow &amp; Arc Lake by DART Meadow | Radical Deepscale</description>
+  <language>en-us</language>
+  <atom:link href="https://dartmeadow.com/feed.xml" rel="self" type="application/rss+xml" />
+
+  <item>
+    <title>New Feature: Ash Bouyancy Launched! Advanced Math Solver and Finite 3D Arc Graphing</title>
+    <link>https://radicaldeepscale.com/brpn.html</link>
+    <description>Advanced Math and Physics Solver with 3D Finite Arc Graphing</description>
+    <pubDate>Sat, 25 Oct 2025 14:00:00 GMT</pubDate>
+    <guid isPermaLink="true">https://radicaldeepscale.com/brpn.html</guid>
+  </item>
+
+  <item>
+    <title>Ash Tree | Ariel Chat in development</title>
+    <link>https://radicaldeepscale.com/</link>
+    <description>The main homepage for the Ash Tree Reflex project is now live, featuring our new Three.js visualization and user instance creation.</description>
+    <pubDate>Sat, 25 Oct 2025 14:00:00 GMT</pubDate>
+    <guid isPermaLink="true">https://radicaldeepscale.com/</guid>
+  </item>
+  <item>
+    <title>Mantis Navigation for Aerospace Chemistry is Live</title>
+    <link>https://dartmeadow.com/mn.html</link>
+    <description>Mantis Navigation |  Mathematical Input for Mathematically Controling a Luanch Sequence and Trajectory.</description>
+    <pubDate>Sat, 25 Oct 2025 14:00:00 GMT</pubDate>
+    <guid isPermaLink="true">https://dartmeadow.com/mn.html</guid>
+  </item>
+  </channel>
+</rss>
