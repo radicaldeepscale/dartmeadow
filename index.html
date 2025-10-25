@@ -1,909 +1,1397 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="description" content="DART Meadow | Aerospace Engineering and Tooling Technologies">
+      <meta name="description" content="DART Meadow | Aerospace Tooling and Engineering">
 <!-- Favicon block: ensures compatibility across all devices -->
-<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-<link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
-<link rel="apple-touch-icon" href="/static/favicon.ico">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DART Meadow - Aerospace Engineering</title>
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        /* Basic Reset & Global Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
-        body {
-            font-family: 'Roboto', sans-serif; /* Modern, clean font for body */
-            line-height: 1.6;
-            color: #cccccc; /* Light gray text for readability on dark backgrounds */
-            scroll-behavior: smooth; /* Smooth scrolling for anchor links */
-            background-color: #0a0e12; /* Deep space black/dark gray background */
-            overflow-x: hidden; /* Prevent horizontal scrollbars */
-        }
+<link rel="icon" href="https://raw.githubusercontent.com/DART-Skyboard/Ariel/refs/heads/main/static/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="https://raw.githubusercontent.com/DART-Skyboard/Ariel/refs/heads/main/static/favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/DART-Skyboard/Ariel/refs/heads/main/static/favicon.ico">
+      
 
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px; /* Padding inside the container */
-            box-sizing: border-box; /* Include padding in width calculation */
-        }
-
-        h1, h2, h3, h4 {
-            font-family: 'Exo 2', sans-serif; /* Geometric, futuristic font for headings */
-            margin-bottom: 15px;
-            color: #ffffff; /* White for prominent headings */
-        }
-
-        h2 {
-            text-align: center;
-            margin-top: 40px;
-            margin-bottom: 30px;
-            font-size: 2.8em; /* Larger headings for impact */
-            color: #344d67; /* Muted steel blue for section titles */
-            text-shadow: 0 0 10px rgba(52, 77, 103, 0.8); /* Subtle glow effect */
-        }
-
-        /* Sections Styling */
-        section {
-            padding: 100px 0; /* Top/bottom padding, horizontal padding handled by container */
-            min-height: 70vh; /* Ensure sections have some height */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            position: relative; /* For potential background elements */
-            overflow: hidden; /* Prevent background overflow */
-        }
-
-        section:nth-child(even) {
-            background-color: #070a0f; /* Slightly darker shade for alternating sections */
-        }
-
-        /* Header & Navigation */
-        .site-header {
-            background-color: #0a0e12; /* Dark header */
-            color: #cccccc;
-            padding: 15px 0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); /* Subtle dark shadow */
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            width: 100%;
-            border-bottom: 1px solid rgba(200, 200, 200, 0.1); /* Very subtle border */
-        }
-
-        .site-header .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
-        }
-
-        .logo {
-            font-size: 2em;
-            font-weight: 700;
-            font-family: 'Exo 2', sans-serif;
-            color: #ffffff; /* White logo */
-            letter-spacing: 1px;
-            flex-shrink: 0; /* Prevent logo from shrinking */
-        }
-
-        /* Main Navigation List */
-        #main-nav ul {
-            list-style: none;
-            
-            display: flex; /* Arranges main menu items horizontally */
-            
-            margin: 0;
-            padding: 0;
-        }
-        /* Main Navigation List Items */
-        #main-nav li {
-            
-            margin-left: 25px;
-             position: relative; 
-        }
-
-        #main-nav a {
-            
-            text-decoration: none;
-            color: #cccccc; /* Light gray links */
-            font-weight: 700; /* Bold links */
-            padding: 5px 10px;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-        }
-
-        #main-nav a:hover
-       #main-nav a.active  {
-           
-            color: #3498db; /* Muted blue accent for hover/active */
-            text-shadow: 0 0 8px rgba(52, 152, 219, 0.7); /* Subtle glow */
-        }
-
-        /* Dropdown Menu Styles */
-        .dropdown {
-            display: none; /* Hidden by default */
-            position: absolute; /* Positioned relative to its parent li */
-            top: 100%; /* Aligns the top of the dropdown with the bottom of the parent li */
-            left: 0; /* Aligns the left edge of the dropdown with the left edge of the parent li */
-            background-color: #0a0e12; /* Dark background for dropdown */
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* Dark shadow */
-            border-radius: 5px;
-            min-width: 220px; /* Slightly wider for more text */
-            z-index: 1001; /* Ensure dropdown is above other content */
-            padding: 10px 0;
-            border: 1px solid rgba(200, 200, 200, 0.1); /* Subtle border */
-        }
-
-        .dropdown li {
-            display: none;
-            margin: 0;
-            width: 100%; /* Each dropdown item takes full width */
-        }
-
-        .dropdown a {
-            padding: 12px 20px;
-            display: block; /* Makes the link fill its li */
-            color: #cccccc; /* Light gray dropdown links */
-            font-weight: 400; /* Normal weight for dropdown items */
-            transition: background-color 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
-        }
-
-        .dropdown a:hover {
-            background-color: #070a0f; /* Darker background on hover */
-            color: #ffffff; /* White text on hover */
-            text-shadow: none; /* Remove glow on hover for dropdown */
-        }
+<!-- Link to your RSS/Web Feed for Chrome's "Follow" feature -->
+<link rel="alternate" type="application/rss+xml" title="DART Meadow &amp; Research and Development" href="/feed.xml">
   
-        /* Show dropdown on hover for desktop */
-        #main-nav li:hover > .dropdown {
-            display: block; /* This rule makes the dropdown visible when hovering the parent li */
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-        /* Mobile Menu Toggle */
-        .menu-toggle {
-            display: none; /* Hidden by default */
-            font-size: 2em;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #ffffff; /* White toggle icon */
-            padding: 10px;
-            order: -1; /* Position at the beginning in flex layout */
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-        }
-        .menu-toggle:hover {
-            color: #3498db;
-            text-shadow: 0 0 8px rgba(52, 152, 219, 0.7);
-        }
+<title>DART Meadow</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+<style>
+/* =================================================================
+   THEME DEFINITION & GENERAL STYLES
+   Inspired by the Audio Visualizer UI
+   ================================================================= */
+    :root {
+      --theme-primary: #47c4f1; /* Bright teal/cyan for accents */
+      --theme-primary-glow: rgba(71, 196, 241, 0.5);
+      --theme-text: #E0F4FF; /* Light blueish-white text */
+      --theme-panel-bg: rgba(30, 45, 57, 0.85); /* Dark, semi-transparent panel background */
+      --theme-panel-border: #47c4f1;
+      --theme-input-bg: #0e1b22; /* Very dark background for inputs */
+      --theme-input-border: #4d5e6a;
+      --theme-button-text-dark: #1e2d39;
+      --theme-disabled-color: #778c9b;
+    }
 
-        /* Specific Section Styles */
+   /* full‐screen video behind everything */
+    #bgvid {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: -10;
+      pointer-events: none;
+    }
 
-        /* Home Section */
-        #home {
-            background: linear-gradient(rgba(10, 14, 18, 0.8), rgba(10, 14, 18, 0.8)), url('https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80') center center/cover no-repeat; /* Placeholder: Starfield/Space */
-            color: #fff;
-            min-height: 90vh; /* Make hero section taller */
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* Center content vertically */
-            align-items: center; /* Center content horizontally */
-            text-align: center;
-        }
+    html, body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  font-family: 'Segoe UI', sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: transparent; /* Changed from #000 */
+  color: var(--theme-text);
+}
 
-        #home h1 {
-            font-size: 4.5em; /* Larger hero heading */
-            margin-bottom: 25px;
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(0, 0, 0, 0.6), 0 0 20px rgba(52, 77, 103, 0.4); /* Subtle dark/blue glow */
-        }
+    body > * {
+      z-index: 1;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      padding: 20px;
+      border-radius: 10px;
+      color: white;
+      background: transparent !important;
+    }
 
-        #home p {
-            font-size: 1.3em; /* Larger paragraph text */
-            margin-bottom: 40px;
-            max-width: 750px;
-            color: #d3d3d3; /* Slightly lighter text */
-            text-shadow: 1px 1px 5px rgba(0,0,0,0.6);
-        }
+/* =================================================================
+   PRIVACY MODAL STYLING
+   ================================================================= */
+    #privacyModal {
+      position: fixed;
+      top: 0; /* Changed from 30px to 0 for full-screen feel */
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.5); /* Added a slight backdrop overlay */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100; /* Ensure it's on top */
+      padding: 20px;
+      overflow: auto;
+    }
 
-        .cta-button {
-            display: inline-block;
-            background-color: #3498db; /* Muted blue CTA button */
-            color: #ffffff; /* White text on button */
-            padding: 18px 35px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-size: 1.2em;
-            font-weight: 700;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); /* Button glow */
-        }
+    .modal-content {
+      max-height: 90vh;
+      max-width: 700px;
+      background: var(--theme-panel-bg);
+      border: 1px solid var(--theme-panel-border);
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px var(--theme-primary-glow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+    }
 
-        .cta-button:hover {
-            background-color: #2980b9; /* Darker blue on hover */
-            transform: translateY(-3px);
-            box-shadow: 0 0 25px rgba(41, 128, 185, 0.7); /* Brighter glow on hover */
-        }
+    .modal-header {
+      background: transparent;
+      color: var(--theme-text);
+      padding: 16px 24px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
+      border-bottom: 1px solid var(--theme-panel-border);
+    }
 
-        /* About Section */
-        #about .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Ensure content is centered */
-        }
+    .modal-body {
+      color: var(--theme-text);
+      padding: 18px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
 
-        #about p {
-            max-width: 800px;
-            margin-bottom: 25px;
-            text-align: left; /* Left align text for readability in paragraphs */
-        }
-
-        .team-highlight {
-            font-style: italic;
-            color: #bbb;
-            margin-top: 20px;
-        }
-
-        /* Services Section */
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            width: 100%;
-            text-align: left;
-        }
-
-        .service-item {
-            background-color: #070a0f; /* Darker gray background for service cards */
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); /* Dark shadow */
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center; /* Center items within card */
-            text-align: center; /* Center text within card */
-        }
-
-        .service-item:hover {
-            transform: translateY(-8px); /* Lift effect */
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.6); /* Enhanced shadow on hover */
-        }
-
-        .service-item img {
-            max-width: 80px;
-            height: auto;
-            margin-bottom: 20px;
-            display: block;
-            filter: drop-shadow(0 0 8px rgba(52, 77, 103, 0.7)); /* Muted glow effect on icons */
-        }
-
-        .service-item h3 {
-            font-size: 1.6em;
-            margin-bottom: 15px;
-            color: #ffffff; /* White service titles */
-        }
-
-        .service-item p {
-            flex-grow: 1;
-            margin-bottom: 0;
-            color: #cccccc; /* Light gray text */
-        }
-        
-        /* Detailed Service Sections */
-        .sub-page-section {
-            padding: 100px 0; /* Top/bottom padding, horizontal handled by container */
-            text-align: left; /* Left align detailed descriptions */
-            max-width: 800px; /* Limit width for readability */
-            margin: 0 auto; /* Center the section block */
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Center content block */
-        }
-        .sub-page-section h3 {
-            width: 100%; /* Ensure heading takes full width of its centered block */
-            font-size: 2.5em;
-            margin-bottom: 25px;
-            color: #344d67; /* Muted steel blue heading */
-            text-align: center; /* Center the heading text */
-            text-shadow: none; /* Remove glow for sub-headings */
-        }
-        .sub-page-section p {
-            text-align: left; /* Ensure paragraphs are left-aligned */
-            margin-bottom: 20px;
-            max-width: 800px; /* Ensure paragraph width matches container */
-        }
-
-        /* Gallery Section */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            width: 100%;
-        }
-
-        .gallery-item {
-            background-color: #070a0f; /* Darker gray background */
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .gallery-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            display: block;
-            filter: brightness(90%); /* Slightly muted image */
-            transition: filter 0.3s ease;
-        }
-        .gallery-item:hover img {
-            filter: brightness(110%); /* Brighter on hover */
-        }
-
-        .gallery-item .caption {
-            padding: 15px;
-            background-color: #0a0e12; /* Dark footer background for caption */
-            font-style: italic;
-            text-align: center;
-            font-size: 0.95em;
-            color: #cccccc;
-        }
-
-        /* Contact Section */
-        .contact-form {
-            
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Center form elements */
-            width: 100%;
-            max-width: 500px;
-            background-color: #070a0f; /* Dark gray form background */
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Dark shadow */
-        }
-
-        .contact-form input,
-        .contact-form textarea {
-            
-            width: 100%;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border: 1px solid #344d67; /* Muted blue border */
-            border-radius: 4px;
-            font-size: 1em;
-            font-family: 'Roboto', sans-serif;
-            background-color: #0a0e12; /* Dark background for input fields */
-            color: #ffffff; /* White text in input fields */
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        .contact-form input:focus,
-        .contact-form textarea:focus {
-            border-color: #3498db; /* Muted blue on focus */
-            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Glow on focus */
-            outline: none; /* Remove default outline */
-        }
-
-        .contact-form textarea {
-            
-            min-height: 150px;
-            resize: vertical;
-        }
-
-        .contact-form button {
-            background-color: #3498db; /* Muted blue button */
-            color: #ffffff; /* White text on button */
-            padding: 15px 30px;
-            border: none;
-            border-radius: 4px;
-            font-size: 1.1em;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            box-shadow: 0 0 15px rgba(52, 152, 219, 0.5); /* Button glow */
-        }
-
-        .contact-form button:hover {
-            background-color: #2980b9; /* Darker blue on hover */
-            transform: translateY(-2px);
-            box-shadow: 0 0 25px rgba(41, 128, 185, 0.7); /* Brighter glow on hover */
-        }
-
-        .contact-info {
-            margin-top: 35px;
-            font-size: 1.1em;
-            color: #cccccc;
-            text-align: center; /* Center contact info text */
-        }
-
-        .contact-info p {
-            margin-bottom: 12px;
-        }
-
-        .contact-info a {
-            color: #3498db; /* Muted blue links */
-            text-decoration: none;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-        }
-        .contact-info a:hover {
-            color: #ffffff; /* White on hover */
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
-            text-decoration: underline;
-        }
+    #policyContent {
+      height: 180px;
+      max-height: 35vh;
+      overflow-y: auto;
+      background: var(--theme-input-bg);
+      border: 1px solid var(--theme-input-border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+    }
+    #policyContent a { color: var(--theme-primary); }
+    #policyContent a:hover { color: var(--theme-text); }
 
 
-        /* Footer */
-        .site-footer {
-            background-color: #0a0e12; /* Deep space black footer */
-            color: #b0b0b0; /* Lighter gray for footer text */
-            text-align: center;
-            padding: 40px 0;
-            font-size: 0.95em;
-            border-top: 1px solid rgba(200, 200, 200, 0.1); /* Subtle border */
-        }
+    .modal-body em {
+      font-size: 0.85rem;
+      color: var(--theme-disabled-color);
+      text-align: center;
+    }
 
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .site-header .container {
-                flex-wrap: wrap;
-            }
+    .modal-body input[type="text"],
+    .modal-body input[type="email"],
+    .modal-body input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 4px;
+      border: 1px solid var(--theme-input-border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background-color: var(--theme-input-bg);
+      color: var(--theme-text);
+      transition: all 0.3s ease;
+    }
+    .modal-body input:disabled {
+        opacity: 0.5;
+    }
+    .modal-body input:focus {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 8px var(--theme-primary-glow);
+        outline: none;
+    }
 
-            .logo {
-                width: 100%;
-                text-align: center;
-                margin-bottom: 10px;
-                font-size: 1.8em; /* Slightly smaller logo on mobile */
-            }
+    .modal-body label {
+      color: var(--theme-disabled-color);
+      display: block;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
 
-            /* Mobile Navigation Menu */
-            #main-nav ul {
-                display: none; /* Hidden by default on mobile */
-                flex-direction: column; /* Stack menu items vertically */
-                width: 100%;
-                position: absolute; /* Position it relative to the viewport */
-                top: 70px; /* Position below the header */
-                left: 0;
-                background-color: #0a0e12; /* Dark background for mobile menu */
-                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-                z-index: 999;
-                border-bottom: 1px solid rgba(200, 200, 200, 0.1);
-                padding-bottom: 10px; /* Add some padding at the bottom */
-            }
+    .modal-footer {
+      padding: 16px 24px;
+      background: transparent;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 1px solid var(--theme-panel-border);
+    }
 
-            #main-nav ul.menu-open {
-                display: flex; /* Show when menu-open class is added */
-            }
+    .modal-footer button {
+      padding: 8px 18px;
+      border: 1px solid var(--theme-disabled-color);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--theme-disabled-color);
+      font-weight: 500;
+      cursor: not-allowed;
+      transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
 
-            #main-nav li {
-                margin: 0;
-                width: 100%;
-                text-align: center;
-                border-bottom: 1px solid rgba(200, 200, 200, 0.05); /* Very subtle separator */
-            }
-            #main-nav li:last-child {
-                border-bottom: none;
-            }
+    .modal-footer button.enabled {
+      border-color: var(--theme-primary);
+      color: var(--theme-primary);
+      cursor: pointer;
+    }
+    .modal-footer button.enabled:hover {
+      background: var(--theme-primary);
+      color: var(--theme-button-text-dark);
+      box-shadow: 0 0 10px var(--theme-primary-glow);
+    }
 
-            #main-nav a {
-                padding: 15px 20px;
-                display: block;
-                font-size: 1.1em; /* Larger links on mobile */
-            }
+/* =================================================================
+   SIDE MENU STYLING
+   ================================================================= */
+    #userMenuDropdown {
+      display: none;
+      position: fixed;
+      top: 85px;
+      left: 10px;
+      width: 60vw;
+      max-width: 215px;
+      max-height: 80vh;
+      
+      background: var(--theme-panel-bg);
+      border: 1px solid var(--theme-panel-border);
+      color: var(--theme-text);
+      padding: 12px;
+      border-radius: 10px;
+      
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5), 0 0 15px var(--theme-primary-glow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      
+      display: flex; /* Kept from original to ensure layout */
+      flex-direction: column;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
 
-            /* Mobile Dropdown Styling */
-            .dropdown {
-                position: static;
-                display: none; /* Hidden by default for mobile click-to-open */
-                box-shadow: none;
-                background-color: #070a0f;
-                width: 100%;
-                border: none;
-            }
+    #userMenuDropdown p {
+        margin: 2px 0;
+    }
 
-            .dropdown.open {
-                display: block; /* Class to show the dropdown */
-            }
+    #userMenuDropdown button,
+    .menu-button { /* A new class for all menu buttons */
+        background: rgba(0,0,0,0.2);
+        border: 1px solid var(--theme-input-border);
+        color: var(--theme-text);
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+        margin: 4px 0;
+        text-align: left;
+        transition: all 0.2s ease-in-out;
+    }
 
-            .dropdown li {
-                border-bottom: 1px solid rgba(200, 200, 200, 0.05); /* Very subtle separator */
-            }
-            .dropdown li:last-child {
-                border-bottom: none;
-            }
+    #userMenuDropdown button:hover,
+    .menu-button:hover {
+        background: var(--theme-primary);
+        border-color: var(--theme-primary);
+        color: var(--theme-button-text-dark);
+        transform: translateX(5px);
+    }
+    
+    /* Specific overrides */
+    #userMenuDropdown #accountSettingsBtn { background: rgba(0,0,0,0.2); }
+    #userMenuDropdown button[onclick="logout()"] { border-color: #f1476f; color: #f1476f; }
+    #userMenuDropdown button[onclick="logout()"]:hover { background: #f1476f; border-color: #f1476f; color: #fff; }
+    #userMenuDropdown button[onclick="deleteAccount()"] { margin-top: 12px; }
 
-            .dropdown a {
-                padding-left: 40px; /* Indent dropdown items */
-                font-size: 1em; /* Standard size for dropdown items */
-                color: #cccccc; /* Light gray for dropdown text */
-            }
-            .dropdown a:hover {
-                background-color: #0a0e12; /* Dark hover for dropdown */
-                color: #ffffff; /* White text */
-                text-shadow: none;
-            }
+    #accountSettingsSection {
+      display: none;
+      margin-top: 8px;
+      border-top: 1px solid var(--theme-input-border);
+      padding-top: 8px;
+    }
+    #accountSettingsSection h4 { color: var(--theme-primary); margin: 4px 0; }
+    #accountSettingsSection label { color: var(--theme-disabled-color); }
+    #accountSettingsSection input {
+        width: 100%;
+        padding: 6px;
+        margin-top: 2px;
+        background-color: var(--theme-input-bg);
+        border: 1px solid var(--theme-input-border);
+        border-radius: 4px;
+        color: var(--theme-text);
+    }
+    #accountSettingsSection button {
+        background: #28a745;
+        border: 1px solid #28a745;
+        text-align: center;
+    }
+    #accountSettingsSection button:hover {
+        background: #218838;
+        border-color: #1e7e34;
+        color: #fff;
+    }
 
-            .menu-toggle {
-                display: block;
-                order: -1; /* Position the toggle button at the start of the flex order */
-                margin-right: auto; /* Push it to the left */
-                margin-left: 0;
-            }
+/* =================================================================
+   MAIN PAGE CONTENT & FORMS STYLING
+   ================================================================= */
+    
+    /* General Button Style for Main Page */
+    #startInstanceBtn,
+    #interactiveElements button {
+        background: transparent;
+        color: var(--theme-primary);
+        border: 1px solid var(--theme-primary);
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    #startInstanceBtn:hover,
+    #interactiveElements button:hover {
+      background: var(--theme-primary);
+      color: var(--theme-button-text-dark);
+      box-shadow: 0 0 15px var(--theme-primary-glow);
+    }
 
-            /* Adjust section padding for smaller screens */
-            section {
-                padding: 80px 0; /* Remove horizontal padding here, container handles it */
-                min-height: auto; /* Let content define height */
-            }
+    /* Form Container Styling */
+    #interactiveElements .container {
+        width: 100%;
+        background: var(--theme-panel-bg) !important;
+        border: 1px solid var(--theme-panel-border);
+        padding: 25px;
+        border-radius: 8px;
+        margin-top: 20px;
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
 
-            #home {
-                min-height: 60vh; /* Smaller hero on mobile */
-            }
+    #interactiveElements h4 {
+        color: var(--theme-primary);
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    #interactiveElements label {
+      margin-right: 10px;
+    }
 
-            #home h1 {
-                font-size: 2.8em;
-            }
+    /* Main page inputs and textareas */
+    #userInput, #algebraicValue,
+    textarea#responseField,
+    textarea#calculationResult {
+      padding: 10px;
+      border-radius: 5px;
+      background-color: var(--theme-input-bg);
+      border: 1px solid var(--theme-input-border);
+      color: var(--theme-text);
+      resize: vertical;
+      transition: all 0.3s ease;
+    }
+    
+    #userInput:focus, #algebraicValue:focus,
+    textarea#responseField:focus,
+    textarea#calculationResult:focus {
+        border-color: var(--theme-primary);
+        box-shadow: 0 0 8px var(--theme-primary-glow);
+        outline: none;
+    }
 
-            #home p {
-                font-size: 1.1em;
-            }
+    textarea#responseField,
+    textarea#calculationResult {
+      width: 100%; /* Changed from 80% to fit new container */
+      height: 150px;
+      margin-top: 20px;
+    }
 
-            h2 {
-                font-size: 2.2em;
-            }
+    #userInputForm, #algebraicValueForm {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
 
-            .services-grid, .gallery-grid {
-                grid-template-columns: 1fr; /* Single column on small screens */
-            }
-            .service-item {
-                text-align: center; /* Center align service item content */
-            }
-            .service-item img {
-                margin: 0 auto 15px auto;
-            }
-            .sub-page-section {
-                align-items: center; /* Center content block */
-                text-align: center; /* Center text within the block */
-            }
-            .sub-page-section h3 {
-                text-align: center; /* Center sub-section headings */
-                font-size: 2.2em;
-            }
-            .sub-page-section p {
-                text-align: center; /* Center paragraphs */
-            }
-            .contact-form {
-                max-width: 95%;
-                padding: 30px;
-            }
-            .contact-info {
-                text-align: center; /* Ensure contact info is also centered on mobile */
-            }
-        }
-    </style>
+
+/* =================================================================
+   MISC & LEGACY STYLES (Minor adjustments)
+   ================================================================= */
+    h6 { color: white; margin-top: 10px; }
+    h2 { color: white; font-weight: bold; }
+    
+    #canvasContainer {
+      position: relative;
+      width: 100%;
+      max-width: 875px;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      margin-top: 50px;
+      background: transparent;
+    }
+    #canvasContainer canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      max-width: 100%;
+      --bs-gutter-x: 0;
+    }
+    
+    .buttonContainer,
+    .buttonContainer2 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    #chatContainer {
+      display: none;
+      flex-direction: column;
+      width: 875px;
+      padding-top: 50px;
+      background: transparent !important;
+    }
+    #chat-header { text-align: center; margin-bottom: 30px; }
+    #chat-header .chat-logo { width: 175px; object-fit: contain; }
+    #messageWindow {
+      height: 300px; border: 1px solid var(--theme-input-border); padding: 8px;
+      overflow-y: auto; background: var(--theme-input-bg); width: 80%; border-radius: 5px;
+    }
+    #messageWindow p, #messageWindow span { color: var(--theme-text) !important; }
+    .buttonContainer.chat { margin-top: 8px; gap: 8px; }
+    .buttonContainer.chat input {
+      width: 400px; padding: 8px; border-radius: 5px;
+      background-color: var(--theme-input-bg); border: 1px solid var(--theme-input-border); color: var(--theme-text);
+    }
+    .buttonContainer.chat button {
+      background-color: transparent; color: var(--theme-primary); border: 1px solid var(--theme-primary);
+      padding: 10px 20px; border-radius: 5px; cursor: pointer; transition: all 0.3s ease;
+    }
+    .buttonContainer.chat button:hover { background-color: var(--theme-primary); color: var(--theme-button-text-dark); }
+
+    label { margin: 8px; }
+
+    #floatingMenuIcon {
+      pointer-events: auto; touch-action: manipulation;
+      position: fixed; top: 0; left: 0; margin: 25px;
+    }
+    #header {
+      position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+      background-color: transparent; display: flex; align-items: center; justify-content: center; z-index: 3;
+    }
+    .avatar-placeholder {
+      width: 150px; height: 150px; margin: 0 auto 10px; border-radius: 50%;
+      overflow: hidden; position: relative; cursor: pointer; border: 2px solid var(--theme-primary);
+    flex-shrink: 0;
+    }
+    .avatar-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+
+    .avatar-selection-popup {
+      display: none; position: absolute; top: 100px; left: 235px;
+      background: var(--theme-panel-bg); padding: 8px; border-radius: 6px;
+      border: 1px solid var(--theme-panel-border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000;
+      grid-template-columns: repeat(8, 50px); grid-auto-rows: 50px; gap: 8px;
+      width: calc((50px + 8px) * 8 - 8px); height: calc((50px + 8px) * 8 - 8px);
+      overflow: auto;
+    }
+    .avatar-selection-popup.active { display: grid !important; }
+    .avatar-selection-popup img {
+      width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+      cursor: pointer; transition: transform .15s;
+    }
+    .avatar-selection-popup img:hover { transform: scale(1.2); }
+    
+    /* Deprecated selectors from old buttons */
+    #userLoginToggle, #ashCanvas, #btnleatr, #btnleav, #btnltrproto, #btnide, #btnmn, #dartmeadow {
+      /* All styling is now handled by the #userMenuDropdown button rule */
+    }
+/* Add this inside your <style> tag */
+#merchandiseBtn {
+    display: flex; /* Use flexbox for centering */
+    flex-direction: column;
+    align-items: center; /* Vertically align items */
+    justify-content: center; /* Horizontally align items */
+    text-align: center; /* Ensure text is centered if it wraps */
+    padding: 10px 0; /* Adjust padding as needed */
+    height: auto; /* Allow height to adjust to the image + padding */
+}
+
+#merchandiseBtn img {
+    /* Keep the user's requested size */
+    width: 70px;
+    height: 100px;
+    /* Keep margin-right to separate from text */
+    margin-right: 8px;
+    /* Remove vertical-align as flexbox handles alignment */
+    vertical-align: initial; /* or just remove the line */
+}
+
+#merchandiseBtn span {
+    /* Basic styling for the text */
+    display: block; /* Ensure text is on its own line if needed, though flex will put it next to image */
+    flex-shrink: 0; /* Prevent text from shrinking */
+}
+    .speaker-button {
+      padding-top: 25px; background-color: transparent;
+      border: none; cursor: pointer; outline: none;
+    }
+    .speaker-button img { background-color: transparent; width: 50px; height: 50px; }
+</style>
 </head>
+
 <body>
 
-    <header class="site-header">
-        <div class="container">
-            <div class="logo">DART Meadow</div>
-            <nav id="main-nav">
-                <button id="menu-toggle" class="menu-toggle">&#9776;</button>
-                <ul id="nav-list">
-                    <li><a href="#home" class="nav-link">Home</a></li>
-                    <li><a href="#about" class="nav-link">About Us</a></li>
-                    <li id="services-menu">
-                        <a href="#services" class="nav-link">Services</a>
-                        <ul class="dropdown" id="services-dropdown">
-                            <li><a href="#service-rnd" class="nav-link">Research & Development</a></li>
-                            <li><a href="#service-analysis" class="nav-link">Analysis</a></li>
-                            <li><a href="#service-simulation" class="nav-link">Simulation</a></li>
-                            <li><a href="#service-measurement" class="nav-link">Measurement</a></li>
-                            <li><a href="#service-space-trans" class="nav-link">Space Transportation Vehicles & Equipment Engineering</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="#gallery" class="nav-link">Gallery</a></li>
-                    <li><a href="#contact" class="nav-link">Contact Us</a></li>
-                </ul>
-            </nav>
+
+    <!-- full‐screen video background -->
+ <video id="bgvid" autoplay muted loop playsinline>
+  <source src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/tree/main/static/dmbg.mp4" type="video/mp4">
+</video>
+
+
+  <!-- Privacy & Consent Modal -->
+  <div id="privacyModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        You must agree to DART Meadow's Privacy Policy.
+      </div>
+      <div class="modal-body">
+
+        <!-- Scrollable Privacy Policy -->
+        <div id="policyContent">
+              <!-- 🍪 Cookie/Storage blurb -->
+    <p class="cookie‑blurb">
+      We’ll store your acceptance in <strong>localStorage</strong> (like a cookie) so 
+      you won’t see this again on this device/browser.
+    </p>
+          <h3>DART Meadow Privacy Policy and License</h3>
+          <p><strong>Where As Such:</strong></p>
+          <p>DART Meadow LLC. | Radical Deepscale LLC. Privacy Policy and Licensing</p>
+          <p><strong>Information obtained:</strong><br>
+            Input provided by the Visitor or prior interactions in our network will be respectfully
+            mutual and private where such is engaged. Upon interacting with the network any visitor
+            agrees to our (yourself, your group or groups as a whole) duty(ies) in ethics for liability
+            outside our network.
+          </p>
+          <p><strong>With as such, Documentation or Assets publicly shared by our Network are
+            welcomed to be copied and distributed but not modified without consent so as long as you
+            provide this attached License Policy with the Documents or Assets.</strong>
+          </p>
+          <p>Commercial distributions are fine only where upon exercising so the License Policy is
+            attached to Documents or Assets then only distributed as highlighted reference. When
+            you exercise modification you must seek consent.
+          </p>
+          <p><a href="https://leadedge.wixsite.com/dartmeadow/privacy-policy" target="_blank">
+            Full policy on dartmeadow.com</a>
+          </p>
+          <!-- sentinel at bottom -->
+          <div id="policyEnd" style="width:100%;height:5px;"></div>
         </div>
-    </header>
 
-    <main>
-        <section id="home">
-            <div class="container">
-                <h1>Navigate Your Universe <h3>(New Site in Development)</h3></h1>
-                <p>DART Meadow provides cutting-edge engineering and tooling solutions, guiding your business through the complexities of function optimization with precision and expertise.</p>
-                <a href="#contact" class="cta-button">Initiate Mission</a>
-            </div>
-        </section>
+        <p><em>Scroll to the bottom of the policy to enable the buttons</em></p>
 
-        <section id="about">
-            <div class="container">
-                <h2>About Our Command Center</h2>
-                <p>Welcome to DART Meadow, your strategic partner in Tooling. We are a dedicated team of innovators and engineers, committed to delivering advanced solutions that propel your enterprise forward. Our mission is to equip your business unique capabilities through tooling and engineering to achieve unparalleled success.</p>
-                <p>We operate with a philosophy of collaboration and transparency, ensuring every project is aligned with your ultimate objectives. Our extensive experience in the math and science domains allows us to navigate challenging landscapes, providing you with reliable, effective, and state-of-the-art services.</p>
-                <p class="team-highlight">Let us chart your course to Aerospace Engineering and Tooling.</p>
+        <!-- Create Account Form -->
+        <div id="signupSection">
+          <h5>Create Account</h5>
+          <div class="row">
+            <div class="col">
+              <label>Username
+                <input id="signupUsername" type="text" placeholder="Pick a username" disabled>
+              </label>
             </div>
-        </section>
-
-        <section id="services">
-            <div class="container">
-                <h2>Our Service Modules</h2>
-                <div class="services-grid">
-                    <a href="#service-rnd" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/344d67/0a0e12?text=R&D" alt="Research & Development Icon">
-                        <h3>Research & Development</h3>
-                        <p>Pioneering new frontiers, driving innovation and developing groundbreaking solutions.</p>
-                    </a>
-                    <a href="#service-analysis" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/3498db/0a0e12?text=AN" alt="Analysis Icon">
-                        <h3>Data Analysis</h3>
-                        <p>Extracting critical insights from complex data to inform strategic decisions and optimize performance.</p>
-                    </a>
-                    <a href="#service-simulation" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/2ecc71/0a0e12?text=SIM" alt="Simulation Icon">
-                        <h3>Advanced Simulation</h3>
-                        <p>Modeling and simulating complex systems to test scenarios, predict outcomes, and refine designs.</p>
-                    </a>
-                    <a href="#service-measurement" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/f39c12/0a0e12?text=MEAS" alt="Measurement Icon">
-                        <h3>Precision Measurement</h3>
-                        <p>Ensuring accuracy and reliability through meticulous data capture and validation processes.</p>
-                    </a>
-                    <a href="#service-space-trans" class="service-item">
-                        <img src="https://via.placeholder.com/80x80/e74c3c/0a0e12?text=STVE" alt="Space Transport Icon">
-                        <h3>Space Transportation Vehicles & Equipment Engineering</h3>
-                        <p>Engineering robust vehicles and critical equipment for space exploration and transport missions.</p>
-                    </a>
-                </div>
+            <div class="col">
+              <label>Name
+                <input id="signupName" type="text" placeholder="Your name" disabled>
+              </label>
             </div>
-        </section>
-
-        <section id="service-rnd" class="sub-page-section">
-            <div class="container">
-                <h3>Research & Development</h3>
-                <p>DART Meadow is at the forefront of innovation, dedicated to pioneering new technologies and methodologies. Our Research and Development initiatives focus on exploring emerging trends, solving complex challenges, and creating novel digital solutions that can revolutionize industries. We invest heavily in understanding future possibilities to ensure our clients gain a significant competitive advantage.</p>
-                <p>We are driven by a passion for discovery and a commitment to pushing the boundaries of what's possible in the digital realm.</p>
+          </div>
+          <div class="row mt-2">
+            <div class="col">
+              <label>Email
+                <input id="signupEmail" type="email" placeholder="you@example.com" disabled>
+              </label>
             </div>
-        </section>
-
-        <section id="service-analysis" class="sub-page-section">
-            <div class="container">
-                <h3>Data Analysis</h3>
-                <p>Leveraging advanced analytical tools and techniques, Dart Meadow transforms raw data into actionable intelligence. We provide comprehensive analysis services that uncover hidden patterns, identify key trends, and offer deep insights into your operations, markets, and customer behavior. Our data-driven approach empowers you to make informed strategic decisions, optimize resource allocation, and drive measurable business growth.</p>
-                <p>We help you understand your data so you can achieve your mission objectives more effectively.</p>
+            <div class="col">
+              <label>Password
+                <input id="signupPassword" type="password" placeholder="Pick a password" disabled>
+              </label>
             </div>
-        </section>
-
-        <section id="service-simulation" class="sub-page-section">
-            <div class="container">
-                <h3>Advanced Simulation</h3>
-                <p>Dart Meadow excels in developing sophisticated simulation models that replicate real-world environments and complex systems. Our simulation services enable you to test hypotheses, predict the performance of new designs, train personnel in critical scenarios, and optimize processes without the risks or costs associated with physical testing. We create virtual environments that provide invaluable data and foresight for your most critical projects.</p>
-                <p>From mission planning to equipment testing, our simulations offer a safe and effective path to validation.</p>
-            </div>
-        </section>
-
-        <section id="service-measurement" class="sub-page-section">
-            <div class="container">
-                <h3>Precision Measurement</h3>
-                <p>Accuracy is paramount in aerospace. Dart Meadow offers meticulous measurement services, employing state-of-the-art tools and rigorous methodologies to ensure the highest levels of precision and reliability. Whether for critical component validation, performance monitoring, or quality assurance, our measurement expertise guarantees that your projects meet the most stringent standards and specifications.</p>
-                <p>We provide the certainty you need through precise, verifiable data.</p>
-            </div>
-        </section>
-        
-        <section id="service-space-trans" class="sub-page-section">
-            <div class="container">
-                <h3>Space Transportation Vehicles & Equipment Engineering</h3>
-                <p>Dart Meadow is your trusted partner for the engineering of space transportation vehicles and critical equipment. Our team possesses deep expertise in designing, developing, and testing systems for launch vehicles, spacecraft, and associated support infrastructure. We are committed to delivering solutions that are safe, reliable, and perform optimally in the extreme conditions of space, supporting your most ambitious missions.</p>
-                <p>We engineer the future of space travel and exploration.</p>
-            </div>
-        </section>
-
-        <section id="gallery">
-            <div class="container">
-                <h2>Project Showcase</h2>
-                <p>Explore a curated selection of our deployments, highlighting our dedication to excellence, design integrity, and client triumph.</p>
-                <div class="gallery-grid">
-                    <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1477414847939-04035c5c46d0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Alpha Showcase">
-                        <div class="caption">Advanced Propulsion System UI</div>
-                    </div>
-                    <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1518770660439-46361701d979?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Beta Showcase">
-                        <div class="caption">Satellite Communication Platform</div>
-                    </div>
-                    <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1501386704289-8d794c47380a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Gamma Showcase">
-                        <div class="caption">Aerospace Manufacturing Portal</div>
-                    </div>
-                    <div class="gallery-item">
-                        <img src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1740&q=80" alt="Project Delta Showcase">
-                        <div class="caption">Flight Simulation Interface</div>
-                    </div>
-                    </div>
-            </div>
-        </section>
-
-        <section id="contact">
-            <div class="container">
-                <h2>Initiate Contact Protocol</h2>
-                <p>Have a mission critical project or inquiry? We're ready to receive your transmission.</p>
-                <form id="contact-form" class="contact-form">
-                    <input type="text" id="name" placeholder="Your Designation (Name)" required>
-                    <input type="email" id="email" placeholder="Your Comms Channel (Email)" required>
-                    <input type="tel" id="phone" placeholder="Your Frequency (Phone Number)">
-                    <textarea id="message" placeholder="Your Transmission (Message)" required></textarea>
-                    <button type="submit">Send Transmission</button>
-                </form>
-                <div class="contact-info">
-                    <p>Orbital Comms: <a href="mailto:justin@dartmeadow.com">justin@dartmeadow.com</a></p>
-                    <p>Subspace Channel: <a href="tel:+17473734090">+1 (747) 373-4090</a></p>
-                    <p>Galactic Hub: 123 Orbit Avenue, Sector 7G, Innovation City, IC 98765</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            &copy; 2025 DART Meadow. All Rights Reserved. Mission Accomplished.
+          </div>
         </div>
-    </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const navLinks = document.querySelectorAll('.nav-link');
-            const menuToggle = document.getElementById('menu-toggle');
-            const navList = document.getElementById('nav-list');
-            const sections = document.querySelectorAll('section');
-            const servicesMenu = document.getElementById('services-menu');
-            const servicesDropdown = document.getElementById('services-dropdown');
+        <!-- Login Form -->
+        <div id="loginSection" class="mt-4">
+          <h5>Login</h5>
+          <div class="row">
+            <div class="col">
+              <label>Username
+                <input id="loginUsername" type="text" placeholder="Your username" disabled>
+              </label>
+            </div>
+            <div class="col">
+              <label>Password
+                <input id="loginPassword" type="password" placeholder="Your password" disabled>
+              </label>
+            </div>
+          </div>
+        </div>
 
-            function setActiveSection(hash) {
-                sections.forEach(section => {
-                    section.style.display = 'none';
-                });
+      </div>
+      <div class="modal-footer">
+        <button id="createBtn" disabled>Create Account</button>
+        <button id="loginBtn" disabled>Login</button>
+        <button id="continueBtn" disabled>Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+<div id="header">
+  <!-- avatar‐as menu‐icon -->
+  <img id="floatingMenuIcon" src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmlogo%20(20250726055056)%20(20250918121801).png"
+  alt="User Avatar"
+  style="width:50px;height:50px;cursor:pointer; border-radius:50%; object-fit:cover;"
+/>
 
-                const targetSection = document.querySelector(hash);
-                if (targetSection) {
-                    targetSection.style.display = 'flex';
-                }
+<!-- avatar grid popup -->
+<div id="avatarSelectionPopup" class="avatar-selection-popup"></div>
 
-                navLinks.forEach(link => {
-                    if (link.getAttribute('href') === hash) {
-                        link.classList.add('active');
-                    } else {
-                        link.classList.remove('active');
-                    }
-                });
+   
+    <div id="userMenuDropdown">
+      <div class="avatar-placeholder" id="avatarPlaceholder">
+        <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmlogo%20(20250726055056)%20(20250918121801).png"
+        id="userAvatar"
+        alt="User Avatar"
+ >
+      </div>
 
-                // Hide dropdown when switching sections on mobile
-                if (window.innerWidth <= 768) {
-                    servicesDropdown.style.display = 'none';
-                }
+      <!-- the popup — note it’s initially empty -->
+      <div id="avatarSelectionPopup" class="avatar-selection-popup"></div>
+      
+  <p><strong id="menuName"></strong></p>
+
+    <p><strong id="menuName"></strong></p>
+    <p id="menuEmail" style="font-size:0.9em;"></p>
+    
+<!-- LOGIN / CREATE SECTION (hidden until “Log In” clicked) -->
+<button id="userLoginToggle">
+  Credentials
+</button>
+
+
+
+
+
+<button
+  id="btnarview"
+  onclick="location.href='https://radicaldeepscale.com/ar.html'"
+>
+  DART View
+</button>
+
+
+
+
+
+
+<button
+  id="btnmn"
+  onclick="location.href='https://radicaldeepscale.com/mn.html'"
+>
+  Mantis Navigation
+      </button>
+      
+      <button
+  id="btnalt"
+  onclick="location.href='https://radicaldeepscale.com/altitude.html'"
+>
+  Altitude Calculators
+      </button>
+      
+
+    <!-- Add inside <div id="userMenuDropdown"> -->
+<button id="accountSettingsBtn">Account Settings</button>
+
+<div id="accountSettingsSection">
+  <!-- Change Email -->
+  <h4>Change Email</h4>
+  <label>Current Password:
+    <input type="password" id="currentEmailPwd" placeholder="Enter current password" />
+  </label>
+  <label>New Email:
+    <input type="email" id="newEmail" placeholder="Enter new email" />
+  </label>
+  
+  <button onclick="changeEmail()">Change Email</button>
+  <hr style="border-color:#555; margin:8px 0;" />
+  <!-- Change Password -->
+  <h4>Change Password</h4>
+  <label>Current Password:
+    <input type="password" id="currentPwd" placeholder="Enter current password" />
+  </label>
+  <label>New Password:
+    <input type="password" id="newPwd" placeholder="Enter new password" />
+  </label>
+  
+  <button onclick="changePassword()">Change Password</button>
+</div>
+<br>
+
+<!-- Add this inside the <div id="userMenuDropdown"> -->
+<!-- Just above the 'Log Out' button -->
+
+<button
+  id="merchandiseBtn"
+  class="menu-button"
+  onclick="location.href='https://leadedge.wixsite.com/dartmeadow/skyboard'"
+> <!-- The closing > for the opening tag should be HERE -->
+  <!-- Content goes inside the button -->
+  <img src="https://raw.githubusercontent.com/DART-Skyboard/Ariel/main/static/leatrshirt.png" alt="Merchandise Icon" style="width: 70px; height: 100px; margin-right: 8px;">
+  <span>Skyboard Shop</span>
+</button> 
+<br>
+
+    <button onclick="logout()">Log Out</button>
+    <br>
+    <button onclick="deleteAccount()">Delete Account</button>
+    <br>
+    
+    <button
+  id="linkedin"
+  onclick="location.href='https://linkedin.com/comm/mynetwork/discovery-see-all?usecase=PEOPLE_FOLLOWS&followMember=dartmeadow'"
+>
+  LinkedIn: DM Studio
+</button>
+<br>
+
+ <button
+ id="dartmeadow"
+ onclick="location.href='https://www.radicaldeepscale.com/'"
+>
+Radical Deepscale
+</button>
+
+
+
+
+</div>
+<script>
+  document.getElementById('floatingMenuIcon')
+    .addEventListener('click', ()=>{
+      let dd = document.getElementById('userMenuDropdown');
+      // The display style is now handled in the stylesheet, this script just toggles it
+      dd.style.display = dd.style.display==='flex' ? 'none':'flex';
+  });
+</script>
+</div>
+  
+ <div class="DARTSound">
+        <!-- Button to control audio -->
+        <button id="mute" onClick="playPause()" class="speaker-button">
+          <img id="speaker-icon" src="https://static.wixstatic.com/media/2451db_f3535dbdc10b4117a28832eeef15fa71~mv2.png" alt="Play">
+          <audio id="backgroundMusic" src="https://static.wixstatic.com/mp3/2451db_3d232605a51744daaf4e8f0e6f8fb0a0.mp3" play loop></audio>
+        </button>
+
+        <script>
+          const audioElement = document.getElementById('backgroundMusic');
+          const speakerIcon = document.getElementById('speaker-icon');
+
+          function playPause() {
+            if (audioElement.paused) {
+              audioElement.play();
+              speakerIcon.src = "https://static.wixstatic.com/media/2451db_18a14b6ce43e4412bbe3edb353b6f399~mv2.png"; // Switch to pause icon
+              speakerIcon.alt = "Pause";
+            } else {
+              audioElement.pause();
+              speakerIcon.src = "https://static.wixstatic.com/media/2451db_f3535dbdc10b4117a28832eeef15fa71~mv2.png"; // Switch to play icon
+              speakerIcon.alt = "Play";
             }
+          }
+        </script>
+      </div>
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    if (this.getAttribute('href').startsWith('#')) {
-                        // Allow the services link to toggle the dropdown on mobile
-                        if (window.innerWidth <= 768 && this.parentElement.id === 'services-menu') {
-                            return; // Let the other event listener handle it
-                        }
-                        
-                        e.preventDefault();
-                        const hash = this.getAttribute('href');
+  <!-- Main Chat -->
+  <div id="chatContainer">
+    <div class="container">
+      <div id="chat-header">
+        <img
+          class="chat-logo"
+          src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmlogo%20(20250726055056)%20(20250918121801).png"
+          alt="DART";
+        />
+      </div>
 
-                        if (navList.classList.contains('menu-open')) {
-                            navList.classList.remove('menu-open');
-                        }
+    </div>
+  </div>
 
-                        history.pushState(null, null, hash);
-                        setActiveSection(hash);
-                    }
-                });
+<script>
+let GS_URL = ''; // declared early
+
+// Grab the toggle and the modal
+const userLoginToggle = document.getElementById('userLoginToggle');
+const modal           = document.getElementById('privacyModal');
+
+// When they click “Log In / Create Account”, we simply bring the modal back
+userLoginToggle.addEventListener('click', () => {
+  modal.style.display = 'flex';
+
+  // If you have scroll‑to‑enable inside the modal, re‑start it:
+  startScrollObserver();
+});
+
+let policyObserver; // define observer in a broader scope
+
+function startScrollObserver() {
+    const policy = document.getElementById('policyContent');
+    const sentinel = document.getElementById('policyEnd');
+    const formInputs = document.querySelectorAll('.modal-body input');
+    const buttons = document.querySelectorAll('.modal-footer button');
+
+    // Disconnect any previous observer to prevent multiple triggers
+    if (policyObserver) {
+        policyObserver.disconnect();
+    }
+
+    policyObserver = new IntersectionObserver((entries, obs) => {
+        if (entries[0].isIntersecting) {
+            formInputs.forEach(i => i.disabled = false);
+            buttons.forEach(b => {
+                b.disabled = false;
+                b.classList.add('enabled');
             });
+            obs.disconnect(); // Stop observing once enabled
+        }
+    }, {
+        root: policy,
+        threshold: 1.0
+    });
 
-            // Toggle mobile menu
-            menuToggle.addEventListener('click', function() {
-                navList.classList.toggle('menu-open');
-                // Ensure dropdown is closed when main menu is closed
-                if (!navList.classList.contains('menu-open')) {
-                    servicesDropdown.style.display = 'none';
-                }
-            });
+    policyObserver.observe(sentinel);
+}
 
-            // Services dropdown toggle on click for mobile
-            servicesMenu.querySelector('a').addEventListener('click', function(e) {
-                if (window.innerWidth <= 768) {
-                    e.preventDefault(); // Prevent navigating to #services
-                    const isVisible = servicesDropdown.style.display === 'block';
-                    servicesDropdown.style.display = isVisible ? 'none' : 'block';
-                }
-            });
 
-            // Hover show/hide for desktop
-            if (window.innerWidth > 768) {
-                servicesMenu.addEventListener('mouseenter', () => {
-                    servicesDropdown.style.display = 'block';
-                });
+// Self-invoking function for initial setup
+;(function() {
+  const modal = document.getElementById('privacyModal');
+  const chat = document.getElementById('chatContainer');
+  const continueBtn = document.getElementById('continueBtn');
+  const createAccountBtn = document.getElementById('createBtn');
+  const loginBtn = document.getElementById('loginBtn');
+  
+  // 1) On load, check if they’ve previously accepted
+  document.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('privacyAccepted') === 'true') {
+      modal.style.display = 'none';
+      chat.style.display  = 'flex';
+      initUserMenuIfStored(); // your existing auto-login / avatar init
+    } else {
+      modal.style.display = 'flex'; // Show modal if not accepted
+      startScrollObserver(); // Initialize the scroll observer
+    }
+  });
 
-                servicesMenu.addEventListener('mouseleave', () => {
-                    servicesDropdown.style.display = 'none';
-                });
-            }
+  function acceptPrivacy() {
+    localStorage.setItem('privacyAccepted', 'true');
+    modal.style.display = 'none';
+    chat.style.display = 'flex';
+  }
 
-            // Click outside to close (useful for desktop if a click opens it)
-            document.addEventListener('click', (e) => {
-                if (!servicesMenu.contains(e.target) && window.innerWidth > 768) {
-                    servicesDropdown.style.display = 'none';
-                }
-            });
+  // Hook into buttons that imply acceptance
+  continueBtn.addEventListener('click', () => {
+    if (!continueBtn.classList.contains('enabled')) return;
+    acceptPrivacy();
+  });
+  
+  // These functions will be defined later, but we can set up the acceptance part
+  createAccountBtn.addEventListener('click', () => {
+    if (createAccountBtn.classList.contains('enabled')) {
+       // The actual account creation logic will handle success/failure
+       // but we can pre-emptively set acceptance upon a valid click.
+       // It's better to do it inside onUserReady after successful creation.
+    }
+  });
+  
+  loginBtn.addEventListener('click', () => {
+     if (loginBtn.classList.contains('enabled')) {
+       // Same as above, do it inside onUserReady after successful login.
+     }
+  });
+  
+})();
 
-            // Initial load
-            const initialHash = window.location.hash || '#home';
-            setActiveSection(initialHash);
+function onUserReady(u) {
+  localStorage.setItem('privacyAccepted', 'true');
+  saveUser(u);
+  document.getElementById('privacyModal').style.display = 'none';
+  document.getElementById('chatContainer').style.display = 'flex';
+  document.getElementById('menuName').innerText = u.name;
+  document.getElementById('menuEmail').innerText = u.email;
+  // document.getElementById('floatingMenu').style.display = 'block'; // This ID does not exist
+  // We manage the menu visibility with its own click listener.
+}
 
-            // Hash change handling
-            window.addEventListener('hashchange', function() {
-                const newHash = window.location.hash || '#home';
-                setActiveSection(newHash);
-            });
 
-            // Contact form validation (unchanged)
-            const contactForm = document.getElementById('contact-form');
-            if (contactForm) {
-                contactForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const name = document.getElementById('name').value;
-                    const email = document.getElementById('email').value;
-                    const message = document.getElementById('message').value;
-                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                    let isValid = true;
+function startUserInstance() {
+  fetch('https://script.google.com/macros/s/AKfycbzthCAgveCNyw_Cp3WdzHQBbsMYiKHEIZiC9g-RKjaQb4f3tbjma29egU7Jgyyt3LdYFA/exec')
+  .then(response => response.text())
+  .then(sheetUrl => {
+    
+    document.getElementById('startInstanceBtn').style.display = 'none';
+    document.getElementById('interactiveElements').style.display = 'block';
+    alert("Your personal sheet instance is ready. Please proceed.");
+  })
+  .catch(error => console.error('Error:', error));
+}
 
-                    if (!name.trim()) {
-                        alert('Please enter your designation.');
-                        isValid = false;
-                    }
-                    if (!email.trim() || !emailRegex.test(email)) {
-                        alert('Please enter a valid communication channel (email).');
-                        isValid = false;
-                    }
-                    if (!message.trim()) {
-                        alert('Please enter your transmission (message).');
-                        isValid = false;
-                    }
+function submitUserInput(event) {
+  event.preventDefault();
+  var userInput = document.getElementById('userInput').value;
+  var formData = new FormData();
+  formData.append('encodetoAutumn', userInput);
+  fetch('https://script.google.com/macros/s/AKfycbwKWaUL1hOF_bXITYJknZfynRTcAvTfb9HASZKs7X8mr6zmdfaStNYBeoMTtaTj1SnTRA/exec', {
+    method: 'POST',
+    body: formData,
+  })
+  .then(response => response.text())
+  .then(text => {
+    document.getElementById('responseField').value = text;
+    document.getElementById('userInput').value = '';
+    updateVisualization(); // Dynamically update visualization based on the response data
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    document.getElementById('responseField').value = "Error processing request.";
+  });
+}
 
-                    if (isValid) {
-                        alert('Transmission received successfully! We will respond shortly.');
-                        contactForm.reset();
-                    }
-                });
-            }
-        });
-    </script>
+function submitAlgebraicValue(event) {
+  event.preventDefault();
+  var algebraicValue = document.getElementById('algebraicValue').value;
+  var formData = new FormData();
+  formData.append('algebraicValue', algebraicValue);
+  fetch('https://script.google.com/macros/s/AKfycbzhRCS88J2s9HrV0HJjUp6_uebt5JJuYsD9GpfWVHkI09dbfRsgCDqLb8v4K_XjHBrY_A/exec', {
+    method: 'POST',
+    body: formData,
+  })
+  .then(response => response.text())
+  .then(text => {
+    document.getElementById('calculationResult').value = text;
+    document.getElementById('algebraicValue').value = '';
+    updateVisualization(); // Dynamically update visualization based on the response data
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    document.getElementById('calculationResult').value = "Error processing request.";
+  });
+}
+
+function downloadResponse() {
+  var response = document.getElementById('responseField').value;
+  var blob = new Blob([response], {type: "text/plain"});
+  var anchor = document.createElement("a");
+  anchor.download = "Autumn.ash";
+  anchor.href = window.URL.createObjectURL(blob);
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+}
+
+function downloadAlgebraResponse() {
+  var response = document.getElementById('calculationResult').value;
+  var blob = new Blob([response], {type: "text/plain"});
+  var anchor = document.createElement("a");
+  anchor.download = "Element Algebra.ash";
+  anchor.href = window.URL.createObjectURL(blob);
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+}
+
+// Three.js setup for dynamic node visualization with OrbitControls
+let scene, camera, renderer, controls, nodes = [], lines = [];
+let currentColor = new THREE.Color(Math.random(), Math.random(), Math.random());
+
+function init() {
+  const container = document.getElementById('canvasContainer');
+  if (!container) return;
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.z = 100;
+
+  renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webglCanvas'), antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  // No need to appendChild if canvas element is already in HTML
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.25;
+  controls.enableZoom = true;
+
+  const ambientLight = new THREE.AmbientLight(0x404040);
+  scene.add(ambientLight);
+
+  const pointLight = new THREE.PointLight(0xffffff, 1, 500);
+  pointLight.position.set(10, 10, 10);
+  scene.add(pointLight);
+
+  createNodes(10); // Create initial nodes with fewer data points
+  animate();
+
+  // Handle resize
+  window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+  }, false);
+}
+
+function createNodes(count) {
+  for (let i = 0; i < count; i++) {
+    const phi = Math.acos(-1 + (2 * i) / count);
+    const theta = Math.sqrt(count * Math.PI) * phi;
+
+    const position = new THREE.Vector3(
+      30 * Math.cos(theta) * Math.sin(phi),
+      30 * Math.sin(theta) * Math.sin(phi),
+      30 * Math.cos(phi)
+    );
+    const node = createNode(position, currentColor); // Initial color nodes
+    nodes.push(node);
+  }
+  updateLines();
+}
+
+function createNode(position, color) {
+  const geometry = new THREE.SphereGeometry(1, 32, 32);
+  const material = new THREE.MeshBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: 0.6
+  });
+  const node = new THREE.Mesh(geometry, material);
+
+  const glowMaterial = new THREE.MeshBasicMaterial({
+    color: color,
+    transparent: true,
+    opacity: 0.2
+  });
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), glowMaterial);
+
+  node.add(glow);
+  node.position.copy(position);
+  scene.add(node);
+  return node;
+}
+
+function updateLines() {
+  lines.forEach(line => scene.remove(line));
+  lines = [];
+
+  nodes.forEach((node, index) => {
+    if (index > 0) {
+      const previousNode = nodes[index - 1];
+      const points = [];
+      points.push(previousNode.position);
+      points.push(node.position);
+
+      const geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 20, 0.2, 8, false);
+      const material = new THREE.MeshBasicMaterial({ color: currentColor }); // Lines matching node color
+      const line = new THREE.Mesh(geometry, material);
+      scene.add(line);
+      lines.push(line);
+    }
+  });
+}
+
+function updateVisualization() {
+  currentColor = new THREE.Color(Math.random(), Math.random(), Math.random()); // Randomize color
+  nodes.forEach(node => {
+    node.material.color.set(currentColor);
+    node.children[0].material.color.set(currentColor);
+  });
+  updateLines();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  if(controls) controls.update();
+  const time = Date.now() * 0.001;
+
+  nodes.forEach(node => {
+    node.material.color.offsetHSL(0.0005, 0, 0);
+    node.children[0].material.color.offsetHSL(0.0005, 0, 0);
+  });
+  if(renderer) renderer.render(scene, camera);
+}
+
+window.onload = init;
+// Menu Begin 
+
+
+// Environment Auto-Detect and GS_URL Setup
+
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  console.log('%cRunning in LOCALHOST mode', 'color: orange; font-weight: bold;');
+  GS_URL = 'https://script.google.com/macros/s/AKfycbyky9F5m5qky4a8dLb1lZw3af3R7Z73Sig8-42DHiVKiirF5tcLImRAGdoAJugVsqsfcw/exec';
+} else {
+  console.log('%cRunning in PRODUCTION mode', 'color: deepskyblue; font-weight: bold;');
+  GS_URL = 'https://script.google.com/macros/s/AKfycbyky9F5m5qky4a8dLb1lZw3af3R7Z73Sig8-42DHiVKiirF5tcLImRAGdoAJugVsqsfcw/exec';
+}
+
+// Session Storage Functions
+function saveUser(u) {
+  sessionStorage.setItem('user', JSON.stringify(u));
+}
+function getUser() {
+  return JSON.parse(sessionStorage.getItem('user') || 'null');
+}
+function clearUser() {
+  sessionStorage.removeItem('user');
+}
+
+// After Login/Create, Initialize UI - This function is now defined earlier
+
+
+async function createAccount() {
+  const btn = document.getElementById('createBtn');
+  if (!btn.classList.contains('enabled')) {
+    alert('Please scroll to the bottom of the Privacy Policy before proceeding.');
+    return;
+  }
+
+  const form = new URLSearchParams({
+    action: 'create',
+    username: document.getElementById('signupUsername').value,
+    name:     document.getElementById('signupName').value,
+    email:    document.getElementById('signupEmail').value,
+    password: document.getElementById('signupPassword').value
+  });
+
+  try {
+    const res = await fetch(GS_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const j = await res.json();
+
+    if (j.ok) {
+      showBanner(`✅ Account created for ${j.username}`, 'success');
+      setTimeout(() => onUserReady(j), 1200);
+    } else {
+      alert(j.error || 'Account creation failed.');
+    }
+  } catch (err) {
+    console.error('Fetch error:', err);
+    alert('Connection failed. Check console.');
+  }
+}
+
+
+
+
+async function login() {
+  const btn = document.getElementById('loginBtn');
+  if (!btn.classList.contains('enabled')) {
+    alert('Please scroll to the bottom of the Privacy Policy before proceeding.');
+    return;
+  }
+
+  const url = `${GS_URL}?action=login&username=${encodeURIComponent(document.getElementById('loginUsername').value)}&password=${encodeURIComponent(document.getElementById('loginPassword').value)}`;
+
+  try {
+    const res = await fetch(url);
+    const j = await res.json();
+
+    if (j.ok) {
+      showBanner(`👋 Welcome back, ${j.name}`, 'info');
+      setTimeout(() => onUserReady(j), 1000);
+    } else {
+      alert(j.error || 'Login failed.');
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    alert('Login connection failed.');
+  }
+}
+
+
+
+// Delete Account
+async function deleteAccount() {
+  const u = getUser();
+  if (!u || !u.username) return;
+  const res = await fetch(`${GS_URL}?action=delete&username=${encodeURIComponent(u.username)}`);
+  const j = await res.json();
+  if (j.ok) {
+    clearUser();
+    alert('Account deleted successfully');
+    window.location.reload();
+  } else {
+    alert(j.error || 'Account deletion failed.');
+  }
+}
+
+// Logout
+function logout() {
+  clearUser();
+  alert('Logged out successfully.');
+  window.location.reload();
+}
+
+// Change Email
+async function changeEmail() {
+  const u = getUser();
+  const form = new URLSearchParams({
+    action: 'changeEmail',
+    username: u.username,
+    currentPassword: document.getElementById('currentEmailPwd').value,
+    newEmail: document.getElementById('newEmail').value
+  });
+
+  const res = await fetch(GS_URL, {
+    method: 'POST',
+    mode: 'cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: form
+  });
+
+  const j = await res.json();
+  if (j.ok) {
+    u.email = form.get('newEmail');
+    saveUser(u);
+    document.getElementById('menuEmail').innerText = u.email;
+    alert('Email updated successfully.');
+  } else {
+    alert(j.error || 'Email change failed.');
+  }
+}
+
+// Change Password
+async function changePassword() {
+  const u = getUser();
+  const form = new URLSearchParams({
+    action: 'changePassword',
+    username: u.username,
+    currentPassword: document.getElementById('currentPwd').value,
+    newPassword: document.getElementById('newPwd').value
+  });
+
+  const res = await fetch(GS_URL, {
+    method: 'POST',
+    mode: 'cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: form
+  });
+
+  const j = await res.json();
+  if (j.ok) {
+    alert('Password changed successfully.');
+  } else {
+    alert(j.error || 'Password change failed.');
+  }
+}
+
+// Connect Buttons to Functions
+document.getElementById('createBtn').onclick = createAccount;
+document.getElementById('loginBtn').onclick = login;
+document.getElementById('accountSettingsBtn').addEventListener('click', () => {
+  const sec = document.getElementById('accountSettingsSection');
+  sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+});
+
+// Auto-login if already stored
+function initUserMenuIfStored() {
+    const u = getUser();
+    if (u) {
+        onUserReady(u);
+    }
+}
+window.addEventListener('DOMContentLoaded', initUserMenuIfStored);
+
+window.addEventListener('resize', () => {
+  const menu = document.getElementById('userMenuDropdown');
+  if (menu) {
+    menu.style.maxHeight = `${window.innerHeight * 0.9}px`;
+  }
+});
+
+function showBanner(message, type = 'info') {
+  const banner = document.createElement('div');
+  banner.textContent = message;
+  banner.style.position = 'fixed';
+  banner.style.top = '20px';
+  banner.style.left = '50%';
+  banner.style.transform = 'translateX(-50%)';
+  banner.style.padding = '12px 24px';
+  banner.style.borderRadius = '8px';
+  banner.style.fontWeight = '600';
+  banner.style.zIndex = 99999;
+  banner.style.boxShadow = '0 2px 12px rgba(0,0,0,0.2)';
+  banner.style.color = '#fff';
+
+  if (type === 'success') banner.style.background = 'limegreen';
+  else if (type === 'info') banner.style.background = 'deepskyblue';
+  else banner.style.background = '#555';
+
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 2500);
+}
+
+
+const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+const avatarPopup       = document.getElementById('avatarSelectionPopup');
+
+const userAvatarImg     = document.getElementById('userAvatar');
+const menuIcon          = document.getElementById('floatingMenuIcon');
+
+const AVATAR_FILES = [
+  'default.png',
+  'defaultleatr.png',
+  'arieldm.png',
+  'ArielNeom.png',
+  'dart.png',
+  'autumn.jpg',
+  'justin.png',
+  'justinbackdrop.jpg',
+  'darkeagle.png',
+  'dartmeadowtree.png',
+  'pinkpanther.png',
+  'pinkpanthersharp.png',
+  'radicaldeepscalehornet.png',
+  'autumnhornet.png',
+  'lec.png',
+  'timburtonisland.png',
+  'arielfire.png',
+  'ArielWhite.png',
+  'ArielEmerald.png',
+  // …
+];
+
+function buildAvatarGrid() {
+  avatarPopup.innerHTML = '';
+  AVATAR_FILES.forEach(fn => {
+    const img = document.createElement('img');
+    img.src = `https://raw.githubusercontent.com/DART-Skyboard/Ariel/main/static/avatars/${fn}`;      // <— correct static path
+    img.title = fn;
+    img.addEventListener('click', () => {
+      document.getElementById('userAvatar').src        = img.src;
+      document.getElementById('floatingMenuIcon').src  = img.src;
+      sessionStorage.setItem('userAvatar', img.src);
+      avatarPopup.classList.remove('active');
+    });
+    avatarPopup.appendChild(img);
+  });
+}
+
+// 3) TOGGLE POPUP ON CLICK
+avatarPlaceholder.addEventListener('click', () => {
+    // This now targets the main popup container, not the grid itself.
+    const popupGrid = document.querySelector('.avatar-selection-popup');
+    if (popupGrid.classList.contains('active')) {
+        popupGrid.classList.remove('active');
+    } else {
+        popupGrid.classList.add('active');
+    }
+});
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  buildAvatarGrid();
+  const saved = sessionStorage.getItem('userAvatar');
+  if (saved) {
+    document.getElementById('userAvatar').src       = saved;
+    document.getElementById('floatingMenuIcon').src = saved;
+  }
+});
+
+
+</script>
 </body>
 </html>
-
