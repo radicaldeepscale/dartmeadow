@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Galactic Report Generator - DART Meadow</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 40px; background: #1a1a2e; color: white; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; background: #16213e; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        h2 { color: #4db5ff; margin-top: 0; }
+        p { color: #ccc; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #e94560; color: white; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; width: 100%; margin-top: 20px; }
+        button:hover { background: #c1364d; }
+        button:disabled { background: #555; cursor: wait; }
+        .status { font-size: 12px; margin-top: 10px; color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Galactic Report</h2>
+        <p>Click below to generate the DART Meadow PDF Report.</p>
+        <button id="genBtn" onclick="generatePDF()">Download Galactic Report</button>
+        <div id="status" class="status">Ready</div>
+    </div>
+
+    <script>
+        // The exact URL provided for the logo
+        const LOGO_URL = "https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmlogo%20(20250726055056)%20(20250918122139).png";
+
+        // Helper: Fetch the image from URL and convert to Base64 so PDFMake can use it
+        async function getBase64ImageFromURL(url) {
+            return new Promise((resolve, reject) => {
+                var img = new Image();
+                img.setAttribute("crossOrigin", "anonymous");
+                
+                img.onload = () => {
+                    var canvas = document.createElement("canvas");
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
+                    var dataURL = canvas.toDataURL("image/png");
+                    resolve(dataURL);
+                };
+                
+                img.onerror = error => {
+                    console.error("Could not load logo:", error);
+                    resolve(null); // Return null if image fails so PDF still generates without it
+                };
+
+                img.src = url;
+            });
+        }
+
+        async function generatePDF() {
+            const btn = document.getElementById('genBtn');
+            const status = document.getElementById('status');
+            
+            btn.disabled = true;
+            btn.innerText = "Processing Logo...";
+            status.innerText = "Fetching image from GitHub...";
+
+            // 1. Get the logo data
+            const logoData = await getBase64ImageFromURL(LOGO_URL);
+
+            status.innerText = "Generating PDF...";
+
+            // 2. Define the Document
+            var docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [40, 60, 40, 60],
+
+                info: {
+                    title: 'Galactic Colonization & Exodus Viability',
+                    author: 'DART Meadow',
+                },
+
+                content: [
+                    // =========================
+                    // PAGE 1: COVER PAGE
+                    // =========================
+                    {
+                        stack: [
+                            { text: '\n\n\n' },
+                            // Logo Centered
+                            logoData ? { image: logoData, width: 200, alignment: 'center' } : { text: '[LOGO FAILED TO LOAD]', alignment: 'center' },
+                            { text: '\n\n\n' },
+                            
+                            // Title
+                            { text: 'GALACTIC COLONIZATION', style: 'coverTitle' },
+                            { text: '& INTERGALACTIC EXODUS VIABILITY', style: 'coverSubtitle' },
+                            
+                            { text: '\n\n\n', fontSize: 14 },
+                            { text: 'Prepared By:', style: 'coverText' },
+                            { text: 'DART MEADOW', style: 'coverAuthor' },
+                            { text: new Date().toLocaleDateString(), style: 'coverText' }
+                        ],
+                        alignment: 'center',
+                        pageBreak: 'after'
+                    },
+
+                    // =========================
+                    // REPORT BODY (From previous context)
+                    // =========================
+                    { text: 'REPORT: Galactic Colonization & Intergalactic Exodus Viability', style: 'header' },
+                    
+                    // Executive Summary
+                    { text: 'Executive Summary', style: 'subheader' },
+                    { text: 'This report analyzes the potential expansion of human civilization from Earth to the Milky Way and eventually to a new galaxy. The analysis contrasts the "hard deadlines" of Earth\'s habitability against the timeline of the Milky Way-Andromeda merger.', margin: [0,0,0,10] },
+                    
+                    // Key Finding Box
+                    {
+                        style: 'highlightBox',
+                        table: {
+                            widths: ['*'],
+                            body: [[
+                                {
+                                    text: [
+                                        { text: 'Key Finding: ', bold: true },
+                                        'The primary threat to humanity is not the galaxy collision (4.5 billion years away), but the aging of our Sun. Humanity has a "Golden Era" of ~1 billion years to colonize the Milky Way.'
+                                    ],
+                                    fillColor: '#f0f0f0',
+                                    color: '#333333'
+                                }
+                            ]]
+                        },
+                        layout: 'noBorders'
+                    },
+
+                    // Section 1
+                    { text: 'Section 1: The Critical Timelines', style: 'subheader' },
+                    { text: 'To determine how many planets we can colonize, we must first establish the time budget available before we are forced to move.', margin: [0,0,0,10] },
+                    
+                    {
+                        style: 'tableExample',
+                        table: {
+                            headerRows: 1,
+                            widths: ['auto', 'auto', 'auto', '*'],
+                            body: [
+                                [ { text: 'Event', style: 'tableHeader' }, { text: 'Time from Now', style: 'tableHeader' }, { text: 'Risk Level', style: 'tableHeader' }, { text: 'Impact', style: 'tableHeader' } ],
+                                [ 'Earth Peak Capacity', '~2080s (60 years)', 'Low', 'Population stabilizes at ~10.4B; resource management becomes key.' ],
+                                [ 'Solar Luminosity', '600M - 1B Years', {text: 'Critical', bold:true, color:'red'}, 'Sun becomes 10% brighter. Oceans evaporate. (Hard Deadline)' ],
+                                [ 'Andromeda Merger', '~4.5 Billion Years', 'Moderate', 'Galaxies merge. Orbits disrupted. Radiation risks increase.' ]
+                            ]
+                        },
+                        layout: 'lightHorizontalLines'
+                    },
+
+                    // Section 2
+                    { text: 'Section 2: The Colonization Potential (Milky Way)', style: 'subheader' },
+                    { text: 'Using the "Colonization Wave" model to calculate expansion before the 1-billion-year deadline.', margin: [0,0,0,5] },
+
+                    { text: '2.1 The Assumptions', style: 'sectionTitle' },
+                    { ul: [
+                        'Travel Technology: Generation Ships (0.1c speed).',
+                        'Travel Time per Hop: ~40–100 years (stars 4–10 LY apart).',
+                        'Settlement Duration: 500 years per planet to build new ships.'
+                    ], margin: [0,0,0,5] },
+
+                    { text: '2.2 The Expansion Rate', style: 'sectionTitle' },
+                    { ul: [
+                        'Cycle Time: 100 years (Travel) + 500 years (Build) = 600 years per hop.',
+                        'Total Time Available: 1 Billion years.',
+                        'Max Cycles: 1,000,000,000 / 600 = ~1.6 million hops.'
+                    ], margin: [0,0,0,5] },
+
+                    { text: '2.3 The Numbers', style: 'sectionTitle' },
+                    { text: 'The "human sphere" expands at roughly 1% the speed of light.', margin: [0,0,0,5] },
+                    { ul: [
+                        'Radius Reachable: 10 million light-years (Theoretical).',
+                        'Milky Way Size: ~100,000 light-years.',
+                        { text: 'Conclusion: We would run out of galaxy before we run out of time.', bold: true },
+                        'Potential Planets: 300 Million to 40 Billion.'
+                    ] },
+                    
+                    { text: 'Note: We do not need to "ditch" the galaxy because of a lack of planets. We would likely saturate the Milky Way long before the Andromeda collision.', style: 'quote' },
+
+                    // Section 3
+                    { text: 'Section 3: The Intergalactic Exodus', style: 'subheader' },
+                    { text: 'If humanity decides to leave the Milky Way, we face the void between galaxies.', margin: [0,0,0,5] },
+                    { text: '3.1 The Destination: Triangulum Galaxy (M33)', bold: true, margin: [0,5,0,2] },
+                    { ul: ['Distance: ~2.73 Million Light-Years.', 'Status: Stable member of Local Group.'] },
+                    { text: '3.2 The Journey (Fleet Logistics)', bold: true, margin: [0,5,0,2] },
+                    { ul: ['Fleet Type: Void Arks (Artificial Planets).', 'Propulsion: Fusion/Antimatter at 0.1c.', 'Travel Duration: ~27 Million Years.', 'Generations: ~900,000 generations.'] },
+                    { text: '3.3 Feasibility Check', bold: true, margin: [0,5,0,2] },
+                    { ul: ['Biology: Significant evolutionary drift expected.', 'Hull Integrity: Ships must be "living" (self-healing) materials.'] },
+
+                    // Section 4
+                    { text: 'Section 4: Final Report & Recommendations', style: 'subheader' },
+                    { text: 'Phase 1: The Milky Way Saturation (Years 2200 – Year 1B)', style: 'sectionTitle' },
+                    { text: 'Aggressive expansion to seed ~10 Billion+ worlds. Humanity becomes a Type II Civilization.' },
+                    { text: 'Phase 2: The Galactic Winter (Year 3B – Year 4B)', style: 'sectionTitle' },
+                    { text: 'Gravitational tides disrupt orbits. Begin construction of "Void Arks" and seed fleets.' },
+                    { text: 'Phase 3: The Great Crossing (Year 4B+)', style: 'sectionTitle' },
+                    { text: 'Departure for Triangulum. ~30 Million years in transit.' },
+
+                    { text: 'Summary Comparison', style: 'sectionTitle', margin: [0,15,0,5] },
+                    {
+                        style: 'tableExample',
+                        table: {
+                            headerRows: 1,
+                            widths: ['*', '*', '*'],
+                            body: [
+                                [ { text: 'Metric', style: 'tableHeader', fillColor: '#333', color: 'white' }, { text: 'Milky Way Phase', style: 'tableHeader', fillColor: '#333', color: 'white' }, { text: 'Intergalactic Phase', style: 'tableHeader', fillColor: '#333', color: 'white' } ],
+                                [ {text:'Primary Constraint', bold:true}, 'Industry Build Time', 'Fuel/Resource Preservation' ],
+                                [ {text:'Travel Time', bold:true}, '40-100 Years', '~27 Million Years' ],
+                                [ {text:'Colonizable Targets', bold:true}, '~40 Billion Planets', '1 New Galaxy (Triangulum)' ],
+                                [ {text:'Evolution', bold:true}, 'Minor Drift', 'Speciation Likely' ]
+                            ]
+                        },
+                        layout: { fillColor: function (rowIndex) { return (rowIndex % 2 === 0) ? '#f9f9f9' : null; } }
+                    },
+
+                    // =========================
+                    // FINAL PAGE: ABOUT DART MEADOW
+                    // =========================
+                    { text: '', pageBreak: 'before' }, 
+                    
+                    // About Header
+                    { text: 'ABOUT US', style: 'aboutHeader', alignment: 'center' },
+                    { canvas: [{ type: 'line', x1: 150, y1: 5, x2: 365, y2: 5, lineWidth: 2, lineColor: '#e94560' }] },
+                    { text: '\n\n' },
+
+                    // Content with Logo (Small version)
+                    {
+                        columns: [
+                            // Logo on the left
+                            logoData ? { image: logoData, width: 100, alignment: 'center' } : {},
+                            
+                            // Text on the right
+                            {
+                                width: '*',
+                                text: [
+                                    { text: 'DART Meadow', bold: true, fontSize: 14, color: '#222' },
+                                    { text: ' has been a cornerstone in the community, involved in both leadership and development. We are proud to lead the way towards a more efficient future with innovative ideas, game-changing technology and transparency.\n\n', fontSize: 11 },
+                                    { text: 'We’ve worked on dozens of projects aimed at providing innovative engineering solutions.', fontSize: 11 }
+                                ],
+                                margin: [20, 0, 0, 0],
+                                alignment: 'justify'
+                            }
+                        ]
+                    }
+                ],
+
+                // --- STYLES ---
+                styles: {
+                    coverTitle: { fontSize: 26, bold: true, color: '#222', margin: [0, 10, 0, 5] },
+                    coverSubtitle: { fontSize: 18, color: '#555', bold: true },
+                    coverText: { fontSize: 12, color: '#666', margin: [0, 2] },
+                    coverAuthor: { fontSize: 14, bold: true, color: '#e94560', margin: [0, 0, 0, 10] },
+
+                    header: { fontSize: 22, bold: true, alignment: 'center', margin: [0, 0, 0, 15], color: '#222' },
+                    subheader: { fontSize: 16, bold: true, margin: [0, 20, 0, 5], color: '#0056b3', decoration: 'underline' },
+                    sectionTitle: { fontSize: 12, bold: true, margin: [0, 10, 0, 2], color: '#444' },
+                    
+                    tableHeader: { bold: true, fontSize: 11, color: 'black' },
+                    tableExample: { margin: [0, 5, 0, 15], fontSize: 10 },
+                    highlightBox: { margin: [0, 10, 0, 10] },
+                    quote: { italics: true, margin: [10, 10, 10, 10], color: '#555', background: '#eee' },
+                    
+                    aboutHeader: { fontSize: 20, bold: true, color: '#222', margin: [0, 0, 0, 5] }
+                }
+            };
+
+            pdfMake.createPdf(docDefinition).download('Galactic_Report_DART.pdf');
+            
+            // Reset button
+            btn.disabled = false;
+            btn.innerText = "Download Galactic Report";
+            status.innerText = "Ready";
+        }
+    </script>
+</body>
+</html>
