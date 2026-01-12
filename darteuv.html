@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DART Meadow | EUV Lithography Concept</title>
+    <style>
+        :root {
+            /* Aerospace Dark Palette */
+            --bg-color: #050505;
+            --surface-color: #0f0f0f;
+            --border-color: #222;
+            --box-bg: #000000;
+            
+            /* High-Contrast Accents */
+            --green: #00FF7F;
+            --blue-dark: #2979FF;
+            --blue-light: #70D1FF;
+            --gray: #888;
+            --purple: #B000FF;
+            --yellow: #FFBD44;
+            --text-main: #e0e0e0;
+            --text-dim: #999;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centers the whole wrapper */
+        }
+
+        .page-wrapper {
+            max-width: 1100px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-title {
+            font-size: 1.8rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            text-align: center;
+            color: white;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            width: 100%;
+        }
+
+        /* Fixed Centered Container */
+        .concept-section {
+            display: grid;
+            grid-template-columns: 1fr; /* Stacked for better control */
+            justify-items: center;
+            background: var(--surface-color);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Layout Grid for the Content */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1.2fr;
+            gap: 30px;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* Central Image Box */
+        .main-visual {
+            background-color: var(--box-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            color: white;
+        }
+
+        .main-visual h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--blue-light);
+        }
+
+        .main-visual h2 {
+            margin: 5px 0;
+            font-size: 1rem;
+            font-weight: 300;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .placeholder-image {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        /* Labels Styling */
+        .label {
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .green { background-color: var(--green); color: black; margin-bottom: 20px; grid-column: 2; width: fit-content; justify-self: center;}
+        .blue-1 { background-color: var(--blue-dark); color: white; }
+        .blue-2 { background-color: var(--blue-light); color: black; }
+        .gray-label { color: var(--text-dim); font-weight: 400; font-size: 1rem;}
+        .purple { background-color: var(--purple); color: white; }
+        .yellow { 
+            background-color: var(--yellow); 
+            color: #221a00; 
+            line-height: 1.6;
+            grid-column: 2;
+            margin-top: 20px;
+            text-align: left;
+            font-weight: 400;
+        }
+
+        .right-labels {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* GIF Section */
+        .gif-container {
+            width: 100%;
+            background: var(--surface-color);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            box-sizing: border-box;
+        }
+        /* GIF Section */
+        .gif-containerblurb {
+            width: 100%;
+            background: var(--surface-color);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+            box-sizing: border-box;
+        }
+        .gif-container h3 {
+            margin-top: 0;
+            color: var(--text-dim);
+            font-weight: 300;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding-bottom: 15px;
+        }
+        .gif-containerblurb h3 {
+            font-size: 12px;
+            margin-top: 0;
+            color: var(--text-dim);
+            font-weight: 200;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding-bottom: 15px;
+        }
+        .gif-box {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid #333;
+        }
+
+
+        /* Mobile Adjustments */
+        @media (max-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+            .green, .yellow, .main-visual {
+                grid-column: 1;
+            }
+            .right-labels {
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="page-wrapper">
+
+    <h1 class="main-title">DART Meadow | EUV Lithography Concept</h1>
+    
+
+</div>
+    <!-- Top Concept Section -->
+    <div class="concept-section">
+        <div class="grid-layout">
+            <!-- Top Green Label centered above the box -->
+            <div></div>
+            <div class="label green">Green Tank, New Gaseous Introduction 1</div>
+            <div></div>
+
+            <!-- Left Empty space for balance -->
+            <div></div>
+
+            <!-- Central Black Box -->
+            <div class="main-visual">
+                <h1>EUV Lithography</h1>
+                <h2>System Architecture</h2>
+
+                <div class="placeholder-image">
+                    <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/EUV.png" alt="Concept Visualization" style="max-width: 90%;">
+                </div>
+            </div>
+
+            <!-- Right Side Labels -->
+            <div class="right-labels">
+                <div class="label blue-1">Blue Tank: Gas Introduction 2</div>
+                <div class="label blue-2">Tin Droplet Delivery</div>
+                <div class="label gray-label">Gray Mirror Chamber</div>
+                <div class="label purple">Purple System: Laser</div>
+            </div>
+
+            <!-- Bottom Yellow Label centered below the box -->
+            <div></div>
+            <div class="label yellow">
+                <strong>Torus:</strong> Key Component Introduction To Filter and Simply Chamber gases while allowing the potential to use more elementary gases cutting back unnecessary mechanical engineering as well as increasing X-ray yield.
+            </div>
+            <div></div>
+        </div>
+    </div>
+
+    <!-- Animated GIF Section -->
+    <div class="gif-container">
+        <h3>Animated Concept Demonstration</h3>
+        <div class="gif-box">
+            <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/euvtorus.gif" alt="Animated EUV Concept" style="width: 100%; height: auto; display: block;">
+        </div>
+            <div class="gif-containerblurb">
+                <h3>You may notice the Torus chamber system is from the DART Meadow "Arrow" rocket engine. After seeing a video on EUV it caught my attention recalling me to my Torus design.</h3>
+    </div>
+
+</div>
+
+</body>
+</html>
