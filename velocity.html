@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velocity Master Converter</title>
+    <style>
+        :root {
+            /* Updated Palette for Glass/Video Look */
+            --primary-color: #0ea5e9; 
+            --primary-hover: #0284c7;
+            
+            /* The card is now semi-transparent white */
+            --card-bg: rgba(255, 255, 255, 0.45); 
+            --card-blur: 15px;
+            
+            --text-main: #1e293b;
+            --text-light: #475569;
+            --border-color: rgba(255, 255, 255, 0.6);
+            --input-bg: rgba(255, 255, 255, 0.9);
+            
+            --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --radius-std: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            /* Fallback color if video fails */
+            background-color: #334155; 
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* --- VIDEO BACKGROUND STYLING --- */
+        #bg-video {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -1; /* Places video behind everything */
+            object-fit: cover;
+            filter: brightness(0.8); /* Slight dim to make text pop */
+        }
+
+        .converter-card {
+            background: var(--card-bg);
+            /* This creates the frosted glass effect */
+            backdrop-filter: blur(var(--card-blur)); 
+            -webkit-backdrop-filter: blur(var(--card-blur));
+            
+            width: 100%;
+            max-width: 600px;
+            padding: 3rem 2.5rem; /* Increased padding slightly */
+            border-radius: var(--radius-std);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-color);
+            
+            /* Flex layout to handle the new logo centering */
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+        }
+
+        /* --- LOGO STYLING --- */
+        .logo-container {
+            margin-bottom: 1.5rem;
+            /* Explicit dimensions as requested */
+            width: 200px; 
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensures logo isn't distorted */
+            
+            /* Temporary border/bg to visualize the area if image is missing */
+            /* You can remove the next line once you add your real logo */
+            background: rgba(14, 165, 233, 0.1); border-radius: 50%; 
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .header h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-light);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* Input Section Styling */
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.15rem;
+            border: 2px solid transparent; /* Cleaner look on glass */
+            border-radius: var(--radius-std);
+            outline: none;
+            transition: all 0.2s;
+            color: var(--text-main);
+            background-color: var(--input-bg);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        input[type="number"]:focus, select:focus {
+            border-color: var(--primary-color);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+
+        /* Results Grid Styling */
+        .results-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .result-item {
+            background-color: rgba(255, 255, 255, 0.6); /* Slightly more transparent */
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.2s ease;
+        }
+
+        .result-item.active {
+            border-color: var(--primary-color);
+            background-color: rgba(240, 249, 255, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(14, 165, 233, 0.15);
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        .unit-abbr {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            font-weight: 500;
+            margin-left: 4px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 500px) {
+            .input-group {
+                flex-direction: column;
+            }
+            .results-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<video autoplay muted loop id="bg-video">
+    <source src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/main/static/velocity.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+</video>
+
+
+    <div class="converter-card">
+        
+        <div class="logo-container">
+           <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/main/static/default.png" alt="Company Logo" class="logo-img">
+
+        </div>
+
+        <div class="header">
+            <h1>Velocity Converter</h1>
+            <p>Precise multi-unit speed calculations.</p>
+        </div>
+
+        <div class="input-group">
+            <div class="input-wrapper" style="flex: 2;">
+                <label for="inputValue">Value</label>
+                <input type="number" id="inputValue" placeholder="0.00" oninput="convert()">
+            </div>
+            <div class="input-wrapper" style="flex: 3;">
+                <label for="unitSelect">Unit</label>
+                <select id="unitSelect" onchange="convert()">
+                    <option value="mph">Miles per Hour (mph)</option>
+                    <option value="kph">Kilometers per Hour (km/h)</option>
+                    <option value="mach">Mach (Standard Atmosphere)</option>
+                    <option value="mps">Meters per Second (m/s)</option>
+                    <option value="fps">Feet per Second (ft/s)</option>
+                    <option value="cmps">Centimeters per Second (cm/s)</option>
+                    <option value="mmps">Millimeters per Second (mm/s)</option>
+                    <option value="knots">Knots (kn)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="resultsGrid" class="results-container">
+            </div>
+    </div>
+
+    <script>
+        // --- Same Logic as Before ---
+        const unitConfig = {
+            mph:   { name: "Miles per Hour", abbr: "mph", factor: 0.44704 },
+            kph:   { name: "Kilometers per Hour", abbr: "km/h", factor: 0.277778 },
+            mach:  { name: "Mach", abbr: "M", factor: 343 }, 
+            mps:   { name: "Meters per Second", abbr: "m/s", factor: 1 },
+            fps:   { name: "Feet per Second", abbr: "ft/s", factor: 0.3048 },
+            cmps:  { name: "Centimeters per Second", abbr: "cm/s", factor: 0.01 },
+            mmps:  { name: "Millimeters per Second", abbr: "mm/s", factor: 0.001 },
+            knots: { name: "Knots", abbr: "kn", factor: 0.514444 }
+        };
+
+        const inputEl = document.getElementById('inputValue');
+        const selectEl = document.getElementById('unitSelect');
+        const resultsEl = document.getElementById('resultsGrid');
+
+        function init() {
+            renderResultsGrid();
+            convert();
+        }
+
+        function renderResultsGrid() {
+            resultsEl.innerHTML = '';
+            for (const [key, unit] of Object.entries(unitConfig)) {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.id = `res-${key}`;
+                
+                item.innerHTML = `
+                    <div class="result-label">${unit.name}</div>
+                    <div class="result-value">
+                        <span id="val-${key}">-</span>
+                        <span class="unit-abbr">${unit.abbr}</span>
+                    </div>
+                `;
+                resultsEl.appendChild(item);
+            }
+        }
+
+        function convert() {
+            const val = parseFloat(inputEl.value);
+            const sourceUnitKey = selectEl.value;
+
+            document.querySelectorAll('.result-item').forEach(el => el.classList.remove('active'));
+            const activeCard = document.getElementById(`res-${sourceUnitKey}`);
+            if(activeCard) activeCard.classList.add('active');
+
+            if (isNaN(val)) {
+                for (const key in unitConfig) {
+                    document.getElementById(`val-${key}`).textContent = "-";
+                }
+                return;
+            }
+
+            const inputFactor = unitConfig[sourceUnitKey].factor;
+            const valueInMps = val * inputFactor;
+
+            for (const key in unitConfig) {
+                const targetFactor = unitConfig[key].factor;
+                let result = valueInMps / targetFactor;
+
+                let displayVal;
+                if (result === 0) {
+                    displayVal = 0;
+                } else if (result < 0.0001) {
+                     displayVal = result.toExponential(4);
+                } else if (result < 1) {
+                    displayVal = result.toFixed(4);
+                } else if (result % 1 === 0) {
+                    displayVal = result; 
+                } else {
+                    displayVal = parseFloat(result.toFixed(3)); 
+                }
+                document.getElementById(`val-${key}`).textContent = displayVal;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
