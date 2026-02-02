@@ -1,102 +1,65 @@
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class DartAlleyCrawler {
-    private static final int MAX_DEPTH = 2;
-    private static final int MAX_LINKS_PER_PAGE = 5; // Limit links to avoid timeout
+    // SETTINGS: Change the MAX_DEPTH to crawl deeper (1 = just the first page)
+    private static final int MAX_DEPTH = 1;
     private Set<String> visitedLinks = new HashSet<>();
-    private List<PageData> results = new ArrayList<>();
-
-    static class PageData {
-        String title;
-        String url;
-        String desc;
-
-        PageData(String title, String url, String desc) {
-            this.title = title;
-            this.url = url;
-            this.desc = desc;
-        }
-    }
 
     public void crawl(String url, int depth) {
-        if (depth >= MAX_DEPTH || visitedLinks.contains(url)) {
-            return;
-        }
+        if ((!visitedLinks.contains(url) && (depth < MAX_DEPTH))) {
+            try {
+                visitedLinks.add(url);
+                // Connect to the web page
+                Document document = Jsoup.connect(url)
+                        .userAgent("DART-Alley-Bot/1.0")
+                        .timeout(5000)
+                        .get();
 
-        try {
-            visitedLinks.add(url);
-            System.out.println("Crawling: " + url + " (depth: " + depth + ")");
-
-            Document document = Jsoup.connect(url)
-                    .userAgent("DART-Alley-Crawler/1.0 (+https://dartmeadow.com)")
-                    .timeout(5000)
-                    .get();
-
-            String title = document.title().trim();
-            if (title.isEmpty()) title = "Untitled Node";
-
-            String desc = document.select("meta[name=description]").attr("content").trim();
-            if (desc.isEmpty()) {
-                desc = document.select("meta[property=og:description]").attr("content").trim();
-            }
-            if (desc.isEmpty()) {
-                Element firstP = document.select("p").first();
-                if (firstP != null) {
-                    desc = firstP.text();
-                    if (desc.length() > 150) {
-                        desc = desc.substring(0, 147) + "...";
-                    }
+                // Extract Data
+                String title = document.title().replace("\"", "'");
+                String desc = "";
+                
+                // Try to find the meta description
+                Element metaDesc = document.selectFirst("meta[name=description]");
+                if (metaDesc != null) {
+                    desc = metaDesc.attr("content").replace("\"", "'");
+                } else {
+                    desc = "No description available for this neural node.";
                 }
-            }
-            if (desc.isEmpty()) {
-                desc = "No description available for this neural pathway.";
-            }
 
-            results.add(new PageData(title, url, desc));
+                // PRINT VALID JSON FORMAT
+                System.out.println("  {");
+                System.out.println("    \"title\": \"" + title + "\",");
+                System.out.println("    \"url\": \"" + url + "\",");
+                System.out.println("    \"desc\": \"" + desc + "\"");
+                System.out.println("  },");
 
-            if (depth < MAX_DEPTH - 1) {
+                // Find more links to crawl
                 Elements linksOnPage = document.select("a[href]");
-                int count = 0;
+                depth++;
                 for (Element page : linksOnPage) {
-                    if (count >= MAX_LINKS_PER_PAGE) break;
-                    String absUrl = page.attr("abs:href");
-                    // Simple check to keep it relevant and avoid huge sites
-                    if (absUrl.startsWith("http") && !visitedLinks.contains(absUrl) && !absUrl.contains("#")) {
-                        crawl(absUrl, depth + 1);
-                        count++;
-                    }
+                    // Recursive crawl
+                    crawl(page.attr("abs:href"), depth);
                 }
-            }
-        } catch (IOException e) {
-            System.err.println("Error crawling " + url + ": " + e.getMessage());
-        }
-    }
 
-    public void saveResults(String filename) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        try (FileWriter writer = new FileWriter(filename)) {
-            gson.toJson(results, writer);
-            System.out.println("Saved " + results.size() + " results to " + filename);
-        } catch (IOException e) {
-            System.err.println("Error saving results: " + e.getMessage());
+            } catch (IOException e) {
+                // Ignore broken links to keep output clean
+            }
         }
     }
 
     public static void main(String[] args) {
-        DartAlleyCrawler crawler = new DartAlleyCrawler();
-        crawler.crawl("https://en.wikipedia.org/wiki/Artificial_intelligence", 0);
-        crawler.saveResults("database.json");
+        System.out.println("[\n  // COPY THESE RESULTS INTO YOUR database.json");
+        
+        // === CHANGE THIS URL TO START CRAWLING A NEW SITE ===
+        new DartAlleyCrawler().crawl("https://en.wikipedia.org/wiki/Artificial_intelligence", 0);
+        
+        System.out.println("]");
     }
 }
