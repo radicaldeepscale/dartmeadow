@@ -188,10 +188,11 @@
 
     <script>
         // --- CONFIGURATION ---
-        // 1. Paste your API Key from Google Cloud Console here:
+        
+        // 1. YOUR API KEY (Verified from your screenshot)
         const API_KEY = 'AQ.Ab8RN6JzBZvJpDFLcMiwZW9jEQfQrXd1_SxtrxpolkjjMybmdQ'; 
         
-        // 2. Your existing Engine ID (Already filled in):
+        // 2. YOUR ENGINE ID (Verified from your screenshot)
         const CX_ID = '854c999db3a9e48e5'; 
 
         const input = document.getElementById('searchInput');
@@ -249,7 +250,7 @@
             } catch (error) {
                 console.error(error);
                 loader.style.display = 'none';
-                resultsArea.innerHTML = `<div style="text-align:center; color:#ef4444;">DATA LINK FAILURE: Verify API Key</div>`;
+                resultsArea.innerHTML = `<div style="text-align:center; color:#ef4444;">DATA LINK FAILURE: Verify API Key. Ensure 'Custom Search API' is ENABLED in Google Cloud Console.</div>`;
             }
         }
 
@@ -259,204 +260,6 @@
         });
 
     </script>
-
-</body>
-</html>            background-size: 50px 50px;
-            transform: perspective(500px) rotateX(60deg);
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* --- HEADER --- */
-        .logo-container {
-            margin-top: 5vh;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-size: 3rem;
-            margin: 0;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            text-shadow: var(--text-glow);
-        }
-        .subtitle {
-            color: var(--neon-cyan);
-            font-size: 1rem;
-            letter-spacing: 2px;
-            opacity: 0.8;
-        }
-
-        /* --- LAYOUT CONTAINERS --- */
-        .search-box-wrapper {
-            width: 90%;
-            max-width: 800px;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1000;
-        }
-
-        .results-wrapper {
-            width: 90%;
-            max-width: 1000px;
-            /* REMOVED THE DARK RECTANGLE BACKGROUND HERE */
-            background: transparent; 
-            padding: 10px;
-        }
-
-        /* =========================================
-           CRITICAL CSS OVERRIDES (THE DARK THEME FIX)
-           ========================================= */
-
-        /* 1. FORCE INLINE (Kill the Popup Window) */
-        .gsc-results-wrapper-overlay {
-            position: static !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            width: 100% !important;
-            max-width: none !important;
-            height: auto !important;
-            left: auto !important;
-            top: auto !important;
-            padding: 0 !important;
-            z-index: 1 !important;
-        }
-        .gsc-modal-background-image {
-            display: none !important; /* Hides the grey backdrop */
-        }
-        .gsc-results-close-btn {
-            display: none !important; /* Hides the X button */
-        }
-
-        /* 2. RESET BACKGROUNDS (Kill the White Box) */
-        .gsc-control-cse, .gsc-control-cse-en {
-            background-color: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-        }
-        .gsc-wrapper {
-            background-color: transparent !important;
-        }
-        .gsc-webResult, .gsc-result {
-            background-color: transparent !important;
-            border: none !important;
-            padding: 20px 0 !important;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.1) !important;
-        }
-        .gsc-expansionArea {
-            background: transparent !important;
-        }
-
-        /* 3. SEARCH INPUT FIELD (The Bar) */
-        form.gsc-search-box { margin-bottom: 0 !important; }
-        table.gsc-search-box { margin-bottom: 0 !important; border-spacing: 0 !important; }
-        
-        .gsc-input-box {
-            background: #0a0f1e !important;
-            border: 1px solid var(--neon-cyan) !important;
-            border-radius: 30px !important;
-            height: 50px !important;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1) !important;
-        }
-        
-        input.gsc-input {
-            background: transparent !important;
-            color: #fff !important;
-            font-family: 'Segoe UI', monospace !important;
-            font-size: 1.2rem !important;
-            padding-left: 15px !important;
-            background-image: none !important;
-        }
-        input.gsc-input::placeholder { color: #64748b; }
-
-        /* 4. SEARCH BUTTON */
-        button.gsc-search-button {
-            background: transparent !important;
-            border: none !important;
-            margin-left: 10px !important;
-        }
-        button.gsc-search-button svg {
-            fill: var(--neon-cyan) !important;
-            width: 24px !important;
-            height: 24px !important;
-        }
-
-        /* 5. AUTOCOMPLETE DROPDOWN (Black Background Fix) */
-        .gsc-completion-container {
-            background-color: #050810 !important;
-            border: 1px solid var(--neon-cyan) !important;
-            color: #fff !important;
-            font-family: 'Segoe UI', monospace !important;
-            border-radius: 8px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.9) !important;
-        }
-        .gsc-completion-selected {
-            background-color: rgba(0, 229, 255, 0.2) !important;
-            color: #fff !important;
-        }
-        .gsc-completion-candidate { color: #aaa !important; }
-        .gsc-completion-promotion { display: none !important; }
-
-        /* 6. SEARCH RESULTS (Text Styling) */
-        .gs-title a {
-            color: var(--neon-cyan) !important;
-            text-decoration: none !important;
-            font-weight: bold;
-            font-size: 1.2rem !important;
-        }
-        .gs-title b { color: #fff !important; }
-        .gs-snippet {
-            color: #cbd5e1 !important;
-            font-family: 'Segoe UI', monospace !important;
-            font-size: 1rem !important;
-            line-height: 1.6 !important;
-        }
-        .gsc-url-top, .gsc-url-bottom { color: #64748b !important; }
-
-        /* 7. IMAGES & THUMBNAILS */
-        .gsc-thumbnail-inside { padding: 0 !important; }
-        .gs-image-box { border: 1px solid var(--neon-cyan) !important; }
-        .gsc-table-result { padding: 0 !important; }
-
-        /* 8. CLEANUP (Hide Ads & Branding) */
-        .gcsc-branding { display: none !important; }
-        .gsc-adBlock { display: none !important; }
-        .gsc-above-wrapper-area { border-bottom: none !important; }
-        .gsc-result-info { color: var(--neon-cyan) !important; padding: 10px !important; }
-
-        /* 9. HOVER EFFECT */
-        .gsc-webResult:hover {
-            background: rgba(255, 255, 255, 0.03) !important;
-            border-left: 2px solid var(--neon-cyan) !important;
-            padding-left: 10px !important;
-            transition: all 0.2s ease;
-        }
-
-    </style>
-</head>
-<body>
-
-    <div class="grid-bg"></div>
-
-    <div class="logo-container">
-        <h1>DART ALLEY</h1>
-        <div class="subtitle">GLOBAL NEURAL SEARCH</div>
-    </div>
-
-    <div class="search-box-wrapper">
-        <div class="gcse-searchbox" 
-             data-resultsUrl="" 
-             data-newWindow="false" 
-             data-queryParameterName="q">
-        </div>
-    </div>
-
-    <div class="results-wrapper">
-        <div class="gcse-searchresults" 
-             data-linkTarget="_self">
-        </div>
-    </div>
 
 </body>
 </html>
