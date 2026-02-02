@@ -11,7 +11,7 @@
         :root {
             --neon-cyan: #00e5ff;
             --deep-space: #050810;
-            --glass-panel: rgba(10, 16, 30, 0.95); /* Darker for readability */
+            --glass-panel: rgba(10, 16, 30, 0.95);
             --text-glow: 0 0 10px rgba(0, 229, 255, 0.5);
         }
 
@@ -67,15 +67,14 @@
             max-width: 800px;
             margin-bottom: 20px;
             position: relative;
-            z-index: 1000; /* Keep search box above results */
+            z-index: 1000;
         }
 
         .results-wrapper {
             width: 90%;
             max-width: 1000px;
-            min-height: 400px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
+            /* REMOVED THE DARK RECTANGLE BACKGROUND HERE */
+            background: transparent; 
             padding: 10px;
         }
 
@@ -83,7 +82,27 @@
            CRITICAL CSS OVERRIDES (THE DARK THEME FIX)
            ========================================= */
 
-        /* 1. RESET BACKGROUNDS (Kill the White Box) */
+        /* 1. FORCE INLINE (Kill the Popup Window) */
+        .gsc-results-wrapper-overlay {
+            position: static !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            width: 100% !important;
+            max-width: none !important;
+            height: auto !important;
+            left: auto !important;
+            top: auto !important;
+            padding: 0 !important;
+            z-index: 1 !important;
+        }
+        .gsc-modal-background-image {
+            display: none !important; /* Hides the grey backdrop */
+        }
+        .gsc-results-close-btn {
+            display: none !important; /* Hides the X button */
+        }
+
+        /* 2. RESET BACKGROUNDS (Kill the White Box) */
         .gsc-control-cse, .gsc-control-cse-en {
             background-color: transparent !important;
             border: none !important;
@@ -95,38 +114,36 @@
         .gsc-webResult, .gsc-result {
             background-color: transparent !important;
             border: none !important;
-            padding: 15px 0 !important;
+            padding: 20px 0 !important;
             border-bottom: 1px solid rgba(0, 229, 255, 0.1) !important;
         }
+        .gsc-expansionArea {
+            background: transparent !important;
+        }
 
-        /* 2. SEARCH INPUT FIELD (The Bar) */
-        form.gsc-search-box {
-            margin-bottom: 0 !important;
-        }
-        table.gsc-search-box {
-            margin-bottom: 0 !important;
-            border-spacing: 0 !important;
-        }
+        /* 3. SEARCH INPUT FIELD (The Bar) */
+        form.gsc-search-box { margin-bottom: 0 !important; }
+        table.gsc-search-box { margin-bottom: 0 !important; border-spacing: 0 !important; }
+        
         .gsc-input-box {
-            background: #0a0f1e !important; /* Dark Background */
+            background: #0a0f1e !important;
             border: 1px solid var(--neon-cyan) !important;
             border-radius: 30px !important;
             height: 50px !important;
             box-shadow: 0 0 15px rgba(0, 229, 255, 0.1) !important;
         }
-        /* Text typed inside */
+        
         input.gsc-input {
             background: transparent !important;
-            color: #fff !important; /* White Text */
+            color: #fff !important;
             font-family: 'Segoe UI', monospace !important;
             font-size: 1.2rem !important;
             padding-left: 15px !important;
-            background-image: none !important; /* Removes Google Logo */
+            background-image: none !important;
         }
-        /* Placeholder text color hack */
         input.gsc-input::placeholder { color: #64748b; }
 
-        /* 3. SEARCH BUTTON (Magnifying Glass) */
+        /* 4. SEARCH BUTTON */
         button.gsc-search-button {
             background: transparent !important;
             border: none !important;
@@ -138,60 +155,50 @@
             height: 24px !important;
         }
 
-        /* 4. AUTOCOMPLETE DROPDOWN (The "White Backdrop" Fix) */
+        /* 5. AUTOCOMPLETE DROPDOWN (Black Background Fix) */
         .gsc-completion-container {
-            background-color: #050810 !important; /* Black Background */
+            background-color: #050810 !important;
             border: 1px solid var(--neon-cyan) !important;
             color: #fff !important;
             font-family: 'Segoe UI', monospace !important;
             border-radius: 8px !important;
-            margin-top: 5px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9) !important;
         }
         .gsc-completion-selected {
-            background-color: rgba(0, 229, 255, 0.2) !important; /* Cyan highlight */
+            background-color: rgba(0, 229, 255, 0.2) !important;
             color: #fff !important;
         }
-        .gsc-completion-candidate {
-            color: #ccc !important;
-        }
-        /* Remove the promo text in dropdown */
-        .gsc-completion-container .gsc-completion-promotion { display: none !important; }
+        .gsc-completion-candidate { color: #aaa !important; }
+        .gsc-completion-promotion { display: none !important; }
 
-        /* 5. SEARCH RESULTS (Text Styling) */
-        
-        /* The Title (Blue Link) */
+        /* 6. SEARCH RESULTS (Text Styling) */
         .gs-title a {
             color: var(--neon-cyan) !important;
             text-decoration: none !important;
             font-weight: bold;
             font-size: 1.2rem !important;
         }
-        .gs-title b { color: #fff !important; } /* Bold keywords */
-
-        /* The Snippet (Description) */
+        .gs-title b { color: #fff !important; }
         .gs-snippet {
-            color: #cbd5e1 !important; /* Light Grey */
+            color: #cbd5e1 !important;
             font-family: 'Segoe UI', monospace !important;
-            line-height: 1.5 !important;
+            font-size: 1rem !important;
+            line-height: 1.6 !important;
         }
-        
-        /* The URL (Green text) */
-        .gsc-url-top, .gsc-url-bottom {
-            color: #64748b !important;
-        }
+        .gsc-url-top, .gsc-url-bottom { color: #64748b !important; }
 
-        /* 6. CLEANUP (Hide Ads & Branding) */
-        .gcsc-branding { display: none !important; } /* Hide "Powered by Google" */
-        .gsc-adBlock { display: none !important; } /* Hide Ads */
-        .gsc-above-wrapper-area { border-bottom: none !important; } /* Remove divider line */
-        .gsc-result-info { color: var(--neon-cyan) !important; padding: 10px !important; } /* "About X results" text */
-
-        /* 7. THUMBNAILS */
-        .gsc-thumbnail-inside, .gsc-url-top { padding: 0 !important; }
+        /* 7. IMAGES & THUMBNAILS */
+        .gsc-thumbnail-inside { padding: 0 !important; }
         .gs-image-box { border: 1px solid var(--neon-cyan) !important; }
+        .gsc-table-result { padding: 0 !important; }
 
-        /* 8. HOVER EFFECT */
+        /* 8. CLEANUP (Hide Ads & Branding) */
+        .gcsc-branding { display: none !important; }
+        .gsc-adBlock { display: none !important; }
+        .gsc-above-wrapper-area { border-bottom: none !important; }
+        .gsc-result-info { color: var(--neon-cyan) !important; padding: 10px !important; }
+
+        /* 9. HOVER EFFECT */
         .gsc-webResult:hover {
             background: rgba(255, 255, 255, 0.03) !important;
             border-left: 2px solid var(--neon-cyan) !important;
@@ -219,7 +226,9 @@
     </div>
 
     <div class="results-wrapper">
-        <div class="gcse-searchresults" data-linkTarget="_blank"></div>
+        <div class="gcse-searchresults" 
+             data-linkTarget="_self">
+        </div>
     </div>
 
 </body>
