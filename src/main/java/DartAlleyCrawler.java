@@ -8,7 +8,7 @@ import java.util.Set;
 
 public class DartAlleyCrawler {
     // SETTINGS: Change the MAX_DEPTH to crawl deeper (1 = just the first page)
-    private static final int MAX_DEPTH = 1;
+    private static final int MAX_DEPTH = 3;
     private Set<String> visitedLinks = new HashSet<>();
 
     public void crawl(String url, int depth) {
