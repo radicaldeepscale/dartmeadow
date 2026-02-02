@@ -518,6 +518,22 @@
       border: none; cursor: pointer; outline: none;
     }
     .speaker-button img { background-color: transparent; width: 50px; height: 50px; }
+
+.dart-link {
+    text-decoration: none;
+    border: 1px solid #00e5ff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    background: rgba(0, 229, 255, 0.1);
+    transition: all 0.3s;
+}
+.dart-link:hover {
+    background: #00e5ff;
+    color: #000;
+    box-shadow: 0 0 15px #00e5ff;
+}
+      
+
 </style>
 </head>
 
@@ -651,7 +667,14 @@
 
     <p><strong id="menuName"></strong></p>
     <p id="menuEmail" style="font-size:0.9em;"></p>
-    
+
+
+<a href="dartalley.html" class="dart-link">
+    <span style="color: #00e5ff; font-weight: bold;">[ACCESS DART ALLEY]</span>
+</a>
+          
+
+          
 <!-- LOGIN / CREATE SECTION (hidden until “Log In” clicked) -->
 <button id="userLoginToggle">
   Credentials
