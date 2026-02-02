@@ -11,7 +11,7 @@
         :root {
             --neon-cyan: #00e5ff;
             --deep-space: #050810;
-            --glass-panel: rgba(10, 16, 30, 0.9);
+            --glass-panel: rgba(10, 16, 30, 0.95); /* Darker for readability */
             --text-glow: 0 0 10px rgba(0, 229, 255, 0.5);
         }
 
@@ -27,7 +27,7 @@
             overflow-x: hidden;
         }
 
-        /* --- BACKGROUND ANIMATION --- */
+        /* --- BACKGROUND --- */
         .grid-bg {
             position: fixed;
             top: 0; left: 0; width: 200%; height: 200%;
@@ -42,9 +42,9 @@
 
         /* --- HEADER --- */
         .logo-container {
-            margin-top: 8vh;
+            margin-top: 5vh;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         h1 {
             font-size: 3rem;
@@ -61,60 +61,76 @@
             opacity: 0.8;
         }
 
-        /* --- SEARCH BOX CONTAINER --- */
-        .search-box-container {
+        /* --- LAYOUT CONTAINERS --- */
+        .search-box-wrapper {
             width: 90%;
-            max-width: 700px;
-            background: rgba(0, 229, 255, 0.05);
-            border: 1px solid var(--neon-cyan);
-            padding: 15px;
-            border-radius: 30px;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
-            margin-bottom: 30px;
+            max-width: 800px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1000; /* Keep search box above results */
         }
 
-        /* --- RESULTS CONTAINER --- */
-        .results-box-container {
+        .results-wrapper {
             width: 90%;
-            max-width: 900px;
-            background: var(--glass-panel);
-            border: 1px solid rgba(0, 229, 255, 0.2);
-            padding: 20px;
-            border-radius: 12px;
-            min-height: 200px;
-            /* This ensures results stay ON PAGE, not popup */
-            position: relative; 
+            max-width: 1000px;
+            min-height: 400px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 10px;
         }
 
-        /* --- HEAVY CSS OVERRIDES FOR GOOGLE --- */
-        
-        /* 1. Force Transparent Backgrounds everywhere */
+        /* =========================================
+           CRITICAL CSS OVERRIDES (THE DARK THEME FIX)
+           ========================================= */
+
+        /* 1. RESET BACKGROUNDS (Kill the White Box) */
         .gsc-control-cse, .gsc-control-cse-en {
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
         }
-        .gsc-wrapper, .gsc-webResult, .gsc-results-wrapper-nooverlay {
+        .gsc-wrapper {
             background-color: transparent !important;
         }
-
-        /* 2. Style the Input Field */
-        input.gsc-input {
-            background: rgba(0, 0, 0, 0.5) !important;
+        .gsc-webResult, .gsc-result {
+            background-color: transparent !important;
             border: none !important;
-            color: #fff !important;
-            font-family: 'Segoe UI', monospace !important;
-            font-size: 1.1rem !important;
-            background-image: none !important; 
-        }
-        td.gsc-input {
-            padding-right: 10px !important;
+            padding: 15px 0 !important;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.1) !important;
         }
 
-        /* 3. Style the Search Button */
+        /* 2. SEARCH INPUT FIELD (The Bar) */
+        form.gsc-search-box {
+            margin-bottom: 0 !important;
+        }
+        table.gsc-search-box {
+            margin-bottom: 0 !important;
+            border-spacing: 0 !important;
+        }
+        .gsc-input-box {
+            background: #0a0f1e !important; /* Dark Background */
+            border: 1px solid var(--neon-cyan) !important;
+            border-radius: 30px !important;
+            height: 50px !important;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.1) !important;
+        }
+        /* Text typed inside */
+        input.gsc-input {
+            background: transparent !important;
+            color: #fff !important; /* White Text */
+            font-family: 'Segoe UI', monospace !important;
+            font-size: 1.2rem !important;
+            padding-left: 15px !important;
+            background-image: none !important; /* Removes Google Logo */
+        }
+        /* Placeholder text color hack */
+        input.gsc-input::placeholder { color: #64748b; }
+
+        /* 3. SEARCH BUTTON (Magnifying Glass) */
         button.gsc-search-button {
             background: transparent !important;
             border: none !important;
+            margin-left: 10px !important;
         }
         button.gsc-search-button svg {
             fill: var(--neon-cyan) !important;
@@ -122,50 +138,65 @@
             height: 24px !important;
         }
 
-        /* 4. Style the Results Text */
-        /* Title Link */
-        .gs-title a, .gs-title b {
+        /* 4. AUTOCOMPLETE DROPDOWN (The "White Backdrop" Fix) */
+        .gsc-completion-container {
+            background-color: #050810 !important; /* Black Background */
+            border: 1px solid var(--neon-cyan) !important;
+            color: #fff !important;
+            font-family: 'Segoe UI', monospace !important;
+            border-radius: 8px !important;
+            margin-top: 5px !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+        }
+        .gsc-completion-selected {
+            background-color: rgba(0, 229, 255, 0.2) !important; /* Cyan highlight */
+            color: #fff !important;
+        }
+        .gsc-completion-candidate {
+            color: #ccc !important;
+        }
+        /* Remove the promo text in dropdown */
+        .gsc-completion-container .gsc-completion-promotion { display: none !important; }
+
+        /* 5. SEARCH RESULTS (Text Styling) */
+        
+        /* The Title (Blue Link) */
+        .gs-title a {
             color: var(--neon-cyan) !important;
             text-decoration: none !important;
+            font-weight: bold;
             font-size: 1.2rem !important;
         }
-        /* Snippet Text */
+        .gs-title b { color: #fff !important; } /* Bold keywords */
+
+        /* The Snippet (Description) */
         .gs-snippet {
-            color: #cbd5e1 !important;
+            color: #cbd5e1 !important; /* Light Grey */
             font-family: 'Segoe UI', monospace !important;
-            font-size: 0.95rem !important;
             line-height: 1.5 !important;
         }
-        /* URL Green Text */
+        
+        /* The URL (Green text) */
         .gsc-url-top, .gsc-url-bottom {
             color: #64748b !important;
         }
 
-        /* 5. Image Results */
-        .gsc-imageResult {
-            background-color: transparent !important;
-        }
-        .gs-image-box {
-            border: 1px solid var(--neon-cyan) !important;
-        }
+        /* 6. CLEANUP (Hide Ads & Branding) */
+        .gcsc-branding { display: none !important; } /* Hide "Powered by Google" */
+        .gsc-adBlock { display: none !important; } /* Hide Ads */
+        .gsc-above-wrapper-area { border-bottom: none !important; } /* Remove divider line */
+        .gsc-result-info { color: var(--neon-cyan) !important; padding: 10px !important; } /* "About X results" text */
 
-        /* 6. Hover Effects */
-        .gsc-webResult.gsc-result:hover {
-            background-color: rgba(255, 255, 255, 0.05) !important;
+        /* 7. THUMBNAILS */
+        .gsc-thumbnail-inside, .gsc-url-top { padding: 0 !important; }
+        .gs-image-box { border: 1px solid var(--neon-cyan) !important; }
+
+        /* 8. HOVER EFFECT */
+        .gsc-webResult:hover {
+            background: rgba(255, 255, 255, 0.03) !important;
             border-left: 2px solid var(--neon-cyan) !important;
             padding-left: 10px !important;
-            transition: all 0.2s;
-        }
-
-        /* 7. Hide Branding/Ads */
-        .gcsc-branding, .gsc-adBlock { display: none !important; }
-
-        /* 8. Fix the "White Box" issue */
-        .gsc-results {
-            width: 100% !important;
-        }
-        table.gsc-search-box {
-            margin-bottom: 0 !important;
+            transition: all 0.2s ease;
         }
 
     </style>
@@ -179,12 +210,16 @@
         <div class="subtitle">GLOBAL NEURAL SEARCH</div>
     </div>
 
-    <div class="search-box-container">
-        <div class="gcse-searchbox" data-resultsUrl=""></div>
+    <div class="search-box-wrapper">
+        <div class="gcse-searchbox" 
+             data-resultsUrl="" 
+             data-newWindow="false" 
+             data-queryParameterName="q">
+        </div>
     </div>
 
-    <div class="results-box-container">
-        <div class="gcse-searchresults"></div>
+    <div class="results-wrapper">
+        <div class="gcse-searchresults" data-linkTarget="_blank"></div>
     </div>
 
 </body>
