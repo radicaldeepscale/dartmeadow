@@ -1,17 +1,32 @@
 [
-    {
-        "title": "DART Alley | Neural Research",
-        "url": "https://dartmeadow.com",
-        "desc": "Official research portal for BRPN nodes and Ash Tree algorithms."
-    },
-    {
-        "title": "Java Jsoup Documentation",
-        "url": "https://jsoup.org",
-        "desc": "Technical documentation for the Java HTML parser used in DART Alley."
-    },
-    {
-        "title": "DART Meadow Github",
-        "url": "https://github.com/radicaldeepscale/dartmeadow",
-        "desc": "Source code repository for the DART crawler and interface."
-    }
+  {
+    "title": "Artificial intelligence - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+    "desc": "No description available for this neural pathway."
+  },
+  {
+    "title": "Wikipedia, the free encyclopedia",
+    "url": "https://en.wikipedia.org/wiki/Main_Page",
+    "desc": "Mount Edziza is a volcanic mountain in Cassiar Land District in northwestern British Columbia, Canada. It is located on the Big Raven Plateau of th..."
+  },
+  {
+    "title": "Wikipedia:Contents - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Wikipedia:Contents",
+    "desc": "No description available for this neural pathway."
+  },
+  {
+    "title": "Portal:Current events - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Portal:Current_events",
+    "desc": "Armed conflicts and attacks"
+  },
+  {
+    "title": "Punk rock subgenres - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Special:Random",
+    "desc": "No description available for this neural pathway."
+  },
+  {
+    "title": "Wikipedia:About - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Wikipedia:About",
+    "desc": "No description available for this neural pathway."
+  }
 ]
