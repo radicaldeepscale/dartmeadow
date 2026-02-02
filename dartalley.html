@@ -11,9 +11,8 @@
         :root {
             --neon-cyan: #00e5ff;
             --deep-space: #050810;
-            --glass-panel: rgba(10, 16, 30, 0.85);
+            --glass-panel: rgba(10, 16, 30, 0.9);
             --text-glow: 0 0 10px rgba(0, 229, 255, 0.5);
-            --alert-color: #f59e0b;
         }
 
         body {
@@ -37,46 +36,13 @@
                 linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
             transform: perspective(500px) rotateX(60deg);
-            animation: cyber-grid 20s linear infinite;
             z-index: -1;
             pointer-events: none;
         }
-        @keyframes cyber-grid {
-            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
-            100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
-        }
-
-        /* --- SYSTEM MONITOR (Top Right) --- */
-        .system-monitor {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 15px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(0, 229, 255, 0.3);
-            border-radius: 20px;
-            font-size: 0.75rem;
-            color: #00e5ff;
-            letter-spacing: 1px;
-            backdrop-filter: blur(5px);
-            z-index: 100;
-        }
-        .status-light {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #00e5ff;
-            box-shadow: 0 0 10px #00e5ff;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         /* --- HEADER --- */
         .logo-container {
-            margin-top: 10vh;
+            margin-top: 8vh;
             text-align: center;
             margin-bottom: 30px;
         }
@@ -96,72 +62,111 @@
         }
 
         /* --- SEARCH BOX CONTAINER --- */
-        .search-engine-box {
+        .search-box-container {
             width: 90%;
-            max-width: 800px;
-            background: var(--glass-panel);
+            max-width: 700px;
+            background: rgba(0, 229, 255, 0.05);
             border: 1px solid var(--neon-cyan);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 40px rgba(0, 229, 255, 0.1);
+            padding: 15px;
+            border-radius: 30px;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+            margin-bottom: 30px;
         }
 
-        /* --- GOOGLE STYLE OVERRIDES (Dark Mode) --- */
-        /* These rules force Google's white box to look like your Cyberpunk theme */
+        /* --- RESULTS CONTAINER --- */
+        .results-box-container {
+            width: 90%;
+            max-width: 900px;
+            background: var(--glass-panel);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            min-height: 200px;
+            /* This ensures results stay ON PAGE, not popup */
+            position: relative; 
+        }
+
+        /* --- HEAVY CSS OVERRIDES FOR GOOGLE --- */
         
-        .gsc-control-cse {
+        /* 1. Force Transparent Backgrounds everywhere */
+        .gsc-control-cse, .gsc-control-cse-en {
             background-color: transparent !important;
             border: none !important;
             padding: 0 !important;
         }
-        
-        /* Search Input */
+        .gsc-wrapper, .gsc-webResult, .gsc-results-wrapper-nooverlay {
+            background-color: transparent !important;
+        }
+
+        /* 2. Style the Input Field */
         input.gsc-input {
             background: rgba(0, 0, 0, 0.5) !important;
-            border: 1px solid #334155 !important;
+            border: none !important;
             color: #fff !important;
-            border-radius: 30px !important;
-            padding: 12px 20px !important;
             font-family: 'Segoe UI', monospace !important;
-            background-image: none !important; /* Removes Google Logo inside input */
+            font-size: 1.1rem !important;
+            background-image: none !important; 
         }
-        
-        /* Search Button */
+        td.gsc-input {
+            padding-right: 10px !important;
+        }
+
+        /* 3. Style the Search Button */
         button.gsc-search-button {
-            background-color: transparent !important;
-            border-color: transparent !important;
+            background: transparent !important;
+            border: none !important;
         }
         button.gsc-search-button svg {
             fill: var(--neon-cyan) !important;
+            width: 24px !important;
+            height: 24px !important;
         }
 
-        /* Results Background */
-        .gsc-webResult.gsc-result {
-            background-color: transparent !important;
-            border-bottom: 1px solid rgba(0, 229, 255, 0.1) !important;
-            padding: 20px 0 !important;
-        }
-        .gsc-webResult:hover {
-            background-color: rgba(255, 255, 255, 0.03) !important;
-        }
-
-        /* Result Titles */
-        .gs-title a {
+        /* 4. Style the Results Text */
+        /* Title Link */
+        .gs-title a, .gs-title b {
             color: var(--neon-cyan) !important;
             text-decoration: none !important;
-            font-weight: bold;
             font-size: 1.2rem !important;
         }
-        
-        /* Result Text */
+        /* Snippet Text */
         .gs-snippet {
             color: #cbd5e1 !important;
             font-family: 'Segoe UI', monospace !important;
+            font-size: 0.95rem !important;
+            line-height: 1.5 !important;
         }
-        .gsc-url-top, .gsc-url-bottom { color: #64748b !important; }
-        
-        /* Hide Branding */
-        .gcsc-branding { display: none !important; }
+        /* URL Green Text */
+        .gsc-url-top, .gsc-url-bottom {
+            color: #64748b !important;
+        }
+
+        /* 5. Image Results */
+        .gsc-imageResult {
+            background-color: transparent !important;
+        }
+        .gs-image-box {
+            border: 1px solid var(--neon-cyan) !important;
+        }
+
+        /* 6. Hover Effects */
+        .gsc-webResult.gsc-result:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border-left: 2px solid var(--neon-cyan) !important;
+            padding-left: 10px !important;
+            transition: all 0.2s;
+        }
+
+        /* 7. Hide Branding/Ads */
+        .gcsc-branding, .gsc-adBlock { display: none !important; }
+
+        /* 8. Fix the "White Box" issue */
+        .gsc-results {
+            width: 100% !important;
+        }
+        table.gsc-search-box {
+            margin-bottom: 0 !important;
+        }
 
     </style>
 </head>
@@ -169,31 +174,18 @@
 
     <div class="grid-bg"></div>
 
-    <div class="system-monitor">
-        <div class="status-light" id="statusLight"></div>
-        <span id="statusText">INITIALIZING GLOBAL UPLINK...</span>
-    </div>
-
     <div class="logo-container">
         <h1>DART ALLEY</h1>
         <div class="subtitle">GLOBAL NEURAL SEARCH</div>
     </div>
 
-    <div class="search-engine-box">
-        <div class="gcse-search"></div>
+    <div class="search-box-container">
+        <div class="gcse-searchbox" data-resultsUrl=""></div>
     </div>
 
-    <script>
-        // Visual Status Simulation
-        const statusText = document.getElementById('statusText');
-        const statusLight = document.getElementById('statusLight');
-
-        setTimeout(() => {
-            statusText.innerText = "CONNECTED :: GLOBAL WEB INDEX";
-            statusLight.style.backgroundColor = "#10b981"; // Green
-            statusLight.style.boxShadow = "0 0 10px #10b981";
-        }, 2000);
-    </script>
+    <div class="results-box-container">
+        <div class="gcse-searchresults"></div>
+    </div>
 
 </body>
 </html>
