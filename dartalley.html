@@ -8,8 +8,9 @@
         :root {
             --neon-cyan: #00e5ff;
             --deep-space: #050810;
-            --glass-panel: rgba(10, 16, 30, 0.7);
+            --glass-panel: rgba(10, 16, 30, 0.75);
             --text-glow: 0 0 10px rgba(0, 229, 255, 0.5);
+            --alert-color: #f59e0b; /* Amber for updates */
         }
 
         body {
@@ -24,7 +25,7 @@
             overflow-x: hidden;
         }
 
-        /* Background Grid Animation */
+        /* --- BACKGROUND ANIMATION --- */
         .grid-bg {
             position: fixed;
             top: 0; left: 0; width: 200%; height: 200%;
@@ -37,19 +38,72 @@
             animation: gridMove 20s linear infinite;
             z-index: -1;
         }
-
         @keyframes gridMove {
             0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
             100% { transform: perspective(500px) rotateX(60deg) translateY(40px) translateZ(-200px); }
         }
 
-        /* Logo Area */
+        /* --- SYSTEM STATUS INDICATOR (Top Right) --- */
+        .system-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.75rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #64748b;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        .system-status.live .status-dot {
+            background-color: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+            animation: pulse 2s infinite;
+        }
+        .system-status.updating .status-dot {
+            background-color: var(--alert-color);
+            box-shadow: 0 0 10px var(--alert-color);
+            animation: flash 0.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+
+        /* --- NOTIFICATION TOAST (Bottom Center) --- */
+        .toast {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass-panel);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        .toast.show { bottom: 30px; }
+
+        /* --- HEADER --- */
         .logo-container {
             margin-top: 10vh;
             text-align: center;
             margin-bottom: 40px;
         }
-
         h1 {
             font-size: 3.5rem;
             margin: 0;
@@ -58,7 +112,6 @@
             letter-spacing: 4px;
             text-shadow: var(--text-glow);
         }
-
         .subtitle {
             color: var(--neon-cyan);
             font-size: 1rem;
@@ -66,17 +119,16 @@
             opacity: 0.8;
         }
 
-        /* Search Box */
+        /* --- SEARCH UI --- */
         .search-wrapper {
             position: relative;
             width: 90%;
             max-width: 600px;
         }
-
         input[type="text"] {
             width: 100%;
             padding: 15px 20px;
-            padding-right: 60px; /* Space for icon */
+            padding-right: 60px; 
             font-size: 1.1rem;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--neon-cyan);
@@ -87,12 +139,10 @@
             transition: all 0.3s ease;
             font-family: 'Segoe UI', monospace;
         }
-
         input[type="text"]:focus {
             background: rgba(0, 229, 255, 0.05);
             box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
         }
-
         .search-btn {
             position: absolute;
             right: 10px;
@@ -105,20 +155,18 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
-
         .search-btn:hover {
             transform: translateY(-50%) scale(1.1);
             text-shadow: var(--text-glow);
         }
 
-        /* Results Area */
+        /* --- RESULTS --- */
         .results-container {
             width: 90%;
             max-width: 800px;
             margin-top: 40px;
-            display: none; /* Hidden until search */
+            display: none; 
         }
-
         .result-card {
             background: rgba(255, 255, 255, 0.03);
             border-left: 3px solid var(--neon-cyan);
@@ -126,13 +174,12 @@
             margin-bottom: 20px;
             border-radius: 0 8px 8px 0;
             transition: transform 0.2s, background 0.2s;
+            animation: fadeIn 0.5s ease-out;
         }
-
         .result-card:hover {
             transform: translateX(5px);
             background: rgba(255, 255, 255, 0.05);
         }
-
         .result-title {
             color: var(--neon-cyan);
             font-size: 1.2rem;
@@ -140,20 +187,17 @@
             text-decoration: none;
             display: block;
         }
-
         .result-url {
             color: #64748b;
             font-size: 0.8rem;
             margin-bottom: 10px;
         }
-
         .result-snippet {
             color: #ccc;
             font-size: 0.95rem;
             line-height: 1.5;
         }
 
-        /* Loading Animation */
         .loader {
             display: none;
             border: 3px solid rgba(0, 229, 255, 0.1);
@@ -164,8 +208,8 @@
             animation: spin 1s linear infinite;
             margin-top: 20px;
         }
-
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     </style>
 </head>
@@ -173,13 +217,20 @@
 
     <div class="grid-bg"></div>
 
+    <div class="system-status" id="systemStatus">
+        <div class="status-dot"></div>
+        <span id="statusText">NEURAL LINK OFFLINE</span>
+    </div>
+
+    <div class="toast" id="toast">New Neural Pathways Discovered</div>
+
     <div class="logo-container">
         <h1>DART ALLEY</h1>
-        <div class="subtitle">Neural Search</div>
+        <div class="subtitle">DEEP WEB INDEXER v2.1</div>
     </div>
 
     <div class="search-wrapper">
-        <input type="text" id="searchInput" placeholder="Enter query or URL for research...">
+        <input type="text" id="searchInput" placeholder="Enter query or URL to crawl...">
         <button class="search-btn" onclick="performSearch()">🔍</button>
     </div>
 
@@ -190,49 +241,80 @@
             <a href="#" class="result-title">System Ready</a>
             <div class="result-url">local://dart-alley/status</div>
             <div class="result-snippet">
-                The neural index is initialized. Type a query above to search the database.json file.
+                The neural index is initialized. Type a query above to search the database.
             </div>
         </div>
     </div>
 
     <script>
-        // --- UPDATED JAVASCRIPT LOGIC ---
-        
-        // 1. Target the correct HTML elements by ID
         const input = document.getElementById('searchInput');
         const loader = document.getElementById('loader');
         const resultsArea = document.getElementById('resultsArea');
+        const statusBox = document.getElementById('systemStatus');
+        const statusText = document.getElementById('statusText');
+        const toast = document.getElementById('toast');
 
-        // 2. Load the Database immediately upon page load
         let searchIndex = [];
-        fetch('database.json')
-            .then(response => response.json())
-            .then(data => {
-                searchIndex = data;
-                console.log("[DART Alley] Index Loaded: " + data.length + " entities.");
-            })
-            .catch(err => {
-                console.error("Index failed to load", err);
-                resultsArea.style.display = 'block';
-                resultsArea.innerHTML = `<div style="color:#ef4444; text-align:center;">Error: database.json not found.</div>`;
-            });
+        let lastModified = null; // Stores the timestamp of the database
 
-        // 3. Define the Search Function
+        // --- CORE FUNCTION 1: LOAD DATABASE ---
+        function loadDatabase(isUpdate = false) {
+            // Add a timestamp query param to prevent browser caching
+            // This forces it to look for a REAL new file on the server
+            const url = 'database.json?t=' + new Date().getTime();
+
+            fetch(url)
+                .then(response => {
+                    // Check Last-Modified Header
+                    const newModified = response.headers.get('Last-Modified');
+                    
+                    if (lastModified && newModified !== lastModified) {
+                        // DETECTED A CHANGE!
+                        showToast("System Updated: New Pathways Synced");
+                        if(isUpdate) {
+                            statusBox.classList.add('updating');
+                            setTimeout(() => statusBox.classList.remove('updating'), 2000);
+                        }
+                    }
+                    lastModified = newModified;
+                    return response.json();
+                })
+                .then(data => {
+                    searchIndex = data;
+                    
+                    // Update Status UI
+                    statusBox.classList.add('live');
+                    statusText.innerText = `NEURAL LINK ACTIVE [${data.length} NODES]`;
+                    console.log(`[DART Alley] Database Loaded: ${data.length} items`);
+                })
+                .catch(err => {
+                    console.error("Link failed", err);
+                    statusBox.classList.remove('live');
+                    statusText.innerText = "LINK SEVERED";
+                });
+        }
+
+        // --- CORE FUNCTION 2: POLL FOR UPDATES (The "Realtime" Check) ---
+        function startLiveSync() {
+            // Check every 30 seconds if the file on GitHub has changed
+            setInterval(() => {
+                loadDatabase(true);
+            }, 30000); 
+        }
+
+        // --- CORE FUNCTION 3: SEARCH ---
         function performSearch() {
             const query = input.value.toLowerCase().trim();
             if(query === "") return;
 
-            // Reset UI to loading state
             resultsArea.style.display = 'none';
-            resultsArea.innerHTML = ''; // Clear old results
+            resultsArea.innerHTML = ''; 
             loader.style.display = 'block';
 
-            // Simulate Processing Time (0.6 seconds) for "Real Feel"
             setTimeout(() => {
                 loader.style.display = 'none';
                 resultsArea.style.display = 'block';
 
-                // Filter Results from Loaded JSON
                 const matches = searchIndex.filter(item => 
                     item.title.toLowerCase().includes(query) || 
                     item.desc.toLowerCase().includes(query)
@@ -243,7 +325,6 @@
                     return;
                 }
 
-                // Render Matched Results
                 matches.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'result-card';
@@ -255,15 +336,22 @@
                     resultsArea.appendChild(card);
                 });
 
-            }, 600); 
+            }, 500); 
         }
 
-        // 4. Add "Enter" key listener
-        input.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                performSearch();
-            }
-        });
+        // --- UTILS ---
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
+
+        // Initialize
+        loadDatabase();
+        startLiveSync();
+
     </script>
 
 </body>
