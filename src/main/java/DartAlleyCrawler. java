@@ -7,21 +7,25 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DartAlleyCrawler {
-    private static final int MAX_DEPTH = 2; 
+    private static final int MAX_DEPTH = 1; // Keep it shallow for testing
     private Set<String> visitedLinks = new HashSet<>();
 
     public void crawl(String url, int depth) {
         if ((!visitedLinks.contains(url) && (depth < MAX_DEPTH))) {
-            System.out.println(">> [DART Crawler] Analyzing: " + url);
             try {
                 visitedLinks.add(url);
                 Document document = Jsoup.connect(url).get();
+                String title = document.title().replace("\"", "'"); // Clean quotes for JSON
+                String desc = document.select("meta[name=description]").attr("content").replace("\"", "'");
                 
-                String title = document.title();
-                System.out.println("   Title Found: " + title);
-                
-                // Here is where you would save 'title' and 'url' to a file/database
-                // for your HTML search engine to read later.
+                if(desc.isEmpty()) desc = "No description available for this neural pathway.";
+
+                // PRINT THIS AS A JSON OBJECT
+                System.out.println("  {");
+                System.out.println("    \"title\": \"" + title + "\",");
+                System.out.println("    \"url\": \"" + url + "\",");
+                System.out.println("    \"desc\": \"" + desc + "\"");
+                System.out.println("  },");
 
                 Elements linksOnPage = document.select("a[href]");
                 depth++;
@@ -29,14 +33,15 @@ public class DartAlleyCrawler {
                     crawl(page.attr("abs:href"), depth);
                 }
             } catch (IOException e) {
-                System.err.println("   [Error]: " + e.getMessage());
+                // Ignore errors to keep JSON clean
             }
         }
     }
 
     public static void main(String[] args) {
-        System.out.println("=== Initializing DART Alley Crawler ===");
-        // You can change this URL to whatever you want to start indexing
+        System.out.println("["); // Start JSON array
+        // CRAWL TARGET: Change this to crawl what you want (e.g., a news site or wiki)
         new DartAlleyCrawler().crawl("https://en.wikipedia.org/wiki/Artificial_intelligence", 0);
+        System.out.println("]"); // End JSON array
     }
 }
