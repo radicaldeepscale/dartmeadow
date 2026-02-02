@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DART Alley | Global Neural Link</title>
-    
-    <script async src="https://cse.google.com/cse.js?cx=854c999db3a9e48e5"></script>
-    
     <style>
         :root {
             --neon-cyan: #00e5ff;
@@ -35,6 +32,236 @@
                 linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- HEADER --- */
+        .logo-container {
+            margin-top: 5vh;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: var(--text-glow);
+        }
+        .subtitle {
+            color: var(--neon-cyan);
+            font-size: 1rem;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        /* --- SEARCH INPUT --- */
+        .search-container {
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            padding-right: 60px;
+            font-size: 1.2rem;
+            background: #0a0f1e;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 30px;
+            color: #fff;
+            outline: none;
+            font-family: 'Segoe UI', monospace;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+            transition: all 0.3s;
+        }
+        input[type="text"]:focus {
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
+        }
+        .search-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--neon-cyan);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- RESULTS AREA --- */
+        .results-container {
+            width: 90%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 50px;
+        }
+
+        .result-card {
+            background: rgba(0, 229, 255, 0.02);
+            border-left: 3px solid var(--neon-cyan);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            transition: transform 0.2s, background 0.2s;
+            animation: fadeIn 0.4s ease-out;
+            display: flex; /* Aligns image and text */
+            gap: 20px;
+        }
+        .result-card:hover {
+            background: rgba(0, 229, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .result-thumb {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            flex-shrink: 0; /* Prevents squishing */
+        }
+        
+        .result-content {
+            flex-grow: 1;
+        }
+
+        .result-title {
+            display: block;
+            color: var(--neon-cyan);
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+        .result-link {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 12px;
+            display: block;
+            word-break: break-all;
+        }
+        .result-snippet {
+            color: #cbd5e1;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* LOADING & ERROR */
+        .loader {
+            display: none;
+            border: 3px solid rgba(0, 229, 255, 0.1);
+            border-top: 3px solid var(--neon-cyan);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="logo-container">
+        <h1>DART ALLEY</h1>
+        <div class="subtitle">GLOBAL NEURAL SEARCH</div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Enter query to access global index...">
+        <button class="search-btn" onclick="executeSearch()">🔍</button>
+    </div>
+
+    <div class="loader" id="loader"></div>
+    <div class="results-container" id="resultsArea"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // 1. Paste your API Key from Google Cloud Console here:
+        const API_KEY = 'AQ.Ab8RN6JzBZvJpDFLcMiwZW9jEQfQrXd1_SxtrxpolkjjMybmdQ'; 
+        
+        // 2. Your existing Engine ID (Already filled in):
+        const CX_ID = '854c999db3a9e48e5'; 
+
+        const input = document.getElementById('searchInput');
+        const loader = document.getElementById('loader');
+        const resultsArea = document.getElementById('resultsArea');
+
+        async function executeSearch() {
+            const query = input.value.trim();
+            if (!query) return;
+
+            // Reset UI
+            resultsArea.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                // FETCH DATA FROM GOOGLE JSON API
+                const url = `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX_ID}&q=${encodeURIComponent(query)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                loader.style.display = 'none';
+
+                if (!data.items || data.items.length === 0) {
+                    resultsArea.innerHTML = `<div style="text-align:center; color:#64748b;">No neural pathways found for "${query}"</div>`;
+                    return;
+                }
+
+                // RENDER RESULTS
+                data.items.forEach(item => {
+                    // Extract Thumbnail if available
+                    let thumbHtml = "";
+                    if(item.pagemap && item.pagemap.cse_image && item.pagemap.cse_image.length > 0) {
+                        const imgUrl = item.pagemap.cse_image[0].src;
+                        // Only show if it's a valid http image
+                        if(imgUrl.startsWith('http')) {
+                            thumbHtml = `<img src="${imgUrl}" class="result-thumb" alt="Result Image">`;
+                        }
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'result-card';
+                    
+                    // HTML Template for each result
+                    card.innerHTML = `
+                        ${thumbHtml}
+                        <div class="result-content">
+                            <a href="${item.link}" target="_blank" class="result-title">${item.title}</a>
+                            <span class="result-link">${item.displayLink}</span>
+                            <div class="result-snippet">${item.snippet}</div>
+                        </div>
+                    `;
+                    resultsArea.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error(error);
+                loader.style.display = 'none';
+                resultsArea.innerHTML = `<div style="text-align:center; color:#ef4444;">DATA LINK FAILURE: Verify API Key</div>`;
+            }
+        }
+
+        // Allow "Enter" key to search
+        input.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') executeSearch();
+        });
+
+    </script>
+
+</body>
+</html>            background-size: 50px 50px;
             transform: perspective(500px) rotateX(60deg);
             z-index: -1;
             pointer-events: none;
