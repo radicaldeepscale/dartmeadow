@@ -1,0 +1,17 @@
+[
+    {
+        "title": "DART Alley | Neural Research",
+        "url": "https://dartmeadow.com",
+        "desc": "Official research portal for BRPN nodes and Ash Tree algorithms."
+    },
+    {
+        "title": "Java Jsoup Documentation",
+        "url": "https://jsoup.org",
+        "desc": "Technical documentation for the Java HTML parser used in DART Alley."
+    },
+    {
+        "title": "DART Meadow Github",
+        "url": "https://github.com/radicaldeepscale/dartmeadow",
+        "desc": "Source code repository for the DART crawler and interface."
+    }
+]
