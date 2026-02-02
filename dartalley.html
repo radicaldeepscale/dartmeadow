@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DART Alley | Neural Search</title>
+    <title>DART Alley | Global Neural Link</title>
+    
+    <script async src="https://cse.google.com/cse.js?cx=854c999db3a9e48e5"></script>
+    
     <style>
         :root {
             --neon-cyan: #00e5ff;
             --deep-space: #050810;
-            --glass-panel: rgba(10, 16, 30, 0.75);
+            --glass-panel: rgba(10, 16, 30, 0.85);
             --text-glow: 0 0 10px rgba(0, 229, 255, 0.5);
-            --alert-color: #f59e0b; /* Amber for updates */
+            --alert-color: #f59e0b;
         }
 
         body {
@@ -30,82 +33,55 @@
             position: fixed;
             top: 0; left: 0; width: 200%; height: 200%;
             background-image: 
-                linear-gradient(var(--glass-panel) 1px, transparent 1px),
-                linear-gradient(90deg, var(--glass-panel) 1px, transparent 1px);
-            background-size: 40px 40px;
-            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
-            opacity: 0.2;
-            animation: gridMove 20s linear infinite;
+                linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg);
+            animation: cyber-grid 20s linear infinite;
             z-index: -1;
+            pointer-events: none;
         }
-        @keyframes gridMove {
-            0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
-            100% { transform: perspective(500px) rotateX(60deg) translateY(40px) translateZ(-200px); }
+        @keyframes cyber-grid {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
         }
 
-        /* --- SYSTEM STATUS INDICATOR (Top Right) --- */
-        .system-status {
+        /* --- SYSTEM MONITOR (Top Right) --- */
+        .system-monitor {
             position: absolute;
             top: 20px;
             right: 20px;
-            font-size: 0.75rem;
-            color: #64748b;
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(0,0,0,0.3);
             padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 229, 255, 0.3);
             border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #64748b;
-            border-radius: 50%;
-            transition: all 0.3s;
-        }
-        .system-status.live .status-dot {
-            background-color: var(--neon-cyan);
-            box-shadow: 0 0 10px var(--neon-cyan);
-            animation: pulse 2s infinite;
-        }
-        .system-status.updating .status-dot {
-            background-color: var(--alert-color);
-            box-shadow: 0 0 10px var(--alert-color);
-            animation: flash 0.5s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-
-        /* --- NOTIFICATION TOAST (Bottom Center) --- */
-        .toast {
-            position: fixed;
-            bottom: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--glass-panel);
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            padding: 15px 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 0.75rem;
+            color: #00e5ff;
+            letter-spacing: 1px;
+            backdrop-filter: blur(5px);
             z-index: 100;
         }
-        .toast.show { bottom: 30px; }
+        .status-light {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00e5ff;
+            box-shadow: 0 0 10px #00e5ff;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         /* --- HEADER --- */
         .logo-container {
             margin-top: 10vh;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         h1 {
-            font-size: 3.5rem;
+            font-size: 3rem;
             margin: 0;
             color: #fff;
             text-transform: uppercase;
@@ -119,97 +95,73 @@
             opacity: 0.8;
         }
 
-        /* --- SEARCH UI --- */
-        .search-wrapper {
-            position: relative;
-            width: 90%;
-            max-width: 600px;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 15px 20px;
-            padding-right: 60px; 
-            font-size: 1.1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--neon-cyan);
-            border-radius: 30px;
-            color: #fff;
-            outline: none;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
-            transition: all 0.3s ease;
-            font-family: 'Segoe UI', monospace;
-        }
-        input[type="text"]:focus {
-            background: rgba(0, 229, 255, 0.05);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
-        }
-        .search-btn {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--neon-cyan);
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .search-btn:hover {
-            transform: translateY(-50%) scale(1.1);
-            text-shadow: var(--text-glow);
-        }
-
-        /* --- RESULTS --- */
-        .results-container {
+        /* --- SEARCH BOX CONTAINER --- */
+        .search-engine-box {
             width: 90%;
             max-width: 800px;
-            margin-top: 40px;
-            display: none; 
-        }
-        .result-card {
-            background: rgba(255, 255, 255, 0.03);
-            border-left: 3px solid var(--neon-cyan);
+            background: var(--glass-panel);
+            border: 1px solid var(--neon-cyan);
             padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 0 8px 8px 0;
-            transition: transform 0.2s, background 0.2s;
-            animation: fadeIn 0.5s ease-out;
-        }
-        .result-card:hover {
-            transform: translateX(5px);
-            background: rgba(255, 255, 255, 0.05);
-        }
-        .result-title {
-            color: var(--neon-cyan);
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-            text-decoration: none;
-            display: block;
-        }
-        .result-url {
-            color: #64748b;
-            font-size: 0.8rem;
-            margin-bottom: 10px;
-        }
-        .result-snippet {
-            color: #ccc;
-            font-size: 0.95rem;
-            line-height: 1.5;
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(0, 229, 255, 0.1);
         }
 
-        .loader {
-            display: none;
-            border: 3px solid rgba(0, 229, 255, 0.1);
-            border-top: 3px solid var(--neon-cyan);
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin-top: 20px;
+        /* --- GOOGLE STYLE OVERRIDES (Dark Mode) --- */
+        /* These rules force Google's white box to look like your Cyberpunk theme */
+        
+        .gsc-control-cse {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Search Input */
+        input.gsc-input {
+            background: rgba(0, 0, 0, 0.5) !important;
+            border: 1px solid #334155 !important;
+            color: #fff !important;
+            border-radius: 30px !important;
+            padding: 12px 20px !important;
+            font-family: 'Segoe UI', monospace !important;
+            background-image: none !important; /* Removes Google Logo inside input */
+        }
+        
+        /* Search Button */
+        button.gsc-search-button {
+            background-color: transparent !important;
+            border-color: transparent !important;
+        }
+        button.gsc-search-button svg {
+            fill: var(--neon-cyan) !important;
+        }
+
+        /* Results Background */
+        .gsc-webResult.gsc-result {
+            background-color: transparent !important;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.1) !important;
+            padding: 20px 0 !important;
+        }
+        .gsc-webResult:hover {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+
+        /* Result Titles */
+        .gs-title a {
+            color: var(--neon-cyan) !important;
+            text-decoration: none !important;
+            font-weight: bold;
+            font-size: 1.2rem !important;
+        }
+        
+        /* Result Text */
+        .gs-snippet {
+            color: #cbd5e1 !important;
+            font-family: 'Segoe UI', monospace !important;
+        }
+        .gsc-url-top, .gsc-url-bottom { color: #64748b !important; }
+        
+        /* Hide Branding */
+        .gcsc-branding { display: none !important; }
 
     </style>
 </head>
@@ -217,141 +169,30 @@
 
     <div class="grid-bg"></div>
 
-    <div class="system-status" id="systemStatus">
-        <div class="status-dot"></div>
-        <span id="statusText">NEURAL LINK OFFLINE</span>
+    <div class="system-monitor">
+        <div class="status-light" id="statusLight"></div>
+        <span id="statusText">INITIALIZING GLOBAL UPLINK...</span>
     </div>
-
-    <div class="toast" id="toast">New Neural Pathways Discovered</div>
 
     <div class="logo-container">
         <h1>DART ALLEY</h1>
-        <div class="subtitle">DEEP WEB INDEXER v2.1</div>
+        <div class="subtitle">GLOBAL NEURAL SEARCH</div>
     </div>
 
-    <div class="search-wrapper">
-        <input type="text" id="searchInput" placeholder="Enter query or URL to crawl...">
-        <button class="search-btn" onclick="performSearch()">🔍</button>
-    </div>
-
-    <div class="loader" id="loader"></div>
-
-    <div class="results-container" id="resultsArea">
-        <div class="result-card">
-            <a href="#" class="result-title">System Ready</a>
-            <div class="result-url">local://dart-alley/status</div>
-            <div class="result-snippet">
-                The neural index is initialized. Type a query above to search the database.
-            </div>
-        </div>
+    <div class="search-engine-box">
+        <div class="gcse-search"></div>
     </div>
 
     <script>
-        const input = document.getElementById('searchInput');
-        const loader = document.getElementById('loader');
-        const resultsArea = document.getElementById('resultsArea');
-        const statusBox = document.getElementById('systemStatus');
+        // Visual Status Simulation
         const statusText = document.getElementById('statusText');
-        const toast = document.getElementById('toast');
+        const statusLight = document.getElementById('statusLight');
 
-        let searchIndex = [];
-        let lastModified = null; // Stores the timestamp of the database
-
-        // --- CORE FUNCTION 1: LOAD DATABASE ---
-        function loadDatabase(isUpdate = false) {
-            // Add a timestamp query param to prevent browser caching
-            // This forces it to look for a REAL new file on the server
-            const url = 'database.json?t=' + new Date().getTime();
-
-            fetch(url)
-                .then(response => {
-                    // Check Last-Modified Header
-                    const newModified = response.headers.get('Last-Modified');
-                    
-                    if (lastModified && newModified !== lastModified) {
-                        // DETECTED A CHANGE!
-                        showToast("System Updated: New Pathways Synced");
-                        if(isUpdate) {
-                            statusBox.classList.add('updating');
-                            setTimeout(() => statusBox.classList.remove('updating'), 2000);
-                        }
-                    }
-                    lastModified = newModified;
-                    return response.json();
-                })
-                .then(data => {
-                    searchIndex = data;
-                    
-                    // Update Status UI
-                    statusBox.classList.add('live');
-                    statusText.innerText = `NEURAL LINK ACTIVE [${data.length} NODES]`;
-                    console.log(`[DART Alley] Database Loaded: ${data.length} items`);
-                })
-                .catch(err => {
-                    console.error("Link failed", err);
-                    statusBox.classList.remove('live');
-                    statusText.innerText = "LINK SEVERED";
-                });
-        }
-
-        // --- CORE FUNCTION 2: POLL FOR UPDATES (The "Realtime" Check) ---
-        function startLiveSync() {
-            // Check every 30 seconds if the file on GitHub has changed
-            setInterval(() => {
-                loadDatabase(true);
-            }, 30000); 
-        }
-
-        // --- CORE FUNCTION 3: SEARCH ---
-        function performSearch() {
-            const query = input.value.toLowerCase().trim();
-            if(query === "") return;
-
-            resultsArea.style.display = 'none';
-            resultsArea.innerHTML = ''; 
-            loader.style.display = 'block';
-
-            setTimeout(() => {
-                loader.style.display = 'none';
-                resultsArea.style.display = 'block';
-
-                const matches = searchIndex.filter(item => 
-                    item.title.toLowerCase().includes(query) || 
-                    item.desc.toLowerCase().includes(query)
-                );
-
-                if (matches.length === 0) {
-                    resultsArea.innerHTML = `<div style="color:#64748b; text-align:center;">No neural pathways found for "${query}"</div>`;
-                    return;
-                }
-
-                matches.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'result-card';
-                    card.innerHTML = `
-                        <a href="${item.url}" class="result-title">${item.title}</a>
-                        <span class="result-url">${item.url}</span>
-                        <div class="result-snippet">${item.desc}</div>
-                    `;
-                    resultsArea.appendChild(card);
-                });
-
-            }, 500); 
-        }
-
-        // --- UTILS ---
-        function showToast(msg) {
-            toast.innerText = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 4000);
-        }
-
-        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') performSearch(); });
-
-        // Initialize
-        loadDatabase();
-        startLiveSync();
-
+        setTimeout(() => {
+            statusText.innerText = "CONNECTED :: GLOBAL WEB INDEX";
+            statusLight.style.backgroundColor = "#10b981"; // Green
+            statusLight.style.boxShadow = "0 0 10px #10b981";
+        }, 2000);
     </script>
 
 </body>
