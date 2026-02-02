@@ -12,10 +12,8 @@ import java.util.Set;
 public class DartAlleyCrawler {
     
     // --- CONFIGURATION ---
-    // Depth 2 = The Seed -> Links on Seed -> Links on those pages.
-    private static final int MAX_DEPTH = 2;
-    // Limit how many links we follow per page to keep moving fast
-    private static final int MAX_LINKS_PER_PAGE = 8; 
+    private static final int MAX_DEPTH = 2; // Depth of crawl
+    private static final int MAX_LINKS_PER_PAGE = 10; // Grab 10 random new links per page
 
     private Set<String> visitedLinks = new HashSet<>();
 
@@ -24,7 +22,7 @@ public class DartAlleyCrawler {
             try {
                 visitedLinks.add(url);
                 
-                // 1. CONNECT (Spoofing a real browser to avoid blocks)
+                // 1. CONNECT (Spoofing a real browser)
                 Document document = Jsoup.connect(url)
                         .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                         .timeout(6000)
@@ -40,14 +38,13 @@ public class DartAlleyCrawler {
                 if (metaDesc != null) {
                     desc = metaDesc.attr("content");
                 } else {
-                    // Fallback: First paragraph of text
                     Element firstP = document.selectFirst("p");
                     if(firstP != null) desc = firstP.text();
                 }
                 
-                // Clean the description for JSON
+                // Clean description
                 desc = desc.replace("\"", "'").replace("\n", " ").replace("\r", " ");
-                if (desc.length() > 200) desc = desc.substring(0, 200) + "...";
+                if (desc.length() > 250) desc = desc.substring(0, 250) + "...";
                 if (desc.isEmpty()) desc = "No neural data available.";
 
                 // 3. PRINT JSON OBJECT
@@ -57,23 +54,20 @@ public class DartAlleyCrawler {
                 System.out.println("    \"desc\": \"" + desc + "\"");
                 System.out.println("  },");
 
-                // 4. FIND NEW DOMAINS (The "Continuous Discovery" Logic)
+                // 4. FIND NEW DOMAINS (Continuous Discovery)
                 Elements links = document.select("a[href]");
                 List<String> linksToVisit = new ArrayList<>();
                 
                 for (Element link : links) {
                     String nextUrl = link.attr("abs:href");
-                    
-                    // Filter out garbage links
                     if (isValidLink(nextUrl)) {
                         linksToVisit.add(nextUrl);
                     }
                 }
 
-                // RANDOMIZE: Shuffle links so we don't just follow the menu bar
+                // Shuffle to find random new corners of the web
                 Collections.shuffle(linksToVisit);
 
-                // EXPLORE: Follow a few random links
                 int count = 0;
                 for (String nextUrl : linksToVisit) {
                     if (count >= MAX_LINKS_PER_PAGE) break;
@@ -82,47 +76,39 @@ public class DartAlleyCrawler {
                 }
 
             } catch (Exception e) {
-                // Silent fail to keep output clean
+                // Silent fail
             }
         }
     }
 
-    // Helper to skip boring links like "login" or "privacy policy"
     private boolean isValidLink(String url) {
         if(url == null || url.length() < 10) return false;
         if(!url.startsWith("http")) return false;
-        
         String lower = url.toLowerCase();
-        return !lower.contains("login") && 
-               !lower.contains("signup") && 
-               !lower.contains("facebook.com") && // Skip social traps
-               !lower.contains("twitter.com") &&
-               !lower.contains("linkedin.com");
+        return !lower.contains("login") && !lower.contains("signup");
     }
 
     public static void main(String[] args) {
         System.out.println("["); // Start JSON array
         
         // --- THE MASTER SEED LIST ---
-        // These sites link to THOUSANDS of other new domains daily.
         String[] seeds = {
-            // AGGREGATORS (The "Hubs" of the web)
-            "https://news.ycombinator.com",      // Hacker News (Tech)
-            "https://www.reddit.com/r/technology", // Reddit Tech
-            "https://www.drudgereport.com",      // Global News Links
-            "https://techmeme.com",              // Tech Industry
-            "https://www.popurls.com",           // The "Mother of Aggregators"
+            // 1. YOUR DOMAINS (Priority)
+            "https://dartmeadow.com",
+            "https://drymeadow.com",
+            "https://radicaldeepscale.com",
 
-            // DISCOVERY ENGINES
-            "https://github.com/trending",       // New Code Projects
-            "https://medium.com/topic/technology", // New Articles
-            "https://www.producthunt.com",       // New Startups
-            
-            // MAJOR AUTHORITIES
+            // 2. DISCOVERY HUBS (Aggregators that link to everywhere)
+            "https://news.ycombinator.com",      // Hacker News
+            "https://www.reddit.com/r/technology", // Reddit Tech
+            "https://www.popurls.com",           // The "Mother of Aggregators"
+            "https://techmeme.com",              // Tech Industry
+            "https://github.com/trending",       // New Code
+
+            // 3. GLOBAL AUTHORITIES
             "https://www.nasa.gov",
-            "https://www.bbc.com/news",
             "https://www.wired.com",
-            "https://radicaldeepscale.com"       // Your Domain
+            "https://www.bbc.com/news"
         };
 
         DartAlleyCrawler bot = new DartAlleyCrawler();
@@ -130,41 +116,10 @@ public class DartAlleyCrawler {
         // Launch the fleet
         for (String seed : seeds) {
             try {
-                // Thread.sleep(1000); // Optional polite pause between seeds
                 bot.crawl(seed, 0);
-            } catch (Exception e) {
-                // Ignore bad seed
-            }
+            } catch (Exception e) { }
         }
         
         System.out.println("]"); // End JSON array
-    }
-}                System.out.println("  {");
-                System.out.println("    \"title\": \"" + title + "\",");
-                System.out.println("    \"url\": \"" + url + "\",");
-                System.out.println("    \"desc\": \"" + desc + "\"");
-                System.out.println("  },");
-
-                // Find more links to crawl
-                Elements linksOnPage = document.select("a[href]");
-                depth++;
-                for (Element page : linksOnPage) {
-                    // Recursive crawl
-                    crawl(page.attr("abs:href"), depth);
-                }
-
-            } catch (IOException e) {
-                // Ignore broken links to keep output clean
-            }
-        }
-    }
-
-    public static void main(String[] args) {
-        System.out.println("[\n  // COPY THESE RESULTS INTO YOUR database.json");
-        
-        // === CHANGE THIS URL TO START CRAWLING A NEW SITE ===
-        new DartAlleyCrawler().crawl("https://en.wikipedia.org/wiki/Artificial_intelligence", 0);
-        
-        System.out.println("]");
     }
 }
