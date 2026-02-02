@@ -187,46 +187,79 @@
 
     <div class="results-container" id="resultsArea">
         <div class="result-card">
-            <a href="#" class="result-title">How to Build a Java Web Crawler</a>
-            <div class="result-url">https://dartalley.net/java/crawler-guide</div>
+            <a href="#" class="result-title">System Ready</a>
+            <div class="result-url">local://dart-alley/status</div>
             <div class="result-snippet">
-                Learn to use Jsoup to parse HTML documents. This guide covers connecting to URLs, extracting links, and managing recursion depth...
-            </div>
-        </div>
-
-        <div class="result-card">
-            <a href="#" class="result-title">Neural Network Architectures for Search</a>
-            <div class="result-url">https://radicaldeepscale.com/research/neural-search</div>
-            <div class="result-snippet">
-                Exploring the Lead Edge Ash Tree Reflex algorithm for optimizing search relevance. BRPN nodes allow for deeper context understanding...
+                The neural index is initialized. Type a query above to search the database.json file.
             </div>
         </div>
     </div>
 
     <script>
+        // --- UPDATED JAVASCRIPT LOGIC ---
+        
+        // 1. Target the correct HTML elements by ID
+        const input = document.getElementById('searchInput');
+        const loader = document.getElementById('loader');
+        const resultsArea = document.getElementById('resultsArea');
+
+        // 2. Load the Database immediately upon page load
+        let searchIndex = [];
+        fetch('database.json')
+            .then(response => response.json())
+            .then(data => {
+                searchIndex = data;
+                console.log("[DART Alley] Index Loaded: " + data.length + " entities.");
+            })
+            .catch(err => {
+                console.error("Index failed to load", err);
+                resultsArea.style.display = 'block';
+                resultsArea.innerHTML = `<div style="color:#ef4444; text-align:center;">Error: database.json not found.</div>`;
+            });
+
+        // 3. Define the Search Function
         function performSearch() {
-            const input = document.getElementById('searchInput');
-            const loader = document.getElementById('loader');
-            const results = document.getElementById('resultsArea');
+            const query = input.value.toLowerCase().trim();
+            if(query === "") return;
 
-            if(input.value.trim() === "") return;
-
-            // UI Simulation
-            results.style.display = 'none';
+            // Reset UI to loading state
+            resultsArea.style.display = 'none';
+            resultsArea.innerHTML = ''; // Clear old results
             loader.style.display = 'block';
 
-            // Simulate Network Delay
+            // Simulate Processing Time (0.6 seconds) for "Real Feel"
             setTimeout(() => {
                 loader.style.display = 'none';
-                results.style.display = 'block';
-                
-                // In a real app, this is where you'd fetch() your Java backend API
-                console.log("Searching DART Alley for: " + input.value);
-            }, 800);
+                resultsArea.style.display = 'block';
+
+                // Filter Results from Loaded JSON
+                const matches = searchIndex.filter(item => 
+                    item.title.toLowerCase().includes(query) || 
+                    item.desc.toLowerCase().includes(query)
+                );
+
+                if (matches.length === 0) {
+                    resultsArea.innerHTML = `<div style="color:#64748b; text-align:center;">No neural pathways found for "${query}"</div>`;
+                    return;
+                }
+
+                // Render Matched Results
+                matches.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card';
+                    card.innerHTML = `
+                        <a href="${item.url}" class="result-title">${item.title}</a>
+                        <span class="result-url">${item.url}</span>
+                        <div class="result-snippet">${item.desc}</div>
+                    `;
+                    resultsArea.appendChild(card);
+                });
+
+            }, 600); 
         }
 
-        // Trigger search on Enter key
-        document.getElementById('searchInput').addEventListener('keypress', function (e) {
+        // 4. Add "Enter" key listener
+        input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 performSearch();
             }
