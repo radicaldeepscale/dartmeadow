@@ -1,0 +1,42 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
+public class DartAlleyCrawler {
+    private static final int MAX_DEPTH = 2; 
+    private Set<String> visitedLinks = new HashSet<>();
+
+    public void crawl(String url, int depth) {
+        if ((!visitedLinks.contains(url) && (depth < MAX_DEPTH))) {
+            System.out.println(">> [DART Crawler] Analyzing: " + url);
+            try {
+                visitedLinks.add(url);
+                Document document = Jsoup.connect(url).get();
+                
+                String title = document.title();
+                System.out.println("   Title Found: " + title);
+                
+                // Here is where you would save 'title' and 'url' to a file/database
+                // for your HTML search engine to read later.
+
+                Elements linksOnPage = document.select("a[href]");
+                depth++;
+                for (Element page : linksOnPage) {
+                    crawl(page.attr("abs:href"), depth);
+                }
+            } catch (IOException e) {
+                System.err.println("   [Error]: " + e.getMessage());
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        System.out.println("=== Initializing DART Alley Crawler ===");
+        // You can change this URL to whatever you want to start indexing
+        new DartAlleyCrawler().crawl("https://en.wikipedia.org/wiki/Artificial_intelligence", 0);
+    }
+}
