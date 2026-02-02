@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DART Alley | Neural Search</title>
+    <style>
+        :root {
+            --neon-cyan: #00e5ff;
+            --deep-space: #050810;
+            --glass-panel: rgba(10, 16, 30, 0.7);
+            --text-glow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', monospace;
+            background-color: var(--deep-space);
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background Grid Animation */
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0; width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(var(--glass-panel) 1px, transparent 1px),
+                linear-gradient(90deg, var(--glass-panel) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            opacity: 0.2;
+            animation: gridMove 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0) translateZ(-200px); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(40px) translateZ(-200px); }
+        }
+
+        /* Logo Area */
+        .logo-container {
+            margin-top: 10vh;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin: 0;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: var(--text-glow);
+        }
+
+        .subtitle {
+            color: var(--neon-cyan);
+            font-size: 1rem;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        /* Search Box */
+        .search-wrapper {
+            position: relative;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            padding-right: 60px; /* Space for icon */
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 30px;
+            color: #fff;
+            outline: none;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', monospace;
+        }
+
+        input[type="text"]:focus {
+            background: rgba(0, 229, 255, 0.05);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--neon-cyan);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-50%) scale(1.1);
+            text-shadow: var(--text-glow);
+        }
+
+        /* Results Area */
+        .results-container {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 40px;
+            display: none; /* Hidden until search */
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid var(--neon-cyan);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .result-card:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .result-title {
+            color: var(--neon-cyan);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .result-url {
+            color: #64748b;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .result-snippet {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Loading Animation */
+        .loader {
+            display: none;
+            border: 3px solid rgba(0, 229, 255, 0.1);
+            border-top: 3px solid var(--neon-cyan);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="logo-container">
+        <h1>DART ALLEY</h1>
+        <div class="subtitle">DEEP WEB INDEXER v1.0</div>
+    </div>
+
+    <div class="search-wrapper">
+        <input type="text" id="searchInput" placeholder="Enter query or URL to crawl...">
+        <button class="search-btn" onclick="performSearch()">🔍</button>
+    </div>
+
+    <div class="loader" id="loader"></div>
+
+    <div class="results-container" id="resultsArea">
+        <div class="result-card">
+            <a href="#" class="result-title">How to Build a Java Web Crawler</a>
+            <div class="result-url">https://dartalley.net/java/crawler-guide</div>
+            <div class="result-snippet">
+                Learn to use Jsoup to parse HTML documents. This guide covers connecting to URLs, extracting links, and managing recursion depth...
+            </div>
+        </div>
+
+        <div class="result-card">
+            <a href="#" class="result-title">Neural Network Architectures for Search</a>
+            <div class="result-url">https://radicaldeepscale.com/research/neural-search</div>
+            <div class="result-snippet">
+                Exploring the Lead Edge Ash Tree Reflex algorithm for optimizing search relevance. BRPN nodes allow for deeper context understanding...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function performSearch() {
+            const input = document.getElementById('searchInput');
+            const loader = document.getElementById('loader');
+            const results = document.getElementById('resultsArea');
+
+            if(input.value.trim() === "") return;
+
+            // UI Simulation
+            results.style.display = 'none';
+            loader.style.display = 'block';
+
+            // Simulate Network Delay
+            setTimeout(() => {
+                loader.style.display = 'none';
+                results.style.display = 'block';
+                
+                // In a real app, this is where you'd fetch() your Java backend API
+                console.log("Searching DART Alley for: " + input.value);
+            }, 800);
+        }
+
+        // Trigger search on Enter key
+        document.getElementById('searchInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+
+</body>
+</html>
