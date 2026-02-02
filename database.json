@@ -1,17 +1,222 @@
 [
-    {
-        "title": "DART Alley | Neural Research",
-        "url": "https://dartmeadow.com",
-        "desc": "Official research portal for BRPN nodes and Ash Tree algorithms."
-    },
-    {
-        "title": "Java Jsoup Documentation",
-        "url": "https://jsoup.org",
-        "desc": "Technical documentation for the Java HTML parser used in DART Alley."
-    },
-    {
-        "title": "DART Meadow Github",
-        "url": "https://github.com/radicaldeepscale/dartmeadow",
-        "desc": "Source code repository for the DART crawler and interface."
-    }
+  {
+    "title": "NASA",
+    "url": "https://www.nasa.gov",
+    "desc": "NASA.gov brings you the latest news, images and videos from America\u0027s space agency, pioneering the future in space exploration, scientific discovery and aeronautics research."
+  },
+  {
+    "title": "NASA",
+    "url": "https://www.nasa.gov/",
+    "desc": "NASA.gov brings you the latest news, images and videos from America\u0027s space agency, pioneering the future in space exploration, scientific discovery and aeronautics research."
+  },
+  {
+    "title": "NASA News",
+    "url": "https://www.nasa.gov/news/",
+    "desc": "Resources for news media, including NASA news contacts and archived news material"
+  },
+  {
+    "title": "2026 News Releases - NASA",
+    "url": "https://www.nasa.gov/2026-news-releases/",
+    "desc": "Sign up to receive NASA news releases and other information."
+  },
+  {
+    "title": "All NASA News - NASA",
+    "url": "https://www.nasa.gov/news/recently-published/",
+    "desc": "Stay up-to-date with the latest content from NASA as we explore the universe and discover more about our home planet."
+  },
+  {
+    "title": "Explore Series | NASA+",
+    "url": "https://plus.nasa.gov/series/",
+    "desc": "NASA explores the unknown in air and space, innovates for the benefit of humanity, and inspires the world through discovery."
+  },
+  {
+    "title": "Podcasts and Audio - NASA",
+    "url": "https://www.nasa.gov/podcasts-and-audio/",
+    "desc": "Explore the universe and discover our home planet with NASA through a collection of our sounds from historic spaceflights and current missions. You can hear"
+  },
+  {
+    "title": "Blogs - NASA",
+    "url": "https://www.nasa.gov/nasa-blogs/",
+    "desc": "Games and Interactives"
+  },
+  {
+    "title": "Newsletters - NASA",
+    "url": "https://www.nasa.gov/newsletters/",
+    "desc": "Centers and Facilities Armstrong Flight Research Center X-Press Sign UpMonthly newsletter highlighting research at Armstrong Flight Research Center in"
+  },
+  {
+    "title": "Official NASA Social Media Accounts - NASA",
+    "url": "https://www.nasa.gov/social-media/",
+    "desc": "These accounts represent NASA on social media and follow the agency\u0027s policies and guidelines.Find the ones that match your interests and"
+  },
+  {
+    "title": "NASA Media Contacts - NASA",
+    "url": "https://www.nasa.gov/news/media-contacts/",
+    "desc": "Media Contacts Gerelle DodsonNASA Workforce, STEM Engagement202-358-1600Jennifer DoorenDeputy News Chief, Cybersecurity202-358-1600Tiernan Doyle"
+  },
+  {
+    "title": "SpaceX",
+    "url": "https://www.spacex.com",
+    "desc": "SpaceX designs, manufactures and launches advanced rockets and spacecraft. The company was founded in 2002 to revolutionize space technology, with the ultimate goal of enabling people to live on ot..."
+  },
+  {
+    "title": "Aerospace engineering - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Aerospace_engineering",
+    "desc": "Aerospace engineering is the primary field of engineering concerned with the development of aircraft and spacecraft.[3] It has two major and overlapping branches: aeronautical engineering and astro..."
+  },
+  {
+    "title": "Wikipedia, the free encyclopedia",
+    "url": "https://en.wikipedia.org/wiki/Main_Page",
+    "desc": "Mount Edziza is a volcanic mountain in Cassiar Land District in northwestern British Columbia, Canada. It is located on the Big Raven Plateau of the Tahltan Highland, which extends along the wester..."
+  },
+  {
+    "title": "Wikipedia:Contents - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Wikipedia:Contents",
+    "desc": "Easily explore Wikipedia using the topic links below. You can also search directly using the search bar. All section headers are clickable for quick navigation."
+  },
+  {
+    "title": "Portal:Current events - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Portal:Current_events",
+    "desc": "Armed conflicts and attacks"
+  },
+  {
+    "title": "Maja Kos - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Special:Random",
+    "desc": "Maja Kos (Serbian: Маја Кос) (6 June 1968 – 16 March 2000) was a synchronized swimmer from Serbia. Kos competed as an Independent Olympic Participant at the 1992 Summer Olympics in the women\u0027s duet..."
+  },
+  {
+    "title": "Wikipedia:About - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Wikipedia:About",
+    "desc": "Wikipedia is a free online encyclopedia that anyone can edit, and millions already have."
+  },
+  {
+    "title": "Wikipedia:Contact us - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Wikipedia:Contact_us",
+    "desc": "Readers How to report a problem with an article, or find out more information."
+  },
+  {
+    "title": "Help:Contents - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Help:Contents",
+    "desc": "This page provides help with the most common questions about Wikipedia."
+  },
+  {
+    "title": "Help:Introduction - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Help:Introduction",
+    "desc": "Wikipedia is made by people like you."
+  },
+  {
+    "title": "Wikipedia:Community portal - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Wikipedia:Community_portal",
+    "desc": "This page provides a listing of current collaborations, tasks, and news about English Wikipedia. New to Wikipedia? See the contributing to Wikipedia page or our tutorial for everything you need to ..."
+  },
+  {
+    "title": "Recent changes - Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Special:RecentChanges",
+    "desc": "This is a list of recent changes to Wikipedia."
+  },
+  {
+    "title": "Leading Aerospace and Defense | Lockheed Martin",
+    "url": "https://www.lockheedmartin.com",
+    "desc": "Lockheed Martin is a leading global security, defense and aerospace contractor, ensuring those we serve always stay ahead of ready."
+  },
+  {
+    "title": "Leading Aerospace and Defense | Lockheed Martin",
+    "url": "https://www.lockheedmartin.com/",
+    "desc": "Lockheed Martin is a leading global security, defense and aerospace contractor, ensuring those we serve always stay ahead of ready."
+  },
+  {
+    "title": "Lockheed Martin News and Events | Lockheed Martin",
+    "url": "https://www.lockheedmartin.com/en-us/news.html",
+    "desc": "Lockheed Martin News and Events"
+  },
+  {
+    "title": "Suppliers | Lockheed Martin",
+    "url": "https://www.lockheedmartin.com/en-us/suppliers.html",
+    "desc": "Supplier information"
+  },
+  {
+    "title": "Global Partnerships | Lockheed Martin",
+    "url": "https://www.lockheedmartin.com/en-us/who-we-are/international.html",
+    "desc": "We work with our global partners to defend against outside threats while strengthening their economies, industries and communities from within. Whatever your mission, we can help you expand what’s ..."
+  },
+  {
+    "title": "Lockheed Martin Australia | Lockheed Martin Australia",
+    "url": "https://www.lockheedmartin.com/en-au/index.html",
+    "desc": "Lockheed Martin Australia is an Australian company that is engaged in design, development and sustainment of advanced technology solutions."
+  },
+  {
+    "title": "Lockheed Martin Canada | Lockheed Martin Canada",
+    "url": "https://www.lockheedmartin.com/en-ca/index.html",
+    "desc": "Our mission at Lockheed Martin Canada is to deliver solutions to our customers’ most challenging and complex problems, by applying innovative approaches from our highly skilled Canadian workforce."
+  },
+  {
+    "title": "Lockheed Martin Canada Français | Lockheed Martin Canada",
+    "url": "https://www.lockheedmartin.com/fr-ca/index.html",
+    "desc": "Nous visons à devenir l\u0027un des principaux fournisseurs canadiens de solutions de systèmes et de services connexes à l\u0027échelle internationale."
+  },
+  {
+    "title": "Denmark | Lockheed Martin Denmark",
+    "url": "https://www.lockheedmartin.com/en-dk/index.html",
+    "desc": "Denmark"
+  },
+  {
+    "title": "Denmark | Lockheed Martin Denmark",
+    "url": "https://www.lockheedmartin.com/da-dk/index.html",
+    "desc": "Denmark"
+  },
+  {
+    "title": "The Boeing Company Official Website",
+    "url": "https://www.boeing.com",
+    "desc": "Welcome to the official corporate site for the world\u0027s largest aerospace company and leading manufacturer of commercial jetliners and defense, space and security systems. Learn about our passion fo..."
+  },
+  {
+    "title": "Strengthening Safety \u0026 Quality",
+    "url": "https://www.boeing.com/strengthening-safety-and-quality",
+    "desc": "Updates on Boeing’s actions to strengthen safety and quality"
+  },
+  {
+    "title": "Information for Boeing Employees and Retirees",
+    "url": "https://www.boeing.com/employee-and-retiree",
+    "desc": "Emergency Information has moved to a new page."
+  },
+  {
+    "title": "Emergency",
+    "url": "https://www.boeing.com/emergency",
+    "desc": "This is the Boeing Emergency Information Website. In the event that a Boeing site or facility has operational impacts, this website will contain the latest information and be kept up-to-date throug..."
+  },
+  {
+    "title": "Boeing Company - Investors - Overview",
+    "url": "http://investors.boeing.com/?_gl\u003d1*169wy4g*_ga*NTk1NTE0ODYzLjE2OTc2NTk2NDA.*_ga_3N2PEGZ4HD*MTcwMTE4OTIxMS45NC4xLjE3MDExOTA3NzUuMC4wLjA.",
+    "desc": "Boeing’s mission is to protect, connect and explore our world and beyond. Every day, we are dedicated to carrying out our mission – safely and sustainably. With revitalized spirit and an unwavering..."
+  },
+  {
+    "title": "Boeing Suppliers",
+    "url": "http://www.boeingsuppliers.com/",
+    "desc": "Learn about Boeing’s position as the world’s leading aerospace company and largest manufacturer of commercial and military aircraft."
+  },
+  {
+    "title": "Boeing Newsroom",
+    "url": "http://boeing.mediaroom.com/?_gl\u003d1*1y16wii*_ga*NTk1NTE0ODYzLjE2OTc2NTk2NDA.*_ga_3N2PEGZ4HD*MTcwMTE4OTIxMS45NC4xLjE3MDExOTA3NzUuMC4wLjA.",
+    "desc": "- Purchase includes 20 737-8 and 10 737-10 airplanes for domestic, regional growth - Additional 737 MAX jets support strong single-aisle demand in one of the world\u0027s fastest-growing aviation..."
+  },
+  {
+    "title": "The Boeing Company Official Website",
+    "url": "https://www.boeing.com/",
+    "desc": "Welcome to the official corporate site for the world\u0027s largest aerospace company and leading manufacturer of commercial jetliners and defense, space and security systems. Learn about our passion fo..."
+  },
+  {
+    "title": "Commercial",
+    "url": "https://www.boeing.com/commercial",
+    "desc": "Explore our range of commercial product families. From the versatile 737 MAX family to the successful long-range 787 Dreamliner, each model is engineered to meet the diverse needs of our customers ..."
+  },
+  {
+    "title": "Commercial Market Outlook",
+    "url": "https://www.boeing.com/commercial/market/commercial-market-outlook",
+    "desc": "For more than 60 years, the Boeing Commercial Market Outlook (CMO) has been the aviation industry’s leading forecast in global commercial air traffic and airplane demand."
+  },
+  {
+    "title": "Business Jets | Boeing",
+    "url": "https://businessjets.boeing.com/",
+    "desc": "Boeing Business Jets (BBJ) brings the best of commercial aviation into the realm of private air travel. Step abroad an experience what it means to fly without compromises."
+  }
 ]
