@@ -152,6 +152,16 @@
         .img-src-note{font-family:'Share Tech Mono',monospace;font-size:0.56rem;color:var(--dim);text-align:center;margin-top:8px;letter-spacing:1px;}
         .img-src-note span{color:var(--purple);}
 
+
+        /* MEDIA TABS */
+        .media-panel{width:100%;display:none;}
+        .media-panel.active{display:block;}
+        .tab-bar{display:flex;gap:0;margin-bottom:10px;border-bottom:1px solid var(--border);}
+        .tab-btn{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:2px;padding:7px 14px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;position:relative;bottom:-1px;}
+        .tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+        .tab-btn.active.yt{color:var(--orange);border-bottom-color:var(--orange);}
+        .tab-btn .tab-count{font-size:0.52rem;margin-left:5px;opacity:0.7;}
+        .tab-btn:hover:not(.active){color:var(--text);}
         /* LOAD MORE */
         .more-btn{font-family:'Share Tech Mono',monospace;font-size:0.58rem;letter-spacing:2px;color:var(--dim);text-align:center;margin-top:9px;padding:8px;border:1px solid var(--border);border-radius:2px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;display:none;}
         .more-btn:hover{color:var(--purple);border-color:rgba(192,132,252,0.4);background:rgba(192,132,252,0.04);}
@@ -342,23 +352,22 @@
                 </div>
                 <div class="rg" id="rg"></div>
             </div>
-            <!-- IMAGE PANEL -->
-            <div class="img-panel" id="imgP" style="display:none;">
-                <div class="ph">
-                    <div class="pl">// IMAGE SCAN //</div>
-                    <div class="pm"><b id="ic">0</b> SIGNALS</div>
+            <!-- TABBED MEDIA PANEL -->
+            <div id="mediaOuter" style="display:none;">
+                <div class="tab-bar">
+                    <button class="tab-btn yt active" id="tab-yt" onclick="switchTab('yt')">▶ VIDEO<span class="tab-count" id="vc-count">0</span></button>
+                    <button class="tab-btn" id="tab-img" onclick="switchTab('img')">◈ IMAGES<span class="tab-count" id="ic">0</span></button>
                 </div>
-                <div class="ig" id="ig"></div>
-                <div class="img-src-note">SOURCE: <span>WIKIPEDIA · WIKIMEDIA</span></div>
-                <div class="more-btn" id="moreBtn" onclick="loadMore()">▼ LOAD MORE</div>
-                <!-- VIDEO PANEL — below images in right column -->
-                <div class="vid-panel" id="vidP" style="display:none;">
-                    <div class="ph">
-                        <div class="pl">// VIDEO FEED //</div>
-                        <div class="pm"><b id="vc-count">0</b> SIGNALS</div>
-                    </div>
+                <!-- VIDEO PANEL -->
+                <div class="media-panel active" id="vidP">
                     <div class="vg" id="vg"></div>
-                    <div class="img-src-note">SOURCE: <span>YOUTUBE</span></div>
+                    <div class="img-src-note" style="margin-top:8px;">SOURCE: <span>YOUTUBE</span></div>
+                </div>
+                <!-- IMAGE PANEL -->
+                <div class="media-panel" id="imgP">
+                    <div class="ig" id="ig"></div>
+                    <div class="img-src-note" style="margin-top:8px;">SOURCE: <span>WIKIPEDIA · WIKIMEDIA</span></div>
+                    <div class="more-btn" id="moreBtn" onclick="loadMore()">▼ LOAD MORE</div>
                 </div>
             </div>
         </div>
@@ -369,7 +378,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  DART ALLEY v10
+//  16
 //  Web:    DDG · HN · Reddit · GDELT · Wiki ExtLinks · GitHub (parallel, CORS-open)
 //  Images: Wikipedia + Wikimedia Commons
 //  Video:  Invidious (10 instances, parallel waves) + allorigins YT RSS fallback
@@ -426,6 +435,7 @@ const qi=document.getElementById('qi'),lw=document.getElementById('lw'),
       ig=document.getElementById('ig'),ic=document.getElementById('ic'),
       sbtn=document.getElementById('sbtn'),
       imgP=document.getElementById('imgP'),
+      mediaOuter=document.getElementById('mediaOuter'),
       moreBtn=document.getElementById('moreBtn');
 
 qi.addEventListener('keypress',e=>{if(e.key==='Enter')doSearch();});
@@ -437,8 +447,12 @@ async function doSearch(){
     sbtn.disabled=true;
     rg.innerHTML='';ig.innerHTML='';allImgs=[];imgPage=0;
     document.getElementById('vg').innerHTML='';
-    document.getElementById('vidP').style.display='none';
-    rw.style.display='none';imgP.style.display='none';moreBtn.style.display='none';
+    document.getElementById('mediaOuter').style.display='none';
+    document.getElementById('tab-yt').classList.add('active');
+    document.getElementById('tab-img').classList.remove('active');
+    document.getElementById('vidP').classList.add('active');
+    document.getElementById('imgP').classList.remove('active');
+    rw.style.display='none';moreBtn.style.display='none';
     lw.style.display='flex';ltxt.textContent='INITIALIZING SCAN...';
 
     // Show intelligence panel if we have prior learning on this topic
@@ -907,116 +921,140 @@ async function fetchGitHub(q,enc){
 }
 
 // ── YOUTUBE VIDEO SEARCH ──────────────────────────────
-// Strategy: Try multiple backends in parallel, take first that responds.
-// 1. Invidious public instances (open-source YT frontend, CORS-open JSON API)
-// 2. YouTube RSS feed via allorigins.win proxy (parses search feed XML → videos)
-// All errors caught silently — no console spam.
+// Uses the official YouTube Data API v3 — reliable, CORS-open, works everywhere.
+// Free quota: 10,000 units/day. Search costs 100 units → ~100 searches/day free.
+// Restrict this key at: console.cloud.google.com → Credentials → dartalley
+//   → Application restrictions → Websites → dartmeadow.com/*
 
-const INVIDIOUS=[
-    'https://invidious.snopyta.org',
-    'https://invidious.kavin.rocks',
-    'https://vid.puffyan.us',
-    'https://invidious.namazso.eu',
-    'https://yt.artemislena.eu',
-    'https://invidious.flokinet.to',
-    'https://inv.riverside.rocks',
-    'https://invidious.nerdvpn.de',
-    'https://invidious.privacydev.net',
-    'https://iv.datura.network'
-];
+const YT_API_KEY = 'AIzaSyBrhOod_Q6QoX6XQFyuaipq_ncFvx5lEac';
+const YT_SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
+
+function isChannelQuery(q){
+    return /^@/.test(q.trim())||/\b(channel|youtube\.com\/@)\b/i.test(q);
+}
+function cleanHandle(q){ return q.trim().replace(/^@/,''); }
 
 async function searchYouTube(q){
-    const enc=encodeURIComponent(q);
-
-    // Fire all sources simultaneously, take first non-empty result
-    const [invResult, rssResult] = await Promise.allSettled([
-        tryInvidious(enc),
-        tryYouTubeRSS(enc)
-    ]);
+    const raw=q.trim();
+    const isChannel=isChannelQuery(raw);
 
     let videos=[];
-    if(invResult.status==='fulfilled'&&invResult.value?.length) videos=invResult.value;
-    else if(rssResult.status==='fulfilled'&&rssResult.value?.length) videos=rssResult.value;
+
+    if(isChannel){
+        // For @handle queries: search for the channel first, then get its videos
+        videos = await ytChannelVideos(cleanHandle(raw));
+    }
+
+    // If not a channel query or channel lookup got nothing, do keyword search
+    if(!videos.length){
+        videos = await ytSearch(raw);
+    }
 
     if(!videos.length){
         setStat('yt','warn','YT: unavailable');
         return;
     }
-    renderVideos(videos.slice(0,8), q);
+    renderVideos(videos.slice(0,12), q);
 }
 
-// Backend A: Invidious JSON API — try all instances, first hit wins
-async function tryInvidious(enc){
-    // Try 3 at a time in parallel waves for speed
-    for(let i=0;i<INVIDIOUS.length;i+=3){
-        const wave=INVIDIOUS.slice(i,i+3);
-        const results=await Promise.allSettled(
-            wave.map(host=>fetchInvidious(host,enc))
-        );
-        for(const r of results){
-            if(r.status==='fulfilled'&&r.value?.length) return r.value;
-        }
-    }
-    return [];
-}
-
-async function fetchInvidious(host,enc){
-    // Use no-throw wrapper so errors don't bubble
+// General video search via YouTube Data API v3
+async function ytSearch(q){
     try{
-        const ctrl=new AbortController();
-        const tid=setTimeout(()=>ctrl.abort(),5000);
-        const res=await fetch(`${host}/api/v1/search?q=${enc}&type=video&page=1`,{signal:ctrl.signal});
-        clearTimeout(tid);
-        if(!res.ok) return [];
-        const d=await res.json();
-        return (Array.isArray(d)?d:[]).filter(v=>v.videoId&&v.title).map(v=>({
-            videoId: v.videoId,
-            title:   v.title,
-            channel: v.author||'',
-            views:   v.viewCount||0,
-            duration:v.lengthSeconds||0,
-            thumb:   `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-            url:     `https://youtube.com/watch?v=${v.videoId}`
-        }));
-    }catch(e){ return []; }  // AbortError, network error, parse error — all silent
-}
-
-// Backend B: YouTube search RSS via allorigins.win CORS proxy
-async function tryYouTubeRSS(enc){
-    try{
-        // allorigins returns the raw response wrapped in JSON — CORS open, free
-        const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.youtube.com/results?search_query='+enc+'&sp=EgIQAQ%253D%253D')}`;
-        const ctrl=new AbortController();
-        const tid=setTimeout(()=>ctrl.abort(),9000);
-        const res=await fetch(proxyUrl,{signal:ctrl.signal});
-        clearTimeout(tid);
-        if(!res.ok) return [];
-        const wrapper=await res.json();
-        const html=wrapper.contents||'';
-        // Extract video IDs + titles from the ytInitialData JSON embedded in the page
-        const match=html.match(/var ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s)
-                 ||html.match(/ytInitialData\s*=\s*(\{.+?\});/s);
-        if(!match) return [];
-        const data=JSON.parse(match[1]);
-        const contents=data?.contents?.twoColumnSearchResultsRenderer
-            ?.primaryContents?.sectionListRenderer?.contents?.[0]
-            ?.itemSectionRenderer?.contents||[];
-        const videos=[];
-        contents.forEach(item=>{
-            const v=item.videoRenderer;
-            if(!v||!v.videoId) return;
-            const title=v.title?.runs?.[0]?.text||v.title?.simpleText||'';
-            const channel=v.ownerText?.runs?.[0]?.text||v.longBylineText?.runs?.[0]?.text||'';
-            const views=v.viewCountText?.simpleText||v.shortViewCountText?.simpleText||'';
-            const dur=v.lengthText?.simpleText||'';
-            videos.push({
-                videoId:v.videoId,title,channel,views,duration:dur,
-                thumb:`https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
-                url:`https://youtube.com/watch?v=${v.videoId}`
-            });
+        const params=new URLSearchParams({
+            part:'snippet',
+            q,
+            type:'video',
+            maxResults:12,
+            key:YT_API_KEY
         });
-        return videos;
+        const r=await ft(`${YT_SEARCH_URL}?${params}`,10000);
+        if(!r.ok){
+            const err=await r.json().catch(()=>({}));
+            const msg=err?.error?.message||('HTTP '+r.status);
+            console.warn('[DART] YT API error:',msg);
+            setStat('yt','warn','YT: '+msg.slice(0,40));
+            return [];
+        }
+        const d=await r.json();
+        console.log('[DART] YT API ok, items:',(d.items||[]).length);
+        return (d.items||[]).map(item=>({
+            videoId: item.id?.videoId||'',
+            title:   item.snippet?.title||'',
+            channel: item.snippet?.channelTitle||'',
+            views:   '',
+            duration:'',
+            thumb:   item.snippet?.thumbnails?.medium?.url
+                     ||item.snippet?.thumbnails?.default?.url
+                     ||`https://i.ytimg.com/vi/${item.id?.videoId}/mqdefault.jpg`,
+            url:     `https://youtube.com/watch?v=${item.id?.videoId}`
+        })).filter(v=>v.videoId);
+    }catch(e){
+        console.warn('[DART] YT exception:',e.name, e.message);
+        setStat('yt','warn','YT: '+e.name);
+        return [];
+    }
+}
+
+// Channel search: find channel by handle/name, then return its latest videos
+async function ytChannelVideos(handle){
+    try{
+        // Step 1: find the channel
+        const sp=new URLSearchParams({
+            part:'snippet',
+            q:handle,
+            type:'channel',
+            maxResults:1,
+            key:YT_API_KEY
+        });
+        const r=await ft(`${YT_SEARCH_URL}?${sp}`,10000);
+        if(!r.ok) return [];
+        const d=await r.json();
+        const channelId=d.items?.[0]?.id?.channelId;
+        if(!channelId) return [];
+
+        // Step 2: get latest videos from that channel
+        const vp=new URLSearchParams({
+            part:'snippet',
+            channelId,
+            type:'video',
+            order:'date',
+            maxResults:12,
+            key:YT_API_KEY
+        });
+        const r2=await ft(`${YT_SEARCH_URL}?${vp}`,10000);
+        if(!r2.ok) return [];
+        const d2=await r2.json();
+        return (d2.items||[]).map(item=>({
+            videoId: item.id.videoId,
+            title:   item.snippet.title,
+            channel: item.snippet.channelTitle,
+            views:   '',
+            duration:'',
+            thumb:   item.snippet.thumbnails?.medium?.url
+                     ||`https://i.ytimg.com/vi/${item.id.videoId}/mqdefault.jpg`,
+            url:     `https://youtube.com/watch?v=${item.id.videoId}`
+        })).filter(v=>v.videoId);
     }catch(e){ return []; }
+}
+
+
+// ── MEDIA TAB SWITCHER ────────────────────────────────
+function switchTab(tab){
+    const ytBtn=document.getElementById('tab-yt');
+    const imgBtn=document.getElementById('tab-img');
+    const vidP=document.getElementById('vidP');
+    const imgP=document.getElementById('imgP');
+    if(tab==='yt'){
+        ytBtn.classList.add('active');
+        imgBtn.classList.remove('active');
+        vidP.classList.add('active');
+        imgP.classList.remove('active');
+    } else {
+        imgBtn.classList.add('active');
+        ytBtn.classList.remove('active');
+        imgP.classList.add('active');
+        vidP.classList.remove('active');
+    }
 }
 
 function renderVideos(videos, q){
@@ -1024,8 +1062,7 @@ function renderVideos(videos, q){
     const vg=document.getElementById('vg');
     const vcCount=document.getElementById('vc-count');
 
-    vidP.style.display='block';
-    imgP.style.display='block';
+    document.getElementById('mediaOuter').style.display='block';
     vcCount.textContent=videos.length;
     setBadge('b-yt','cyan');
     setStat('yt','ok','YT: '+videos.length+' videos');
@@ -1164,7 +1201,7 @@ function renderImgs(page){
     const slice=allImgs.slice(start,start+IPP);
     if(!slice.length)return;
 
-    imgP.style.display='block';
+    document.getElementById('mediaOuter').style.display='block';
     ic.textContent=allImgs.length;
 
     slice.forEach((img,i)=>{
