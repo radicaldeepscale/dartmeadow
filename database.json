@@ -1,32 +1,1164 @@
 [
   {
-    "title": "Artificial intelligence - Wikipedia",
-    "url": "https://en.wikipedia.org/wiki/Artificial_intelligence",
-    "desc": "No description available for this neural pathway."
+    "title": "DART Meadow — Home",
+    "url": "https:",
+    "desc": "DART Meadow — the official hub for aerospace innovation, deep-scale research, and neural technology. Explore projects, media, and mission updates.",
+    "tags": [
+      "dart",
+      "meadow",
+      "aerospace",
+      "home",
+      "official"
+    ]
   },
   {
-    "title": "Wikipedia, the free encyclopedia",
-    "url": "https://en.wikipedia.org/wiki/Main_Page",
-    "desc": "Mount Edziza is a volcanic mountain in Cassiar Land District in northwestern British Columbia, Canada. It is located on the Big Raven Plateau of th..."
+    "title": "DART Meadow — Projects",
+    "url": "https:",
+    "desc": "Browse all active and archived DART Meadow aerospace and technology projects. Innovation at the edge of science and culture.",
+    "tags": [
+      "dart",
+      "meadow",
+      "projects",
+      "aerospace",
+      "tech"
+    ]
   },
   {
-    "title": "Wikipedia:Contents - Wikipedia",
-    "url": "https://en.wikipedia.org/wiki/Wikipedia:Contents",
-    "desc": "No description available for this neural pathway."
+    "title": "DART Meadow — Media & Press",
+    "url": "https:",
+    "desc": "Media gallery, press kits, and visual archives from DART Meadow Aerospace. Photography, video, and editorial content.",
+    "tags": [
+      "dart",
+      "meadow",
+      "media",
+      "press",
+      "gallery",
+      "photos"
+    ]
   },
   {
-    "title": "Portal:Current events - Wikipedia",
-    "url": "https://en.wikipedia.org/wiki/Portal:Current_events",
-    "desc": "Armed conflicts and attacks"
+    "title": "DART Meadow — About",
+    "url": "https:",
+    "desc": "The story behind DART Meadow Aerospace. Mission, vision, team, and the philosophy driving innovation across disciplines.",
+    "tags": [
+      "dart",
+      "meadow",
+      "about",
+      "mission",
+      "team",
+      "vision"
+    ]
   },
   {
-    "title": "Punk rock subgenres - Wikipedia",
-    "url": "https://en.wikipedia.org/wiki/Special:Random",
-    "desc": "No description available for this neural pathway."
+    "title": "DART Meadow — Contact",
+    "url": "https:",
+    "desc": "Get in touch with the DART Meadow Aerospace team. Partnerships, press inquiries, and collaboration opportunities.",
+    "tags": [
+      "dart",
+      "meadow",
+      "contact",
+      "partnership",
+      "collaboration"
+    ]
   },
   {
-    "title": "Wikipedia:About - Wikipedia",
-    "url": "https://en.wikipedia.org/wiki/Wikipedia:About",
-    "desc": "No description available for this neural pathway."
+    "title": "Radical Deep Scale — Home",
+    "url": "https:",
+    "desc": "Radical Deep Scale is a research-driven technology initiative exploring deep systems, machine learning, and scalable infrastructure at the frontier of human knowledge.",
+    "tags": [
+      "radical",
+      "deep",
+      "scale",
+      "research",
+      "AI",
+      "tech",
+      "machine learning"
+    ]
+  },
+  {
+    "title": "Radical Deep Scale — Research",
+    "url": "https:",
+    "desc": "Published research, whitepapers, and experiments from Radical Deep Scale. Covering AI, neural networks, distributed systems, and deep science.",
+    "tags": [
+      "radical",
+      "deep",
+      "scale",
+      "research",
+      "papers",
+      "AI",
+      "neural",
+      "science"
+    ]
+  },
+  {
+    "title": "Radical Deep Scale — Blog",
+    "url": "https:",
+    "desc": "Deep-dive articles, essays, and technical posts from the Radical Deep Scale team. Think at scale.",
+    "tags": [
+      "radical",
+      "deep",
+      "scale",
+      "blog",
+      "articles",
+      "tech",
+      "writing"
+    ]
+  },
+  {
+    "title": "Dry Meadow — Home",
+    "url": "https:",
+    "desc": "Dry Meadow — an independent creative and experimental platform. Art, sound, structure, and experiments at the intersection of nature and technology.",
+    "tags": [
+      "dry",
+      "meadow",
+      "art",
+      "creative",
+      "experimental",
+      "design",
+      "nature"
+    ]
+  },
+  {
+    "title": "Dry Meadow — Works",
+    "url": "https:",
+    "desc": "Portfolio of works from Dry Meadow: installation art, digital experiments, sound design, and visual media projects.",
+    "tags": [
+      "dry",
+      "meadow",
+      "works",
+      "portfolio",
+      "art",
+      "installation",
+      "sound",
+      "visual"
+    ]
+  },
+  {
+    "title": "Dry Meadow — Journal",
+    "url": "https:",
+    "desc": "Field notes and journal entries from Dry Meadow. Essays on creativity, environment, process, and the natural world.",
+    "tags": [
+      "dry",
+      "meadow",
+      "journal",
+      "writing",
+      "creativity",
+      "nature",
+      "essays"
+    ]
+  },
+  {
+    "title": "NASA Official Website",
+    "url": "https:",
+    "desc": "National Aeronautics and Space Administration. Missions, research, space exploration, climate data, and the future of human spaceflight.",
+    "tags": [
+      "nasa",
+      "space",
+      "aerospace",
+      "rockets",
+      "missions",
+      "exploration",
+      "astronauts"
+    ]
+  },
+  {
+    "title": "SpaceX — Launches & Missions",
+    "url": "https:",
+    "desc": "SpaceX designs, manufactures, and launches advanced rockets and spacecraft. Falcon 9, Starship, Dragon capsule, and Starlink satellite network.",
+    "tags": [
+      "spacex",
+      "elon musk",
+      "falcon",
+      "starship",
+      "rockets",
+      "space",
+      "launch",
+      "starlink"
+    ]
+  },
+  {
+    "title": "ESA — European Space Agency",
+    "url": "https:",
+    "desc": "The European Space Agency explores the universe through science and technology. Satellites, astronauts, earth observation, and interplanetary missions.",
+    "tags": [
+      "ESA",
+      "europe",
+      "space",
+      "satellite",
+      "astronomy",
+      "missions"
+    ]
+  },
+  {
+    "title": "Blue Origin",
+    "url": "https:",
+    "desc": "Blue Origin builds rockets and spacecraft to enable a future where millions of people live and work in space. New Shepard and New Glenn launch vehicles.",
+    "tags": [
+      "blue origin",
+      "jeff bezos",
+      "space",
+      "new shepard",
+      "new glenn",
+      "rocket"
+    ]
+  },
+  {
+    "title": "NASA Jet Propulsion Laboratory",
+    "url": "https:",
+    "desc": "JPL is a research and development center managing robotic space and earth-science missions, including Mars rovers, Voyager, and deep-space probes.",
+    "tags": [
+      "JPL",
+      "NASA",
+      "mars",
+      "rovers",
+      "deep space",
+      "robotic",
+      "probe",
+      "Perseverance",
+      "Curiosity"
+    ]
+  },
+  {
+    "title": "Space.com — Space News & Exploration",
+    "url": "https:",
+    "desc": "The latest space news, launches, astronomy, astrophysics, and exploration updates. Covers NASA, SpaceX, private space industry, and the cosmos.",
+    "tags": [
+      "space",
+      "astronomy",
+      "news",
+      "launches",
+      "telescope",
+      "cosmos",
+      "universe"
+    ]
+  },
+  {
+    "title": "Spaceflight Now — Launch Schedule",
+    "url": "https:",
+    "desc": "Up-to-date launch schedules, mission reports, and spaceflight news from around the world. Covers orbital launches, ISS, and commercial spaceflight.",
+    "tags": [
+      "spaceflight",
+      "launches",
+      "ISS",
+      "orbit",
+      "missions",
+      "schedule"
+    ]
+  },
+  {
+    "title": "Artificial Intelligence — Wikipedia",
+    "url": "https:",
+    "desc": "Comprehensive overview of artificial intelligence: history, approaches, machine learning, deep learning, natural language processing, and applications.",
+    "tags": [
+      "AI",
+      "artificial intelligence",
+      "machine learning",
+      "deep learning",
+      "neural network"
+    ]
+  },
+  {
+    "title": "OpenAI",
+    "url": "https:",
+    "desc": "OpenAI builds safe and beneficial AI. Home of ChatGPT, GPT-4, DALL-E, Sora, Whisper, and the o-series reasoning models.",
+    "tags": [
+      "openai",
+      "chatgpt",
+      "GPT",
+      "AI",
+      "artificial intelligence",
+      "language model",
+      "DALL-E"
+    ]
+  },
+  {
+    "title": "Anthropic — AI Safety Research",
+    "url": "https:",
+    "desc": "Anthropic is an AI safety company building reliable, interpretable, and steerable AI systems. Creator of Claude, the AI assistant.",
+    "tags": [
+      "anthropic",
+      "claude",
+      "AI safety",
+      "machine learning",
+      "LLM",
+      "language model"
+    ]
+  },
+  {
+    "title": "Google DeepMind",
+    "url": "https:",
+    "desc": "Google DeepMind conducts cutting-edge AI research. Creator of AlphaGo, AlphaFold, Gemini, and Gemma. Advancing science through AI.",
+    "tags": [
+      "deepmind",
+      "google",
+      "AI",
+      "AlphaGo",
+      "AlphaFold",
+      "Gemini",
+      "research",
+      "deep learning"
+    ]
+  },
+  {
+    "title": "Hugging Face — Open ML Models",
+    "url": "https:",
+    "desc": "The platform for open-source machine learning. Thousands of models, datasets, and demos. Build and share AI models for free.",
+    "tags": [
+      "hugging face",
+      "AI",
+      "machine learning",
+      "models",
+      "open source",
+      "NLP",
+      "transformers"
+    ]
+  },
+  {
+    "title": "Papers With Code — ML Research",
+    "url": "https:",
+    "desc": "Machine learning research with code implementations. Browse state-of-the-art papers, benchmarks, datasets, and code across all ML domains.",
+    "tags": [
+      "machine learning",
+      "papers",
+      "research",
+      "code",
+      "benchmark",
+      "AI",
+      "deep learning"
+    ]
+  },
+  {
+    "title": "arXiv — AI & Computer Science Papers",
+    "url": "https:",
+    "desc": "Free open-access archive of AI, machine learning, computer science, physics, and mathematics research papers before peer review.",
+    "tags": [
+      "arxiv",
+      "research",
+      "papers",
+      "AI",
+      "science",
+      "preprint",
+      "academic"
+    ]
+  },
+  {
+    "title": "GitHub — Code Repositories",
+    "url": "https:",
+    "desc": "Where the world builds software. Millions of developers host, review, and collaborate on code. CI/CD, Actions, Copilot, and open-source projects.",
+    "tags": [
+      "github",
+      "code",
+      "programming",
+      "open source",
+      "git",
+      "developers",
+      "software"
+    ]
+  },
+  {
+    "title": "Stack Overflow — Developer Q&A",
+    "url": "https:",
+    "desc": "The largest online community for programmers. Ask and answer programming questions across all languages and frameworks.",
+    "tags": [
+      "stackoverflow",
+      "programming",
+      "coding",
+      "development",
+      "Q&A",
+      "debugging",
+      "help"
+    ]
+  },
+  {
+    "title": "MDN Web Docs — Web Technology Reference",
+    "url": "https:",
+    "desc": "Comprehensive documentation for HTML, CSS, JavaScript, and Web APIs. Reference for all web developers from beginner to expert.",
+    "tags": [
+      "MDN",
+      "web development",
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "docs",
+      "API",
+      "reference"
+    ]
+  },
+  {
+    "title": "The Verge — Technology News",
+    "url": "https:",
+    "desc": "Technology news, product reviews, and culture. Covers consumer tech, AI, science, entertainment, and the intersection of tech and society.",
+    "tags": [
+      "tech news",
+      "verge",
+      "gadgets",
+      "reviews",
+      "AI",
+      "consumer tech"
+    ]
+  },
+  {
+    "title": "Wired — Future of Technology",
+    "url": "https:",
+    "desc": "In-depth reporting on technology, culture, science, and business. How the connected world is being built and who is building it.",
+    "tags": [
+      "wired",
+      "tech",
+      "culture",
+      "science",
+      "future",
+      "journalism",
+      "innovation"
+    ]
+  },
+  {
+    "title": "Hacker News",
+    "url": "https:",
+    "desc": "Social news and discussion for technology, startups, and science. Run by Y Combinator. Daily aggregator of the most interesting tech stories.",
+    "tags": [
+      "hacker news",
+      "tech",
+      "startups",
+      "programming",
+      "news",
+      "discussion",
+      "YC"
+    ]
+  },
+  {
+    "title": "National Geographic",
+    "url": "https:",
+    "desc": "Exploration, science, adventure, photography, and storytelling. Covers nature, wildlife, history, environment, and human culture.",
+    "tags": [
+      "national geographic",
+      "science",
+      "nature",
+      "wildlife",
+      "exploration",
+      "environment",
+      "photography"
+    ]
+  },
+  {
+    "title": "Science.org — Science Magazine",
+    "url": "https:",
+    "desc": "Peer-reviewed research and science news from the American Association for the Advancement of Science. Covers all scientific disciplines.",
+    "tags": [
+      "science",
+      "research",
+      "journal",
+      "biology",
+      "physics",
+      "chemistry",
+      "academic"
+    ]
+  },
+  {
+    "title": "Nature.com — Scientific Research",
+    "url": "https:",
+    "desc": "One of the world's most prestigious science journals. Publishes groundbreaking research across all scientific disciplines.",
+    "tags": [
+      "nature",
+      "science",
+      "research",
+      "journal",
+      "biology",
+      "physics",
+      "academic",
+      "publication"
+    ]
+  },
+  {
+    "title": "New Scientist — Science News",
+    "url": "https:",
+    "desc": "Weekly science news magazine covering the latest discoveries in physics, biology, space, environment, technology, and human sciences.",
+    "tags": [
+      "science",
+      "new scientist",
+      "news",
+      "discoveries",
+      "physics",
+      "biology",
+      "environment"
+    ]
+  },
+  {
+    "title": "CERN — Particle Physics",
+    "url": "https:",
+    "desc": "CERN operates the Large Hadron Collider and conducts fundamental research into particle physics. Home of the Higgs boson discovery and the World Wide Web.",
+    "tags": [
+      "CERN",
+      "particle physics",
+      "LHC",
+      "Higgs boson",
+      "science",
+      "research",
+      "quantum"
+    ]
+  },
+  {
+    "title": "NASA Climate — Earth Science",
+    "url": "https:",
+    "desc": "NASA Earth science data, climate research, satellite imagery, and visualizations tracking global climate change and environmental systems.",
+    "tags": [
+      "NASA",
+      "climate",
+      "earth science",
+      "environment",
+      "global warming",
+      "satellite",
+      "data"
+    ]
+  },
+  {
+    "title": "Quantum Mechanics — Wikipedia",
+    "url": "https:",
+    "desc": "Quantum mechanics is the fundamental theory describing nature at the smallest scales. Covers wave functions, superposition, entanglement, and uncertainty.",
+    "tags": [
+      "quantum mechanics",
+      "physics",
+      "quantum",
+      "superposition",
+      "entanglement",
+      "wave function"
+    ]
+  },
+  {
+    "title": "Wolfram MathWorld — Mathematics",
+    "url": "https:",
+    "desc": "The world's most extensive mathematics resource. Definitions, theorems, formulas, and interactive visualizations for every branch of mathematics.",
+    "tags": [
+      "math",
+      "mathematics",
+      "equations",
+      "theorems",
+      "geometry",
+      "algebra",
+      "calculus",
+      "wolfram"
+    ]
+  },
+  {
+    "title": "Physics Forums",
+    "url": "https:",
+    "desc": "Online community for physics discussions. Expert explanations of classical mechanics, relativity, quantum physics, and astrophysics.",
+    "tags": [
+      "physics",
+      "forum",
+      "help",
+      "quantum",
+      "relativity",
+      "mechanics",
+      "astrophysics"
+    ]
+  },
+  {
+    "title": "Khan Academy — Free Education",
+    "url": "https:",
+    "desc": "Free world-class education for everyone. Courses in math, physics, chemistry, biology, computer science, economics, and more.",
+    "tags": [
+      "khan academy",
+      "education",
+      "math",
+      "science",
+      "free",
+      "courses",
+      "learning",
+      "school"
+    ]
+  },
+  {
+    "title": "IEEE — Electrical & Electronics Engineers",
+    "url": "https:",
+    "desc": "World's largest technical professional organization. Standards, publications, conferences, and resources for engineers in all technical disciplines.",
+    "tags": [
+      "IEEE",
+      "engineering",
+      "electrical",
+      "electronics",
+      "standards",
+      "technical",
+      "professional"
+    ]
+  },
+  {
+    "title": "Instructables — DIY Projects",
+    "url": "https:",
+    "desc": "Step-by-step instructions for making all kinds of projects. Electronics, woodworking, 3D printing, robotics, and creative making guides.",
+    "tags": [
+      "DIY",
+      "maker",
+      "projects",
+      "electronics",
+      "3D printing",
+      "robotics",
+      "crafts",
+      "build"
+    ]
+  },
+  {
+    "title": "Hackaday — Hardware Hacking",
+    "url": "https:",
+    "desc": "Daily coverage of hardware hacking, electronics projects, DIY builds, and maker culture. Reverse engineering and creative engineering.",
+    "tags": [
+      "hackaday",
+      "hardware",
+      "hacking",
+      "electronics",
+      "maker",
+      "DIY",
+      "engineering",
+      "microcontroller"
+    ]
+  },
+  {
+    "title": "Behance — Design Portfolio",
+    "url": "https:",
+    "desc": "The world's largest creative network for showcasing and discovering creative work. Graphic design, UI/UX, photography, illustration, and motion.",
+    "tags": [
+      "design",
+      "portfolio",
+      "creative",
+      "graphic design",
+      "UI UX",
+      "illustration",
+      "art"
+    ]
+  },
+  {
+    "title": "Dribbble — UI/UX Design",
+    "url": "https:",
+    "desc": "Community of designers sharing interface designs, web design, icon sets, typography, and UI/UX work. Inspiration and hiring platform.",
+    "tags": [
+      "design",
+      "UI",
+      "UX",
+      "interface",
+      "web design",
+      "graphic",
+      "typography",
+      "inspiration"
+    ]
+  },
+  {
+    "title": "Spotify — Music Streaming",
+    "url": "https:",
+    "desc": "Stream millions of songs, podcasts, and audiobooks. Discover new music based on your taste. Available on web, mobile, and desktop.",
+    "tags": [
+      "spotify",
+      "music",
+      "streaming",
+      "songs",
+      "playlist",
+      "podcast",
+      "audio"
+    ]
+  },
+  {
+    "title": "Bandcamp — Independent Music",
+    "url": "https:",
+    "desc": "Discover and support independent artists. Buy music directly from artists and labels. Listen to full albums across every genre.",
+    "tags": [
+      "bandcamp",
+      "music",
+      "indie",
+      "independent",
+      "artists",
+      "albums",
+      "buy",
+      "support"
+    ]
+  },
+  {
+    "title": "SoundCloud — Audio Platform",
+    "url": "https:",
+    "desc": "Discover and share music, podcasts, and audio tracks. Platform for emerging artists to release original music and reach new audiences.",
+    "tags": [
+      "soundcloud",
+      "music",
+      "audio",
+      "upload",
+      "stream",
+      "indie",
+      "producers",
+      "podcast"
+    ]
+  },
+  {
+    "title": "Resident Advisor — Electronic Music",
+    "url": "https:",
+    "desc": "Global electronic music news, reviews, events, artists, and mixes. DJ culture, club events, festivals, and underground music journalism.",
+    "tags": [
+      "RA",
+      "electronic music",
+      "DJ",
+      "techno",
+      "house",
+      "club",
+      "events",
+      "festivals"
+    ]
+  },
+  {
+    "title": "Discogs — Music Database & Marketplace",
+    "url": "https:",
+    "desc": "The world's largest music database and marketplace. Catalog, buy, and sell vinyl records, CDs, and music memorabilia. Every genre and era.",
+    "tags": [
+      "discogs",
+      "music",
+      "vinyl",
+      "records",
+      "marketplace",
+      "catalog",
+      "collector"
+    ]
+  },
+  {
+    "title": "Artsy — Contemporary Art",
+    "url": "https:",
+    "desc": "Discover art from the world's top galleries, museums, and auction houses. Browse millions of artworks for purchase or simply for inspiration.",
+    "tags": [
+      "art",
+      "contemporary",
+      "gallery",
+      "museum",
+      "paintings",
+      "sculpture",
+      "artsy",
+      "buy art"
+    ]
+  },
+  {
+    "title": "Google Arts & Culture",
+    "url": "https:",
+    "desc": "Explore thousands of artworks in super high definition, virtual museum tours, cultural landmarks, and historical collections from around the world.",
+    "tags": [
+      "art",
+      "culture",
+      "google",
+      "museum",
+      "history",
+      "virtual tour",
+      "gallery",
+      "masterpiece"
+    ]
+  },
+  {
+    "title": "The Metropolitan Museum of Art",
+    "url": "https:",
+    "desc": "One of the world's largest and most comprehensive art museums. Over 5,000 years of art from every corner of the globe. Free online collection.",
+    "tags": [
+      "met museum",
+      "art",
+      "history",
+      "museum",
+      "culture",
+      "paintings",
+      "sculpture",
+      "New York"
+    ]
+  },
+  {
+    "title": "Pitchfork — Music Criticism",
+    "url": "https:",
+    "desc": "Leading music publication covering the best in independent and alternative music. Reviews, news, best-of lists, interviews, and music videos.",
+    "tags": [
+      "pitchfork",
+      "music",
+      "reviews",
+      "indie",
+      "alternative",
+      "criticism",
+      "news",
+      "album"
+    ]
+  },
+  {
+    "title": "Reuters — Breaking World News",
+    "url": "https:",
+    "desc": "International news agency providing trustworthy breaking news, business, financial, and political reporting from around the world.",
+    "tags": [
+      "reuters",
+      "news",
+      "world",
+      "breaking news",
+      "politics",
+      "business",
+      "journalism"
+    ]
+  },
+  {
+    "title": "Associated Press",
+    "url": "https:",
+    "desc": "Independent global news network since 1846. Factual, impartial reporting on world events, politics, science, sports, and business.",
+    "tags": [
+      "AP news",
+      "news",
+      "world",
+      "journalism",
+      "breaking news",
+      "facts",
+      "reporting"
+    ]
+  },
+  {
+    "title": "BBC News",
+    "url": "https:",
+    "desc": "BBC World News: comprehensive, trusted coverage of world events, science, politics, culture, sports, and technology.",
+    "tags": [
+      "BBC",
+      "news",
+      "world",
+      "UK",
+      "journalism",
+      "international",
+      "politics"
+    ]
+  },
+  {
+    "title": "Al Jazeera English",
+    "url": "https:",
+    "desc": "International news and investigative journalism. Covers global events with a focus on underrepresented regions, human rights, and conflict reporting.",
+    "tags": [
+      "Al Jazeera",
+      "news",
+      "international",
+      "journalism",
+      "global",
+      "politics",
+      "Middle East"
+    ]
+  },
+  {
+    "title": "WHO — World Health Organization",
+    "url": "https:",
+    "desc": "Directing and coordinating authority on international public health. Disease outbreaks, global health guidelines, research, and health policy.",
+    "tags": [
+      "WHO",
+      "health",
+      "medicine",
+      "disease",
+      "public health",
+      "global",
+      "pandemic"
+    ]
+  },
+  {
+    "title": "PubMed — Medical Research",
+    "url": "https:",
+    "desc": "Free database of biomedical and life science research from the National Institutes of Health. Millions of peer-reviewed medical papers.",
+    "tags": [
+      "pubmed",
+      "medical",
+      "research",
+      "health",
+      "biology",
+      "clinical",
+      "NIH",
+      "science"
+    ]
+  },
+  {
+    "title": "WebMD — Medical Information",
+    "url": "https:",
+    "desc": "Trusted health and medical information. Symptoms, conditions, drugs, treatments, and wellness guides reviewed by medical professionals.",
+    "tags": [
+      "WebMD",
+      "health",
+      "medical",
+      "symptoms",
+      "medicine",
+      "wellness",
+      "doctor",
+      "health info"
+    ]
+  },
+  {
+    "title": "IPCC — Climate Science Reports",
+    "url": "https:",
+    "desc": "The Intergovernmental Panel on Climate Change publishes comprehensive assessments of climate science, impacts, and mitigation strategies.",
+    "tags": [
+      "IPCC",
+      "climate",
+      "climate change",
+      "science",
+      "environment",
+      "global warming",
+      "report"
+    ]
+  },
+  {
+    "title": "Ars Technica — Technology & Science",
+    "url": "https:",
+    "desc": "In-depth technology journalism, science reporting, and policy analysis. Deep technical coverage of computing, AI, space, and culture.",
+    "tags": [
+      "ars technica",
+      "tech",
+      "science",
+      "computing",
+      "news",
+      "analysis",
+      "space"
+    ]
+  },
+  {
+    "title": "Stanford Encyclopedia of Philosophy",
+    "url": "https:",
+    "desc": "Authoritative reference work on philosophy maintained by Stanford University. Covers metaphysics, ethics, logic, philosophy of mind, and more.",
+    "tags": [
+      "philosophy",
+      "ethics",
+      "logic",
+      "metaphysics",
+      "stanford",
+      "reference",
+      "academic"
+    ]
+  },
+  {
+    "title": "Edge.org — Ideas & Science",
+    "url": "https:",
+    "desc": "Conversations with the world's leading scientists and thinkers. Explores the frontiers of human understanding across all disciplines.",
+    "tags": [
+      "ideas",
+      "science",
+      "philosophy",
+      "thinkers",
+      "research",
+      "intellect",
+      "culture"
+    ]
+  },
+  {
+    "title": "TED Talks",
+    "url": "https:",
+    "desc": "Ideas worth spreading. Thousands of free talks from the world's most inspiring thinkers on technology, science, design, business, and global issues.",
+    "tags": [
+      "TED",
+      "talks",
+      "ideas",
+      "inspiration",
+      "science",
+      "technology",
+      "education",
+      "speakers"
+    ]
+  },
+  {
+    "title": "Wikipedia — Free Encyclopedia",
+    "url": "https:",
+    "desc": "The world's largest free encyclopedia. Millions of articles on virtually every subject in over 300 languages.",
+    "tags": [
+      "wikipedia",
+      "encyclopedia",
+      "reference",
+      "knowledge",
+      "facts",
+      "history",
+      "science"
+    ]
+  },
+  {
+    "title": "Britannica — Online Encyclopedia",
+    "url": "https:",
+    "desc": "Encyclopaedia Britannica: trusted, authoritative articles written by experts. Reference content across science, history, culture, and society.",
+    "tags": [
+      "britannica",
+      "encyclopedia",
+      "reference",
+      "history",
+      "knowledge",
+      "academic"
+    ]
+  },
+  {
+    "title": "Internet Archive — Wayback Machine",
+    "url": "https:",
+    "desc": "Non-profit digital library with millions of books, movies, software, music, and the Wayback Machine capturing web history since 1996.",
+    "tags": [
+      "internet archive",
+      "wayback machine",
+      "library",
+      "history",
+      "archive",
+      "books",
+      "media"
+    ]
+  },
+  {
+    "title": "Wolfram Alpha — Computational Engine",
+    "url": "https:",
+    "desc": "Compute expert-level answers using Wolfram's algorithms and knowledge base. Math, science, data, geography, history, nutrition, and more.",
+    "tags": [
+      "wolfram alpha",
+      "math",
+      "computing",
+      "answers",
+      "calculations",
+      "science",
+      "data",
+      "facts"
+    ]
+  },
+  {
+    "title": "Python.org — Official Python Docs",
+    "url": "https:",
+    "desc": "Official home of the Python programming language. Documentation, tutorials, downloads, and the Python Package Index (PyPI).",
+    "tags": [
+      "python",
+      "programming",
+      "coding",
+      "language",
+      "docs",
+      "tutorial",
+      "development"
+    ]
+  },
+  {
+    "title": "Mozilla Developer Network — JavaScript",
+    "url": "https:",
+    "desc": "Complete JavaScript reference and tutorials. Variables, functions, arrays, objects, promises, DOM manipulation, and ES6+ features.",
+    "tags": [
+      "javascript",
+      "JS",
+      "programming",
+      "web",
+      "frontend",
+      "docs",
+      "tutorial",
+      "code"
+    ]
+  },
+  {
+    "title": "CSS-Tricks — Web Design & CSS",
+    "url": "https:",
+    "desc": "Daily articles about CSS, HTML, JavaScript, and web design. Tutorials, code snippets, guides, and the CSS almanac reference.",
+    "tags": [
+      "CSS",
+      "HTML",
+      "web design",
+      "frontend",
+      "tutorial",
+      "flexbox",
+      "grid",
+      "animation"
+    ]
+  },
+  {
+    "title": "CodePen — Frontend Playground",
+    "url": "https:",
+    "desc": "Online code editor and community for front-end designers and developers. Build and share HTML, CSS, and JavaScript demos.",
+    "tags": [
+      "codepen",
+      "frontend",
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "demo",
+      "playground",
+      "web"
+    ]
+  },
+  {
+    "title": "IMDb — Internet Movie Database",
+    "url": "https:",
+    "desc": "The world's most popular and authoritative source for movie, TV, and celebrity content. Ratings, reviews, trailers, and industry news.",
+    "tags": [
+      "IMDB",
+      "movies",
+      "film",
+      "TV",
+      "actors",
+      "directors",
+      "reviews",
+      "ratings"
+    ]
+  },
+  {
+    "title": "Letterboxd — Film Community",
+    "url": "https:",
+    "desc": "Social network for film lovers. Log, rate, and review films. Discover movies through friends and curated lists.",
+    "tags": [
+      "letterboxd",
+      "movies",
+      "film",
+      "reviews",
+      "cinema",
+      "community",
+      "diary",
+      "watchlist"
+    ]
+  },
+  {
+    "title": "Criterion Collection",
+    "url": "https:",
+    "desc": "The Criterion Collection publishes and restores important classic and contemporary films. Curated world cinema with supplements and essays.",
+    "tags": [
+      "criterion",
+      "film",
+      "cinema",
+      "classics",
+      "world cinema",
+      "restoration",
+      "art house"
+    ]
+  },
+  {
+    "title": "CoinMarketCap — Crypto Prices",
+    "url": "https:",
+    "desc": "Cryptocurrency prices, market capitalizations, charts, and data. Track Bitcoin, Ethereum, and thousands of altcoins in real time.",
+    "tags": [
+      "crypto",
+      "bitcoin",
+      "ethereum",
+      "cryptocurrency",
+      "prices",
+      "market cap",
+      "blockchain"
+    ]
+  },
+  {
+    "title": "Yahoo Finance — Market Data",
+    "url": "https:",
+    "desc": "Stock quotes, financial news, portfolio management, and market data. Track equities, ETFs, currencies, and economic indicators.",
+    "tags": [
+      "finance",
+      "stocks",
+      "market",
+      "investing",
+      "portfolio",
+      "S&P500",
+      "NASDAQ",
+      "economics"
+    ]
+  },
+  {
+    "title": "IGN — Video Game News",
+    "url": "https:",
+    "desc": "Video game news, reviews, trailers, previews, and guides for all platforms. PC, PlayStation, Xbox, Nintendo Switch, and mobile gaming.",
+    "tags": [
+      "IGN",
+      "games",
+      "gaming",
+      "reviews",
+      "PC",
+      "PlayStation",
+      "Xbox",
+      "Nintendo"
+    ]
+  },
+  {
+    "title": "itch.io — Indie Game Platform",
+    "url": "https:",
+    "desc": "Open marketplace for independent game creators. Discover thousands of unique indie games, game jams, game dev tools, and comics.",
+    "tags": [
+      "itch.io",
+      "indie games",
+      "game dev",
+      "game jam",
+      "independent",
+      "download",
+      "free games"
+    ]
   }
 ]
