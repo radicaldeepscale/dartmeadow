@@ -180,6 +180,65 @@
         .iframe-warn .iw-title{font-family:'Orbitron',monospace;font-size:0.62rem;letter-spacing:2px;margin-bottom:8px;}
         .iframe-warn .iw-dim{color:var(--dim);margin-top:6px;font-size:0.61rem;}
 
+        /* ── NEURAL INTELLIGENCE PANEL ── */
+        .intel-panel{width:100%;max-width:700px;margin-top:10px;display:none;border:1px solid rgba(57,255,20,0.2);border-left:3px solid var(--green);border-radius:0 4px 4px 0;background:rgba(57,255,20,0.02);padding:10px 14px;animation:cs 0.3s ease forwards;}
+        .intel-panel.show{display:block;}
+        .intel-hdr{font-family:'Orbitron',monospace;font-size:0.52rem;letter-spacing:3px;color:var(--green);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+        .intel-hdr span{color:var(--dim);font-size:0.48rem;cursor:pointer;letter-spacing:1px;}
+        .intel-hdr span:hover{color:var(--green);}
+        .intel-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;}
+        .intel-col{flex:1;min-width:120px;}
+        .intel-label{font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--dim);letter-spacing:2px;margin-bottom:5px;text-transform:uppercase;}
+        .intel-tags{display:flex;flex-wrap:wrap;gap:4px;}
+        .intel-tag{font-family:'Share Tech Mono',monospace;font-size:0.56rem;padding:2px 8px;border:1px solid rgba(57,255,20,0.3);border-radius:2px;color:rgba(57,255,20,0.8);background:rgba(57,255,20,0.04);cursor:pointer;transition:all 0.2s;}
+        .intel-tag:hover{background:rgba(57,255,20,0.12);border-color:var(--green);color:var(--green);}
+        .intel-tag.domain{border-color:rgba(0,229,255,0.3);color:rgba(0,229,255,0.7);background:rgba(0,229,255,0.03);}
+        .intel-tag.domain:hover{border-color:var(--cyan);color:var(--cyan);}
+        .intel-stats{font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--dim);margin-top:6px;}
+        .intel-stats b{color:var(--green);}
+
+        .ft.on-g{color:var(--green);border-color:rgba(57,255,20,0.5);background:rgba(57,255,20,0.05);}
+        .ft.on-r{color:#ff4444;border-color:rgba(255,68,68,0.5);background:rgba(255,68,68,0.05);}
+
+        /* DOMAIN NETWORK CARDS */
+        .card.dom{border-left-color:var(--green);background:rgba(57,255,20,0.02);}
+        .card.dom::before{background:linear-gradient(90deg,var(--green),transparent 55%);}
+        .card.dom .ctitle{color:var(--green);}
+        .card.dom .ud{color:rgba(57,255,20,0.6);}
+        .cb-g{color:var(--green);border:1px solid rgba(57,255,20,0.35);background:rgba(57,255,20,0.06);}
+        .dom-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+        .dom-tag{font-family:'Share Tech Mono',monospace;font-size:0.56rem;letter-spacing:1px;padding:2px 8px;border:1px solid rgba(57,255,20,0.25);border-radius:2px;color:rgba(57,255,20,0.7);background:rgba(57,255,20,0.04);text-decoration:none;transition:all 0.2s;}
+        .dom-tag:hover{border-color:var(--green);color:var(--green);background:rgba(57,255,20,0.1);}
+        .dom-tag.live{border-color:rgba(57,255,20,0.5);color:var(--green);}
+        .dom-tag.dead{opacity:0.35;text-decoration:line-through;}
+
+        /* ── VIDEO PANEL ── */
+        .vid-panel{margin-top:22px;}
+        .vid-panel .pl{color:#ff4444;}
+        .vid-panel .ph{border-color:rgba(255,68,68,0.2);}
+        .vid-panel .pm b{color:#ff4444;}
+
+        .vg{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+        @media(max-width:520px){.vg{grid-template-columns:1fr;}}
+
+        .vc{position:relative;border-radius:4px;border:1px solid rgba(255,68,68,0.18);background:rgba(255,68,68,0.03);cursor:pointer;transition:all 0.25s;animation:cs 0.35s ease forwards;opacity:0;overflow:hidden;text-decoration:none;display:block;}
+        .vc:hover{border-color:rgba(255,68,68,0.55);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.65);}
+        .vc-thumb{position:relative;aspect-ratio:16/9;overflow:hidden;background:#111;}
+        .vc-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity 0.35s;opacity:0;}
+        .vc-thumb img.ok{opacity:1;}
+        .vc-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;}
+        .vc:hover .vc-play{opacity:1;}
+        .vc-play-btn{width:40px;height:40px;background:rgba(255,0,0,0.88);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,0.6);}
+        .vc-play-btn::after{content:'';border-left:14px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px;}
+        .vc-info{padding:8px 10px 10px;}
+        .vc-title{font-family:'Exo 2',sans-serif;font-size:0.78rem;font-weight:600;color:#e8e8e8;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+        .vc-meta{font-family:'Share Tech Mono',monospace;font-size:0.52rem;color:var(--dim);margin-top:5px;display:flex;justify-content:space-between;align-items:center;}
+        .vc-ch{color:rgba(255,68,68,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;}
+        .vc-dur{color:var(--dim);flex-shrink:0;}
+        .vbdg{position:absolute;top:5px;right:5px;font-family:'Share Tech Mono',monospace;font-size:0.42rem;letter-spacing:1px;padding:2px 5px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,68,68,0.5);border-radius:2px;color:#ff4444;text-transform:uppercase;}
+
+        .cb-r{color:#ff4444;border:1px solid rgba(255,68,68,0.4);background:rgba(255,68,68,0.06);}
+
         @media(max-width:520px){.hud-r,.pfx{display:none}.logo-main{font-size:2.4rem}}
     </style>
 </head>
@@ -218,6 +277,8 @@
             <div class="badge" id="b-wiki"><span class="bdot"></span>WIKIPEDIA</div>
             <div class="badge" id="b-srx"><span class="bdot"></span>WEB SEARCH</div>
             <div class="badge" id="b-img"><span class="bdot"></span>IMAGE SCAN</div>
+            <div class="badge" id="b-dom"><span class="bdot"></span>DOMAIN NET</div>
+            <div class="badge" id="b-yt"><span class="bdot"></span>YOUTUBE</div>
         </div>
     </div>
 
@@ -235,9 +296,28 @@
             <button class="ft on-c" id="f-wiki"  onclick="tF('wiki', this)">◉ WIKIPEDIA</button>
             <button class="ft on-c" id="f-srx"   onclick="tF('srx',  this)">◉ WEB SEARCH</button>
             <button class="ft on-p" id="f-img"   onclick="tF('img',  this)">◈ IMAGE SCAN</button>
+            <button class="ft on-g" id="f-dom"   onclick="tF('dom',  this)">◈ DOMAIN NET</button>
+            <button class="ft on-r" id="f-yt"    onclick="tF('yt',   this)">▶ YOUTUBE</button>
         </div>
         <div class="sbar" id="sbar"></div>
-    </div>
+        <div class="intel-panel" id="intelPanel">
+            <div class="intel-hdr">◈ NEURAL SIGNAL PROFILE <span id="intelForget" onclick="forgetTopic()">✕ FORGET TOPIC</span></div>
+            <div class="intel-row">
+                <div class="intel-col">
+                    <div class="intel-label">▸ LEARNED KEYWORDS</div>
+                    <div class="intel-tags" id="intelKeywords"></div>
+                </div>
+                <div class="intel-col">
+                    <div class="intel-label">▸ TRUSTED DOMAINS</div>
+                    <div class="intel-tags" id="intelDomains"></div>
+                </div>
+                <div class="intel-col">
+                    <div class="intel-label">▸ PREFERRED SOURCES</div>
+                    <div class="intel-tags" id="intelSources"></div>
+                </div>
+            </div>
+            <div class="intel-stats" id="intelStats"></div>
+        </div>
 
     <!-- IFRAME / RESTRICTED CONTEXT WARNING -->
     <div class="iframe-warn" id="iframeWarn">
@@ -271,18 +351,31 @@
                 <div class="ig" id="ig"></div>
                 <div class="img-src-note">SOURCE: <span>WIKIPEDIA · WIKIMEDIA</span></div>
                 <div class="more-btn" id="moreBtn" onclick="loadMore()">▼ LOAD MORE</div>
+                <!-- VIDEO PANEL — below images in right column -->
+                <div class="vid-panel" id="vidP" style="display:none;">
+                    <div class="ph">
+                        <div class="pl">// VIDEO FEED //</div>
+                        <div class="pm"><b id="vc-count">0</b> SIGNALS</div>
+                    </div>
+                    <div class="vg" id="vg"></div>
+                    <div class="img-src-note">SOURCE: <span>YOUTUBE</span></div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="footer">DART ALLEY &nbsp;|&nbsp; <span>DART MEADOW AEROSPACE</span> &nbsp;|&nbsp; SEARX · WIKIPEDIA · WIKIMEDIA · LOCAL</div>
+    <div class="footer">DART ALLEY &nbsp;|&nbsp; <span>DART MEADOW AEROSPACE</span> &nbsp;|&nbsp; DDG · HN · REDDIT · GDELT · GITHUB · YOUTUBE · WIKIPEDIA · WIKIMEDIA · WIKIDATA · LOCAL</div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  DART ALLEY v4
-//  Web:    Searx public instances (JSON API, no proxy needed)
-//  Images: Wikipedia page images + Wikimedia Commons (no proxy)
+//  DART ALLEY v10
+//  Web:    DDG · HN · Reddit · GDELT · Wiki ExtLinks · GitHub (parallel, CORS-open)
+//  Images: Wikipedia + Wikimedia Commons
+//  Video:  Invidious (10 instances, parallel waves) + allorigins YT RSS fallback
+//  Domains: Wikidata P856 + favicon probing
+//  NLE:    Neural Learning Engine — behavioral relevance (localStorage)
+//  Errors: All network failures silent via AbortController
 // ═══════════════════════════════════════════════════════════
 
 // ── STARFIELD ─────────────────────────────────────────
@@ -306,7 +399,7 @@ setInterval(()=>{document.getElementById('htime').textContent=new Date().toUTCSt
         console.warn('[DART] Running in restricted context — external fetches will be blocked. Use localhost directly.');
     }
 })();
-const F={prio:true,local:true,wiki:true,srx:true,img:true};
+const F={prio:true,local:true,wiki:true,srx:true,img:true,dom:true,yt:true};
 const DART=['dartmeadow.com','radicaldeepscale.com','drymeadow.com'];
 let DB=[], allImgs=[], imgPage=0;
 const IPP=12;
@@ -314,7 +407,7 @@ const stats={};
 
 function tF(k,btn){
     F[k]=!F[k];
-    const cls=k==='prio'?'on-o':k==='img'?'on-p':'on-c';
+    const cls=k==='prio'?'on-o':k==='img'?'on-p':k==='dom'?'on-g':k==='yt'?'on-r':'on-c';
     btn.classList.toggle(cls,F[k]);
 }
 function setBadge(id,cls='cyan'){const b=document.getElementById(id);if(b){b.classList.add(cls);}}
@@ -340,10 +433,17 @@ qi.addEventListener('keypress',e=>{if(e.key==='Enter')doSearch();});
 // ── MAIN SEARCH ───────────────────────────────────────
 async function doSearch(){
     const q=qi.value.trim();if(!q)return;
+    NLE.onSearch(q);  // ← record search intent
     sbtn.disabled=true;
     rg.innerHTML='';ig.innerHTML='';allImgs=[];imgPage=0;
+    document.getElementById('vg').innerHTML='';
+    document.getElementById('vidP').style.display='none';
     rw.style.display='none';imgP.style.display='none';moreBtn.style.display='none';
     lw.style.display='flex';ltxt.textContent='INITIALIZING SCAN...';
+
+    // Show intelligence panel if we have prior learning on this topic
+    renderIntelPanel(q);
+
     const all=[];
 
     // 1. DART priority local
@@ -369,7 +469,7 @@ async function doSearch(){
     }
     // 4. Searx web search (JSON API, no proxy needed)
     if(F.srx){
-        ltxt.textContent='SCANNING WEB...';
+        ltxt.textContent='SCANNING WEB — DDG · HN · REDDIT · GDELT...';
         try{
             const sr=await searxSearch(q);
             sr.forEach(r=>all.push({...r,_s:'srx'}));
@@ -382,17 +482,282 @@ async function doSearch(){
 
     // Deduplicate
     const seen=new Set();
-    const final=all.filter(r=>{const k=(r.url||r.title||'').toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
+    let final=all.filter(r=>{const k=(r.url||r.title||'').toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
+
+    // ── NLE: Re-rank results using learned model ──
+    final = NLE.rankResults(q, final);
+    // Track skip penalties from this impression
+    NLE.applySkipPenalties(q, final);
+    // Record impressions so skips can be detected on future searches
+    NLE.onImpression(q, final);
 
     // 5. Images (parallel, non-blocking)
     if(F.img){ltxt.textContent='SCANNING IMAGES...';searchImages(q).catch(()=>{});}
+
+    // 6. Domain network discovery (parallel, non-blocking)
+    if(F.dom){searchDomains(q,final).catch(()=>{});}
+
+    // 7. YouTube video results (parallel, non-blocking)
+    if(F.yt){searchYouTube(q).catch(()=>{});}
 
     lw.style.display='none';sbtn.disabled=false;
     renderWeb(final,q);
     rw.style.display='block';
 }
 
-// ── WIKIPEDIA TEXT SEARCH ─────────────────────────────
+// ═══════════════════════════════════════════════════════════
+//  NEURAL LEARNING ENGINE — Behavioral Relevance Intelligence
+//  Tracks clicks, dwell time, repeated searches, skip patterns.
+//  Builds a personal signal model per topic that persists in
+//  localStorage and reshapes every future search in real-time.
+// ═══════════════════════════════════════════════════════════
+
+const NLE = (() => {
+    const STORE_KEY = 'dart_nle_v1';
+    const MAX_TOPICS = 120;
+    const DECAY = 0.92;       // score decay per day of inactivity
+    const CLICK_W = 3.0;      // weight: clicked a result
+    const DWELL_W = 0.8;      // weight per 10s of dwell time
+    const SKIP_W  = -0.6;     // weight: result shown but never clicked (after 3+ ignores)
+    const REPEAT_W = 1.5;     // weight: searched same topic again
+    const SEED_W  = 2.0;      // weight: manually promoted keyword
+
+    let model = {};  // { topicKey: { keywords:{}, domains:{}, sources:{}, skipped:Set, clicks:n, lastSeen:ts } }
+
+    function load(){
+        try{ model=JSON.parse(localStorage.getItem(STORE_KEY)||'{}'); }
+        catch(e){ model={}; }
+        // Convert skipped arrays back to Sets
+        Object.values(model).forEach(t=>{ t.skipped=new Set(t.skipped||[]); });
+    }
+
+    function save(){
+        const serializable={};
+        Object.entries(model).forEach(([k,t])=>{
+            serializable[k]={...t, skipped:[...t.skipped]};
+        });
+        try{ localStorage.setItem(STORE_KEY, JSON.stringify(serializable)); }
+        catch(e){ pruneOldTopics(); }
+    }
+
+    function topicKey(q){ return q.toLowerCase().trim().replace(/\s+/g,' '); }
+
+    function getOrCreate(q){
+        const k=topicKey(q);
+        if(!model[k]) model[k]={keywords:{},domains:{},sources:{},skipped:new Set(),clicks:0,impressions:0,lastSeen:Date.now(),searches:0};
+        return model[k];
+    }
+
+    function applyDecay(topic){
+        const daysSince=(Date.now()-topic.lastSeen)/(1000*60*60*24);
+        const factor=Math.pow(DECAY, daysSince);
+        Object.keys(topic.keywords).forEach(k=>{ topic.keywords[k]*=factor; if(topic.keywords[k]<0.05) delete topic.keywords[k]; });
+        Object.keys(topic.domains).forEach(k=>{ topic.domains[k]*=factor; if(topic.domains[k]<0.05) delete topic.domains[k]; });
+        Object.keys(topic.sources).forEach(k=>{ topic.sources[k]*=factor; });
+    }
+
+    function extractSignals(item){
+        const tokens=[];
+        const text=((item.title||'')+' '+(item.desc||'')).toLowerCase();
+        // Extract meaningful words (3+ chars, not stopwords)
+        const stops=new Set(['the','and','for','are','was','with','this','that','from','have','not','but','all','can','its','will','been','has','had','their','they','about','more','also','into','than','when','your','our','out','use','one','two','how','who','what','which','would','could','should','these','those','there','where','after','before','other','over','such','some','been','very','just','like','well','used','made','most','much','only','both','even','same','take','each','many','come','than','then','yet','now','may','per','via','new']);
+        text.match(/\b[a-z][a-z0-9]{2,}\b/g)?.forEach(w=>{ if(!stops.has(w)) tokens.push(w); });
+        const domain = getDom(item.url||'');
+        return { tokens, domain, source: item._s||'srx' };
+    }
+
+    // ── PUBLIC API ──────────────────────────────────────
+
+    // Call when a search is initiated
+    function onSearch(q){
+        const t=getOrCreate(q);
+        applyDecay(t);
+        t.searches=(t.searches||0)+1;
+        t.lastSeen=Date.now();
+        if(t.searches>1) Object.keys(t.keywords).forEach(k=>t.keywords[k]=(t.keywords[k]||0)+REPEAT_W*0.1);
+        save();
+    }
+
+    // Call when results are rendered (track impressions for skip detection)
+    function onImpression(q, items){
+        const t=getOrCreate(q);
+        t.impressions=(t.impressions||0)+items.length;
+        // After 3 searches on same topic, start tracking what was shown but not clicked
+        if(t.searches>=3){
+            items.forEach(item=>{
+                const k=(item.url||item.title||'').toLowerCase();
+                if(k) t.skipped.add(k);
+            });
+        }
+        save();
+    }
+
+    // Call when user clicks a result
+    function onClick(q, item){
+        const t=getOrCreate(q);
+        const {tokens,domain,source}=extractSignals(item);
+        // Boost clicked keywords
+        tokens.forEach(w=>{ t.keywords[w]=(t.keywords[w]||0)+CLICK_W; });
+        // Boost clicked domain
+        if(domain) t.domains[domain]=(t.domains[domain]||0)+CLICK_W;
+        // Boost source type
+        t.sources[source]=(t.sources[source]||0)+CLICK_W;
+        t.clicks=(t.clicks||0)+1;
+        // Remove from skipped since they did click it
+        const k=(item.url||item.title||'').toLowerCase();
+        t.skipped.delete(k);
+        save();
+    }
+
+    // Call when user dwells on a result (tab returned to, mouse hovered 5s+)
+    function onDwell(q, item, seconds){
+        if(seconds<5) return;
+        const t=getOrCreate(q);
+        const {tokens,domain,source}=extractSignals(item);
+        const weight=DWELL_W*(seconds/10);
+        tokens.forEach(w=>{ t.keywords[w]=(t.keywords[w]||0)+weight; });
+        if(domain) t.domains[domain]=(t.domains[domain]||0)+weight*0.5;
+        t.sources[source]=(t.sources[source]||0)+weight*0.3;
+        save();
+    }
+
+    // Apply skip penalties to consistently ignored results
+    function applySkipPenalties(q, shownItems){
+        const t=model[topicKey(q)];
+        if(!t||t.searches<3) return;
+        shownItems.forEach(item=>{
+            const k=(item.url||item.title||'').toLowerCase();
+            if(t.skipped.has(k)){
+                // Item shown again without being clicked — penalize its signals
+                const {tokens,domain}=extractSignals(item);
+                tokens.forEach(w=>{ if(t.keywords[w]) t.keywords[w]+=SKIP_W*0.2; });
+                if(domain&&t.domains[domain]) t.domains[domain]+=SKIP_W*0.3;
+            }
+        });
+        save();
+    }
+
+    // Score a result item 0–100+ for a given query
+    function scoreItem(q, item){
+        const t=model[topicKey(q)];
+        if(!t) return 50; // neutral for unknown topics
+        const {tokens,domain,source}=extractSignals(item);
+        let score=50;
+        // Keyword relevance
+        tokens.forEach(w=>{ score+=(t.keywords[w]||0)*1.2; });
+        // Domain trust
+        if(domain) score+=(t.domains[domain]||0)*2.5;
+        // Source preference
+        score+=(t.sources[source]||0)*1.0;
+        // Penalize skipped URLs
+        const k=(item.url||item.title||'').toLowerCase();
+        if(t.skipped.has(k)) score-=15;
+        return Math.max(0,score);
+    }
+
+    // Sort and filter results using learned model
+    function rankResults(q, items){
+        const t=model[topicKey(q)];
+        if(!t||t.clicks<2) return items; // not enough data yet, return as-is
+        return [...items].sort((a,b)=>scoreItem(q,b)-scoreItem(q,a));
+    }
+
+    // Get top learned keywords to seed related searches
+    function getSeedKeywords(q, limit=6){
+        const t=model[topicKey(q)];
+        if(!t) return [];
+        return Object.entries(t.keywords)
+            .filter(([w,s])=>s>1.5&&w.length>3)
+            .sort(([,a],[,b])=>b-a)
+            .slice(0,limit)
+            .map(([w])=>w);
+    }
+
+    // Get top trusted domains for a topic
+    function getTrustedDomains(q, limit=5){
+        const t=model[topicKey(q)];
+        if(!t) return [];
+        return Object.entries(t.domains)
+            .filter(([,s])=>s>2)
+            .sort(([,a],[,b])=>b-a)
+            .slice(0,limit)
+            .map(([d])=>d);
+    }
+
+    // Get topic intelligence summary
+    function getInsight(q){
+        const t=model[topicKey(q)];
+        if(!t||t.clicks<1) return null;
+        return {
+            searches: t.searches||0,
+            clicks: t.clicks||0,
+            topKeywords: getSeedKeywords(q,8),
+            topDomains: getTrustedDomains(q,4),
+            topSources: Object.entries(t.sources).sort(([,a],[,b])=>b-a).slice(0,3).map(([s])=>s)
+        };
+    }
+
+    // Clear model for a specific topic or all
+    function forget(q){
+        if(q){ delete model[topicKey(q)]; }
+        else { model={}; }
+        save();
+    }
+
+    function pruneOldTopics(){
+        const sorted=Object.entries(model).sort(([,a],[,b])=>a.lastSeen-b.lastSeen);
+        while(sorted.length>MAX_TOPICS){ const [k]=sorted.shift(); delete model[k]; }
+    }
+
+    function getStats(){
+        const topics=Object.keys(model).length;
+        const totalClicks=Object.values(model).reduce((s,t)=>s+(t.clicks||0),0);
+        return{topics,totalClicks};
+    }
+
+    load();
+    return{onSearch,onImpression,onClick,onDwell,applySkipPenalties,rankResults,scoreItem,getSeedKeywords,getTrustedDomains,getInsight,forget,getStats};
+})();
+
+// ── NEURAL INTELLIGENCE PANEL UI ─────────────────────
+function renderIntelPanel(q){
+    const insight=NLE.getInsight(q);
+    const panel=document.getElementById('intelPanel');
+    if(!insight||insight.searches<2){panel.classList.remove('show');return;}
+    panel.classList.add('show');
+    _populateIntelPanel(q,insight);
+}
+function updateIntelPanel(q){
+    const insight=NLE.getInsight(q);
+    if(!insight)return;
+    document.getElementById('intelPanel').classList.add('show');
+    _populateIntelPanel(q,insight);
+}
+function _populateIntelPanel(q,insight){
+    const kEl=document.getElementById('intelKeywords');
+    const dEl=document.getElementById('intelDomains');
+    const sEl=document.getElementById('intelSources');
+    const stEl=document.getElementById('intelStats');
+    const srcLabels={prio:'DART',local:'LOCAL',wiki:'WIKI',srx:'WEB',dom:'DOMAIN',yt:'YOUTUBE'};
+    kEl.innerHTML=insight.topKeywords.map(w=>`<span class="intel-tag" onclick="seedSearch('${esc(w)}')" title="Refine with keyword">${esc(w)}</span>`).join('')||'<span style="color:var(--dim);font-family:\'Share Tech Mono\',monospace;font-size:0.55rem">building...</span>';
+    dEl.innerHTML=insight.topDomains.map(d=>`<span class="intel-tag domain" onclick="filterByDomain('${esc(d)}')" title="Filter by domain">${esc(d)}</span>`).join('')||'<span style="color:var(--dim);font-family:\'Share Tech Mono\',monospace;font-size:0.55rem">building...</span>';
+    sEl.innerHTML=insight.topSources.map(s=>`<span class="intel-tag domain">${esc(srcLabels[s]||s.toUpperCase())}</span>`).join('')||'';
+    stEl.innerHTML=`Searched <b>${insight.searches}×</b> &nbsp;·&nbsp; <b>${insight.clicks}</b> clicks &nbsp;·&nbsp; model active`;
+}
+function forgetTopic(){
+    if(!_lastQuery)return;
+    NLE.forget(_lastQuery);
+    document.getElementById('intelPanel').classList.remove('show');
+}
+function seedSearch(keyword){
+    qi.value=_lastQuery+' '+keyword;
+    doSearch();
+}
+function filterByDomain(domain){
+    qi.value=_lastQuery+' site:'+domain;
+    doSearch();
+}
+
 async function wikiSearch(q){
     const url=`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&utf8=&format=json&origin=*&srlimit=8&srprop=snippet`;
     const r=await ft(url,8000);const d=await r.json();
@@ -403,48 +768,326 @@ async function wikiSearch(q){
     }));
 }
 
-// ── SEARX WEB SEARCH ──────────────────────────────────
-// Public Searx/SearXNG instances with JSON API & CORS — tried in order
-// Public SearXNG instances — all verified to have CORS + JSON API enabled
-// List ordered by reliability. If one is down, the next is tried automatically.
-const SEARX_INSTANCES = [
-    'https://searx.be',
-    'https://searxng.site',
-    'https://search.sapti.me',
-    'https://searx.tiekoetter.com',
-    'https://search.bus-hit.me',
-    'https://searx.work',
-    'https://priv.au',
-    'https://searx.ninja',
-    'https://paulgo.io',
-    'https://search.in.projectsegfau.lt'
-];
+// ── MULTI-SOURCE WEB SEARCH ───────────────────────────
+// All sources fire in parallel. Every API verified CORS-open, no key required.
 
 async function searxSearch(q){
-    const params=`?q=${encodeURIComponent(q)}&format=json&categories=general&engines=google,bing,brave,duckduckgo&language=en`;
-    let lastErr='All instances failed';
-    for(const host of SEARX_INSTANCES){
-        try{
-            const res=await ft(host+'/search'+params, 8000);
-            if(!res.ok) continue;
-            const ct=res.headers.get('content-type')||'';
-            if(!ct.includes('json')) continue;
-            const d=await res.json();
-            const results=(d.results||[]).slice(0,14).map(r=>({
-                title: r.title||'',
-                url:   r.url||'',
-                desc:  r.content||r.publishedDate||''
-            })).filter(r=>r.title&&r.url);
-            if(results.length>0){
-                console.log(`[DART] Searx via ${host}: ${results.length} results`);
-                return results;
-            }
-        }catch(e){lastErr=e.message;continue;}
-    }
-    throw new Error(lastErr);
+    const enc=encodeURIComponent(q);
+    const settled=await Promise.allSettled([
+        fetchDDG(q,enc),
+        fetchHN(q,enc),
+        fetchReddit(q,enc),
+        fetchGDELT(q,enc),
+        fetchWikiOpenSearch(q,enc),
+        fetchGitHub(q,enc)
+    ]);
+    const merged=[];
+    const seen=new Set();
+    let srcCount=0;
+    settled.forEach(r=>{
+        if(r.status==='fulfilled'&&Array.isArray(r.value)&&r.value.length){
+            srcCount++;
+            r.value.forEach(item=>{
+                const k=(item.url||'').toLowerCase().replace(/\/$/,'');
+                if(k&&!seen.has(k)){seen.add(k);merged.push(item);}
+            });
+        }
+    });
+    console.log(`[DART] web: ${merged.length} results from ${srcCount} sources`);
+    if(!merged.length) throw new Error('No results');
+    return merged.slice(0,28);
 }
 
-// ── IMAGE SEARCH ──────────────────────────────────────
+// ── Source A: DuckDuckGo Instant Answer API ──────────
+// Returns abstract + related topics. Great for popular queries.
+async function fetchDDG(q,enc){
+    const r=await ft(`https://api.duckduckgo.com/?q=${enc}&format=json&no_html=1&skip_disambig=1`,8000);
+    if(!r.ok) throw new Error('DDG');
+    const d=await r.json();
+    const out=[];
+    if(d.AbstractURL&&d.Heading) out.push({title:d.Heading,url:d.AbstractURL,desc:d.AbstractText||'DuckDuckGo abstract'});
+    (d.Results||[]).forEach(x=>{if(x.FirstURL&&x.Text) out.push({title:x.Text,url:x.FirstURL,desc:x.Text});});
+    (d.RelatedTopics||[]).forEach(t=>{
+        if(t.FirstURL&&t.Text) out.push({title:t.Text.split(' - ')[0],url:t.FirstURL,desc:t.Text});
+        else if(t.Topics) t.Topics.slice(0,4).forEach(s=>{if(s.FirstURL&&s.Text) out.push({title:s.Text.split(' - ')[0],url:s.FirstURL,desc:s.Text});});
+    });
+    return out.filter(x=>x.url&&x.title);
+}
+
+// ── Source B: Hacker News via Algolia ────────────────
+// Real-time tech/startup/general news with CORS fully open
+async function fetchHN(q,enc){
+    const r=await ft(`https://hn.algolia.com/api/v1/search?query=${enc}&hitsPerPage=10`,7000);
+    if(!r.ok) throw new Error('HN');
+    const d=await r.json();
+    return(d.hits||[]).filter(h=>(h.url||h.story_url)&&h.title).map(h=>({
+        title:h.title,
+        url:h.url||`https://news.ycombinator.com/item?id=${h.objectID}`,
+        desc:`Hacker News · ${h.points||0}pts · ${h.num_comments||0} comments · by ${h.author||'?'}`
+    }));
+}
+
+// ── Source C: Reddit JSON search ─────────────────────
+// .json endpoint is CORS-open; rate limits apply but rare
+async function fetchReddit(q,enc){
+    const r=await ft(`https://www.reddit.com/search.json?q=${enc}&sort=top&limit=10&t=year`,8000);
+    if(!r.ok) throw new Error('Reddit '+r.status);
+    const d=await r.json();
+    return(d.data?.children||[]).map(c=>c.data).filter(p=>p&&p.title).map(p=>({
+        title:p.title,
+        url:p.is_self||!p.url||p.url.includes('reddit.com')?`https://reddit.com${p.permalink}`:p.url,
+        desc:`r/${p.subreddit} · ${p.score||0}pts · ${p.num_comments||0} comments · ${p.domain||''}`
+    }));
+}
+
+// ── Source D: GDELT real-time global news ─────────────
+async function fetchGDELT(q,enc){
+    // GDELT v2 doc API - returns JSON article list, CORS open
+    const url=`https://api.gdeltproject.org/api/v2/doc/doc?query=${enc}&mode=artlist&maxrecords=10&format=json&sort=hybridrel&timespan=FULL`;
+    const r=await ft(url,9000);
+    if(!r.ok) throw new Error('GDELT '+r.status);
+    const text=await r.text();
+    // GDELT sometimes returns HTML errors; check before parsing
+    if(text.trim().startsWith('<')) throw new Error('GDELT html response');
+    const d=JSON.parse(text);
+    return(d.articles||[]).filter(a=>a.url&&a.title).map(a=>({
+        title:a.title,
+        url:a.url,
+        desc:`${a.domain||'news'} · ${(a.seendate||'').slice(0,8)||'recent'} · global news`
+    }));
+}
+
+// ── Source E: Wikipedia OpenSearch (real URLs, CORS open) ─
+// Returns actual linked Wikipedia article URLs — supplements wikiSearch
+async function fetchWikiOpenSearch(q,enc){
+    // Use the morelike search to find related articles beyond exact match
+    const url=`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${enc}&format=json&origin=*&srlimit=6&srprop=snippet&srwhat=text`;
+    const r=await ft(url,7000);
+    if(!r.ok) throw new Error('WikiOS');
+    const d=await r.json();
+    // Also fetch external links from the top article
+    const top=(d.query?.search||[])[0];
+    const results=(d.query?.search||[]).slice(1).map(i=>({
+        title:i.title+' — Wikipedia',
+        url:`https://en.wikipedia.org/wiki/${encodeURIComponent(i.title.replace(/ /g,'_'))}`,
+        desc:striptags(i.snippet||'')+'...'
+    }));
+    // Fetch external links from the top Wikipedia article for this query
+    if(top){
+        try{
+            const elUrl=`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(top.title)}&prop=extlinks&format=json&origin=*&ellimit=20`;
+            const elR=await ft(elUrl,6000);
+            const elD=await elR.json();
+            const pages=Object.values(elD.query?.pages||{});
+            const links=(pages[0]?.extlinks||[]).map(l=>l['*']||l.url||'').filter(l=>l&&l.startsWith('http')&&!l.includes('wikimedia')&&!l.includes('wikipedia'));
+            links.slice(0,6).forEach(link=>{
+                try{
+                    const host=new URL(link).hostname.replace(/^www\./,'');
+                    results.push({title:`${host} — referenced from "${top.title}"`,url:link,desc:`External link from Wikipedia article: ${top.title}`});
+                }catch(e){}
+            });
+        }catch(e){}
+    }
+    return results;
+}
+
+// ── Source F: GitHub code/repo search ─────────────────
+// CORS open for public search API (no auth = 10 req/min, enough)
+async function fetchGitHub(q,enc){
+    try{
+        const r=await ft(`https://api.github.com/search/repositories?q=${enc}&sort=stars&order=desc&per_page=5`,7000);
+        if(!r.ok) throw new Error('GH '+r.status);
+        const d=await r.json();
+        return(d.items||[]).filter(i=>i.html_url&&i.full_name).map(i=>({
+            title:`${i.full_name} — GitHub`,
+            url:i.html_url,
+            desc:`⭐ ${i.stargazers_count||0} · ${i.description||'GitHub repository'} · ${i.language||''}`
+        }));
+    }catch(e){return[];}
+}
+
+// ── YOUTUBE VIDEO SEARCH ──────────────────────────────
+// Strategy: Try multiple backends in parallel, take first that responds.
+// 1. Invidious public instances (open-source YT frontend, CORS-open JSON API)
+// 2. YouTube RSS feed via allorigins.win proxy (parses search feed XML → videos)
+// All errors caught silently — no console spam.
+
+const INVIDIOUS=[
+    'https://invidious.snopyta.org',
+    'https://invidious.kavin.rocks',
+    'https://vid.puffyan.us',
+    'https://invidious.namazso.eu',
+    'https://yt.artemislena.eu',
+    'https://invidious.flokinet.to',
+    'https://inv.riverside.rocks',
+    'https://invidious.nerdvpn.de',
+    'https://invidious.privacydev.net',
+    'https://iv.datura.network'
+];
+
+async function searchYouTube(q){
+    const enc=encodeURIComponent(q);
+
+    // Fire all sources simultaneously, take first non-empty result
+    const [invResult, rssResult] = await Promise.allSettled([
+        tryInvidious(enc),
+        tryYouTubeRSS(enc)
+    ]);
+
+    let videos=[];
+    if(invResult.status==='fulfilled'&&invResult.value?.length) videos=invResult.value;
+    else if(rssResult.status==='fulfilled'&&rssResult.value?.length) videos=rssResult.value;
+
+    if(!videos.length){
+        setStat('yt','warn','YT: unavailable');
+        return;
+    }
+    renderVideos(videos.slice(0,8), q);
+}
+
+// Backend A: Invidious JSON API — try all instances, first hit wins
+async function tryInvidious(enc){
+    // Try 3 at a time in parallel waves for speed
+    for(let i=0;i<INVIDIOUS.length;i+=3){
+        const wave=INVIDIOUS.slice(i,i+3);
+        const results=await Promise.allSettled(
+            wave.map(host=>fetchInvidious(host,enc))
+        );
+        for(const r of results){
+            if(r.status==='fulfilled'&&r.value?.length) return r.value;
+        }
+    }
+    return [];
+}
+
+async function fetchInvidious(host,enc){
+    // Use no-throw wrapper so errors don't bubble
+    try{
+        const ctrl=new AbortController();
+        const tid=setTimeout(()=>ctrl.abort(),5000);
+        const res=await fetch(`${host}/api/v1/search?q=${enc}&type=video&page=1`,{signal:ctrl.signal});
+        clearTimeout(tid);
+        if(!res.ok) return [];
+        const d=await res.json();
+        return (Array.isArray(d)?d:[]).filter(v=>v.videoId&&v.title).map(v=>({
+            videoId: v.videoId,
+            title:   v.title,
+            channel: v.author||'',
+            views:   v.viewCount||0,
+            duration:v.lengthSeconds||0,
+            thumb:   `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+            url:     `https://youtube.com/watch?v=${v.videoId}`
+        }));
+    }catch(e){ return []; }  // AbortError, network error, parse error — all silent
+}
+
+// Backend B: YouTube search RSS via allorigins.win CORS proxy
+async function tryYouTubeRSS(enc){
+    try{
+        // allorigins returns the raw response wrapped in JSON — CORS open, free
+        const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.youtube.com/results?search_query='+enc+'&sp=EgIQAQ%253D%253D')}`;
+        const ctrl=new AbortController();
+        const tid=setTimeout(()=>ctrl.abort(),9000);
+        const res=await fetch(proxyUrl,{signal:ctrl.signal});
+        clearTimeout(tid);
+        if(!res.ok) return [];
+        const wrapper=await res.json();
+        const html=wrapper.contents||'';
+        // Extract video IDs + titles from the ytInitialData JSON embedded in the page
+        const match=html.match(/var ytInitialData\s*=\s*(\{.+?\});\s*<\/script>/s)
+                 ||html.match(/ytInitialData\s*=\s*(\{.+?\});/s);
+        if(!match) return [];
+        const data=JSON.parse(match[1]);
+        const contents=data?.contents?.twoColumnSearchResultsRenderer
+            ?.primaryContents?.sectionListRenderer?.contents?.[0]
+            ?.itemSectionRenderer?.contents||[];
+        const videos=[];
+        contents.forEach(item=>{
+            const v=item.videoRenderer;
+            if(!v||!v.videoId) return;
+            const title=v.title?.runs?.[0]?.text||v.title?.simpleText||'';
+            const channel=v.ownerText?.runs?.[0]?.text||v.longBylineText?.runs?.[0]?.text||'';
+            const views=v.viewCountText?.simpleText||v.shortViewCountText?.simpleText||'';
+            const dur=v.lengthText?.simpleText||'';
+            videos.push({
+                videoId:v.videoId,title,channel,views,duration:dur,
+                thumb:`https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+                url:`https://youtube.com/watch?v=${v.videoId}`
+            });
+        });
+        return videos;
+    }catch(e){ return []; }
+}
+
+function renderVideos(videos, q){
+    const vidP=document.getElementById('vidP');
+    const vg=document.getElementById('vg');
+    const vcCount=document.getElementById('vc-count');
+
+    vidP.style.display='block';
+    imgP.style.display='block';
+    vcCount.textContent=videos.length;
+    setBadge('b-yt','cyan');
+    setStat('yt','ok','YT: '+videos.length+' videos');
+
+    videos.forEach((v,i)=>{
+        const dur=typeof v.duration==='number'?fmtDur(v.duration):v.duration||'';
+        const views=typeof v.views==='number'?fmtNum(v.views)+' views':v.views||'';
+
+        const card=document.createElement('a');
+        card.className='vc';
+        card.href=v.url;
+        card.target='_blank';
+        card.rel='noopener';
+        card.style.animationDelay=(i*60)+'ms';
+        card.innerHTML=`
+            <div class="vc-thumb">
+                <img data-src="${esc(v.thumb)}" alt="${esc(v.title)}">
+                <div class="vc-play"><div class="vc-play-btn"></div></div>
+                <div class="vbdg">YT</div>
+                ${dur?`<div style="position:absolute;bottom:5px;right:5px;font-family:'Share Tech Mono',monospace;font-size:0.48rem;background:rgba(0,0,0,0.85);color:#fff;padding:1px 5px;border-radius:2px">${esc(dur)}</div>`:''}
+            </div>
+            <div class="vc-info">
+                <div class="vc-title">${esc(v.title)}</div>
+                <div class="vc-meta">
+                    <span class="vc-ch">${esc(v.channel)}</span>
+                    <span class="vc-dur">${esc(views)}</span>
+                </div>
+            </div>`;
+
+        // NLE click tracking for videos
+        card.addEventListener('click',()=>NLE.onClick(q,{
+            _s:'yt',title:v.title,url:v.url,
+            desc:`YouTube: ${v.channel} · ${views}`
+        }));
+
+        const img=card.querySelector('img');
+        const obs=new IntersectionObserver(e=>{
+            if(e[0].isIntersecting){
+                img.src=img.dataset.src;
+                img.onload=()=>img.classList.add('ok');
+                img.onerror=()=>{img.src=`https://i.ytimg.com/vi/${v.videoId}/default.jpg`;img.classList.add('ok');};
+                obs.disconnect();
+            }
+        },{rootMargin:'80px'});
+        obs.observe(card);
+        vg.appendChild(card);
+    });
+}
+
+function fmtNum(n){
+    if(n>=1e9)return(n/1e9).toFixed(1)+'B';
+    if(n>=1e6)return(n/1e6).toFixed(1)+'M';
+    if(n>=1e3)return(n/1e3).toFixed(1)+'K';
+    return String(n);
+}
+function fmtDur(s){
+    if(!s)return'';
+    const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+    return h?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`;
+}
+
+
 // Source 1: Wikipedia search with page images (reliable, direct CORS)
 // Source 2: Wikimedia Commons file search (direct CORS)
 
@@ -575,38 +1218,264 @@ document.addEventListener('keydown',e=>{
 });
 
 // ── RENDER WEB RESULTS ────────────────────────────────
+let _lastQuery='';
 function renderWeb(results,q){
+    _lastQuery=q;
     rc.textContent=results.length;
     if(!results.length){
         rg.innerHTML=`<div class="nr"><div class="nr-code">404</div><div class="nr-msg">NO PATHWAYS FOR &ldquo;${esc(q)}&rdquo;</div></div>`;
         return;
     }
-    const groups={prio:[],local:[],wiki:[],srx:[]};
+    const groups={prio:[],local:[],wiki:[],srx:[],dom:[]};
     results.forEach(r=>(groups[r._s]||groups.srx).push(r));
-    const labels={prio:'◈ DART MEADOW — PRIORITY',local:'◉ LOCAL NEURAL INDEX',wiki:'◉ WIKIPEDIA LIVE FEED',srx:'◉ LIVE WEB RESULTS'};
+    const labels={prio:'◈ DART MEADOW — PRIORITY',local:'◉ LOCAL NEURAL INDEX',wiki:'◉ WIKIPEDIA LIVE FEED',srx:'◉ LIVE WEB — DDG · HN · REDDIT · GDELT',dom:'◈ DOMAIN NETWORK — OFFICIAL SITES'};
     let delay=0;
     Object.entries(groups).forEach(([src,items])=>{
         if(!items.length)return;
         const d=document.createElement('div');d.className='sdiv';d.textContent=labels[src];rg.appendChild(d);
-        items.forEach(item=>{delay+=50;rg.appendChild(mkCard(item,delay));});
+        items.forEach(item=>{delay+=50;rg.appendChild(mkCard(item,delay,q));});
     });
 }
 
-function mkCard(item,delay){
+function mkCard(item,delay,q){
+    q=q||_lastQuery;
     const c=document.createElement('div');
-    c.className='card'+(item._s==='prio'?' prio':'');
+    c.className='card'+(item._s==='prio'?' prio':item._s==='dom'?' dom':'');
     c.style.animationDelay=delay+'ms';
-    const bc={prio:'cb-l',local:'cb-l',wiki:'cb-w',srx:'cb-s'}[item._s]||'cb-s';
-    const bl={prio:'DART',local:'LOCAL',wiki:'WIKI',srx:'WEB'}[item._s]||'WEB';
+    const bc={prio:'cb-l',local:'cb-l',wiki:'cb-w',srx:'cb-s',dom:'cb-g'}[item._s]||'cb-s';
+    const bl={prio:'DART',local:'LOCAL',wiki:'WIKI',srx:'WEB',dom:'DOMAIN'}[item._s]||'WEB';
     const dm=getDom(item.url||'');
     const path=(item.url||'').replace(/^https?:\/\//,'').replace(/^[^\/]*/,'');
-    c.innerHTML=`<div class="ct"><a href="${esc(item.url||'#')}" class="ctitle" target="_blank" rel="noopener">${esc(item.title||'Untitled')}</a><span class="cbdg ${bc}">${bl}</span></div><div class="curl"><span class="ud">${esc(dm)}</span>${esc(path)}</div><div class="csnip">${esc(item.desc||'No signal.')}</div>`;
+    let tagsHtml='';
+    if(item._s==='dom'&&item.related&&item.related.length){
+        tagsHtml='<div class="dom-tags">'+item.related.map(r=>`<a href="${esc(r.url)}" class="dom-tag${r.live?' live':''}" target="_blank" rel="noopener">${esc(r.label)}</a>`).join('')+'</div>';
+    }
+    // NLE signal strength indicator
+    const sig=NLE.scoreItem(q,item);
+    const sigPct=Math.min(100,Math.max(0,(sig-30)*1.5));
+    const sigColor=sigPct>60?'var(--green)':sigPct>30?'var(--cyan)':'var(--dim)';
+    const sigBar=sig>52?`<div class="nle-bar" title="Neural relevance: ${Math.round(sig)}" style="position:absolute;bottom:0;left:0;height:2px;width:${sigPct}%;background:${sigColor};opacity:0.6;transition:width 0.4s;"></div>`:'';
+
+    c.innerHTML=`<div class="ct"><a href="${esc(item.url||'#')}" class="ctitle nle-link" target="_blank" rel="noopener">${esc(item.title||'Untitled')}</a><span class="cbdg ${bc}">${bl}</span></div><div class="curl"><span class="ud">${esc(dm)}</span>${esc(path)}</div><div class="csnip">${esc(item.desc||'No signal.')}</div>${tagsHtml}${sigBar}`;
+
+    // ── NLE click tracking ──
+    const link=c.querySelector('.nle-link');
+    if(link){
+        let hoverStart=0;
+        c.addEventListener('mouseenter',()=>hoverStart=Date.now());
+        c.addEventListener('mouseleave',()=>{
+            if(hoverStart){ NLE.onDwell(q,item,(Date.now()-hoverStart)/1000); hoverStart=0; }
+        });
+        link.addEventListener('click',()=>{
+            NLE.onClick(q,item);
+            if(hoverStart){ NLE.onDwell(q,item,(Date.now()-hoverStart)/1000); }
+            updateIntelPanel(q);
+        });
+    }
     return c;
 }
 
-// ── UTILS ─────────────────────────────────────────────
+// ── DOMAIN NETWORK DISCOVERY ──────────────────────────
+// Step 1: Ask Wikipedia for the top article matching the query, extract Wikidata ID
+// Step 2: Fetch wikidata entity → official website (P856) + social links
+// Step 3: Generate smart domain candidates & probe them
+// Step 4: Inject domain cards at the TOP of the results grid
+
+async function searchDomains(q, existingResults){
+    const domResults=[];
+    const enc=encodeURIComponent(q);
+
+    // Run probe + Wikidata lookup IN PARALLEL for speed
+    const root=q.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const rootWords=q.toLowerCase().replace(/[^a-z0-9 ]/g,'').split(/\s+/).filter(w=>w.length>2);
+
+    // Build candidate list: query-derived slugs + common TLDs
+    const candidateRoots=[root,...rootWords.map(w=>w),...(rootWords.length>1?[rootWords.join('')]:[])]
+        .filter((v,i,a)=>a.indexOf(v)===i).slice(0,3);
+    const tlds=['.com','.org','.net','.io','.app','.dev','.co','.ai','.band','.music','.studio','.tech'];
+    const allCandidates=[];
+    const seenC=new Set();
+    candidateRoots.forEach(cr=>{
+        tlds.forEach(tld=>{
+            const dom=cr+tld;
+            if(!seenC.has(dom)){seenC.add(dom);allCandidates.push({url:`https://${dom}`,label:dom});}
+        });
+    });
+
+    const [probeResults, wikiResult] = await Promise.allSettled([
+        probeDomains(allCandidates.slice(0,18)),
+        fetchWikiOfficial(q)
+    ]);
+
+    const probed = probeResults.status==='fulfilled'?probeResults.value:[];
+    const wikiOfficial = wikiResult.status==='fulfilled'?wikiResult.value:null;
+
+    if(wikiOfficial&&wikiOfficial.url){
+        // Wikidata has an authoritative answer
+        const officialDom=getDom(wikiOfficial.url);
+        const offRoot=(officialDom.match(/^(?:www\.)?([^.]+)/)||[])[1]||'';
+        // Build related list: probe results for the official root + any live candidates
+        const relCandidates=tlds.map(t=>({url:`https://${offRoot}${t}`,label:`${offRoot}${t}`}));
+        const relProbed=await probeDomains(relCandidates);
+        const related=relProbed.filter(r=>r.label!==officialDom.replace(/^www\./,''));
+        domResults.push({
+            _s:'dom',
+            title:`${wikiOfficial.label} — Official Domain Network`,
+            url:wikiOfficial.url,
+            desc:`Wikidata-verified official website${wikiOfficial.desc?': '+wikiOfficial.desc:''}.`,
+            related:related
+        });
+        setBadge('b-dom','cyan');
+        setStat('dom','ok','DOM: verified official + '+(related.filter(r=>r.live).length)+' probed');
+    } else {
+        // No Wikidata hit — use probe results directly
+        const live=probed.filter(r=>r.live);
+        if(live.length){
+            domResults.push({
+                _s:'dom',
+                title:`${q} — Domain Network`,
+                url:live[0].url,
+                desc:`Live domain(s) found for "${q}". ${live.length} active endpoint(s) detected.`,
+                related:live.slice(1,8)
+            });
+            setBadge('b-dom','cyan');
+            setStat('dom','ok','DOM: '+live.length+' live');
+        } else if(probed.length){
+            // Show candidates even if unconfirmed
+            domResults.push({
+                _s:'dom',
+                title:`${q} — Candidate Domains`,
+                url:probed[0].url,
+                desc:`Possible domain network for "${q}". CORS prevents live confirmation; links may be valid.`,
+                related:probed.slice(1,8)
+            });
+            setBadge('b-dom','cyan');
+            setStat('dom','ok','DOM: '+probed.length+' candidates');
+        }
+    }
+
+    if(domResults.length){
+        const divider=document.createElement('div');
+        divider.className='sdiv';
+        divider.textContent='◈ DOMAIN NETWORK — OFFICIAL SITES';
+        rg.insertBefore(divider,rg.firstChild);
+        [...domResults].reverse().forEach(item=>{
+            const card=mkCard(item,0);
+            rg.insertBefore(card,rg.children[1]||rg.firstChild);
+        });
+        rc.textContent=String(parseInt(rc.textContent||'0')+domResults.length);
+    }
+}
+
+// Fetch official website from Wikidata for a query
+async function fetchWikiOfficial(q){
+    try{
+        const enc=encodeURIComponent(q);
+        const wsR=await ft(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${enc}&utf8=&format=json&origin=*&srlimit=5&srprop=snippet`,7000);
+        const wsD=await wsR.json();
+        const pages=wsD.query?.search||[];
+
+        // Score: prefer org/software/band over person
+        const scored=pages.map(p=>{
+            const tl=p.title.toLowerCase();const ql=q.toLowerCase();
+            let s=0;
+            if(tl===ql)s+=10;else if(tl.startsWith(ql))s+=5;else if(tl.includes(ql))s+=2;
+            if(tl.includes('disambiguation'))s-=10;
+            const sn=(p.snippet||'').toLowerCase();
+            if(/\b(company|software|band|group|organization|foundation|corporation|startup|inc\.|ltd\.)\b/.test(sn))s+=5;
+            if(/\b(born|footballer|politician|actor|actress|singer|rapper|ceo|cto)\b/.test(sn)&&!/\b(company|software|band)\b/.test(sn))s-=5;
+            return{...p,s};
+        }).sort((a,b)=>b.s-a.s);
+
+        const top=scored[0];
+        if(!top)return null;
+
+        // Get wikidata ID
+        const wpR=await ft(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(top.title)}&prop=pageprops&format=json&origin=*`,7000);
+        const wpD=await wpR.json();
+        const pg=Object.values(wpD.query?.pages||{})[0];
+        const wdId=pg?.pageprops?.wikibase_item;
+        if(!wdId)return null;
+
+        // Fetch wikidata entity
+        const wdR=await ft(`https://www.wikidata.org/wiki/Special:EntityData/${wdId}.json`,9000);
+        const wdData=await wdR.json();
+        const entity=wdData.entities?.[wdId];
+        if(!entity)return null;
+
+        const sites=(entity.claims?.P856||[]).map(c=>c.mainsnak?.datavalue?.value).filter(Boolean);
+        if(!sites.length)return null;
+
+        return{
+            url:sites[0],
+            label:entity.labels?.en?.value||top.title,
+            desc:entity.descriptions?.en?.value||''
+        };
+    }catch(e){return null;}
+}
+
+async function injectGuessedDomains(q, title, domResults){
+    // kept for compatibility but now handled above
+}
+
+function generateCandidates(root, knownDomain){
+    const tlds=['.com','.org','.net','.io','.app','.dev','.studio','.music','.band'];
+    const prefixes=['','www.'];
+    const candidates=[];
+    const seen=new Set();
+    // If we have a known domain, start with it
+    if(knownDomain){
+        const base=knownDomain.replace(/^www\./,'');
+        if(!seen.has(base)){seen.add(base);candidates.push({url:`https://${base}`,label:base});}
+    }
+    tlds.forEach(tld=>{
+        const dom=root+tld;
+        if(!seen.has(dom)){seen.add(dom);candidates.push({url:`https://${dom}`,label:dom});}
+    });
+    return candidates.slice(0,12);
+}
+
+async function probeDomains(candidates){
+    // no-cors HEAD — opaque response = domain exists, TypeError = DNS/network fail
+    // We use a hidden iframe trick: inject a sandboxed img to test reachability
+    // Actually: no-cors fetch throws TypeError on DNS fail, returns OpaqueResponse on success
+    // The browser WILL log "Failed to fetch" for DNS errors even if caught in JS.
+    // Solution: use a 1px image probe instead — errors are silent.
+    const results=await Promise.all(candidates.map(c=>probeOne(c)));
+    return results.sort((a,b)=>(b.live?1:0)-(a.live?1:0));
+}
+
+function probeOne(c){
+    return new Promise(resolve=>{
+        const img=new Image();
+        const timer=setTimeout(()=>{
+            img.src='';
+            resolve({...c,live:false});
+        },3500);
+        img.onload=()=>{clearTimeout(timer);resolve({...c,live:true});};
+        // onerror can mean domain exists but returns non-image (still live!) 
+        // vs DNS fail which also fires onerror but much faster
+        // We use timing: <200ms = likely DNS fail, >200ms = domain responded
+        const t0=Date.now();
+        img.onerror=()=>{
+            clearTimeout(timer);
+            const elapsed=Date.now()-t0;
+            // If it errored in >150ms, server likely responded (just not an image)
+            resolve({...c,live:elapsed>150});
+        };
+        img.src=c.url+'/favicon.ico?_='+Date.now();
+    });
+}
+
+
 function hit(item,ql){return(item.title||'').toLowerCase().includes(ql)||(item.desc||'').toLowerCase().includes(ql)||(item.tags||[]).some(t=>t.toLowerCase().includes(ql));}
-function ft(url,ms){return Promise.race([fetch(url),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);}
+
+// ft: fetch with timeout. Uses AbortController so no console network error on timeout.
+function ft(url,ms){
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),ms||8000);
+    return fetch(url,{signal:ctrl.signal}).finally(()=>clearTimeout(tid));
+}
 function striptags(s){return s.replace(/<[^>]+>/g,'').replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(n));}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function getDom(u){try{return new URL(u).hostname;}catch{return u;}}
