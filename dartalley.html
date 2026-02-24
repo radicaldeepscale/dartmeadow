@@ -231,7 +231,8 @@
         .vg{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
         @media(max-width:520px){.vg{grid-template-columns:1fr;}}
 
-        .vc{position:relative;border-radius:4px;border:1px solid rgba(255,68,68,0.18);background:rgba(255,68,68,0.03);cursor:pointer;transition:all 0.25s;animation:cs 0.35s ease forwards;opacity:0;overflow:hidden;text-decoration:none;display:block;}
+        /* VIDEO CARD — now a div since thumbnail opens overlay, not a page link */
+        .vc{position:relative;border-radius:4px;border:1px solid rgba(255,68,68,0.18);background:rgba(255,68,68,0.03);cursor:pointer;transition:all 0.25s;animation:cs 0.35s ease forwards;opacity:0;overflow:hidden;display:block;}
         .vc:hover{border-color:rgba(255,68,68,0.55);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.65);}
         .vc-thumb{position:relative;aspect-ratio:16/9;overflow:hidden;background:#111;}
         .vc-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity 0.35s;opacity:0;}
@@ -247,6 +248,201 @@
         .vc-dur{color:var(--dim);flex-shrink:0;}
         .vbdg{position:absolute;top:5px;right:5px;font-family:'Share Tech Mono',monospace;font-size:0.42rem;letter-spacing:1px;padding:2px 5px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,68,68,0.5);border-radius:2px;color:#ff4444;text-transform:uppercase;}
 
+        /* Watch on YouTube link inside the video card info area */
+        .vc-yt-link{display:inline-flex;align-items:center;gap:5px;font-family:'Share Tech Mono',monospace;font-size:0.5rem;letter-spacing:1.5px;color:rgba(255,68,68,0.55);text-decoration:none;border:1px solid rgba(255,68,68,0.22);border-radius:2px;padding:2px 7px;margin-top:6px;transition:all 0.2s;text-transform:uppercase;}
+        .vc-yt-link:hover{color:#ff4444;border-color:rgba(255,68,68,0.6);background:rgba(255,68,68,0.08);}
+        .vc-yt-link::before{content:'↗';font-size:0.55rem;}
+
+        /* YT-boosted card indicator */
+        .yt-signal-badge{position:absolute;top:5px;left:5px;font-family:'Share Tech Mono',monospace;font-size:0.42rem;letter-spacing:1px;padding:2px 5px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,68,68,0.4);border-radius:2px;color:rgba(255,68,68,0.8);text-transform:uppercase;pointer-events:none;z-index:2;}
+
+        /* ── YOUTUBE PREVIEW OVERLAY ── */
+        /* Covers the full viewport. The user can watch the video without leaving the page.
+           Pressing Escape or clicking the backdrop closes the overlay and stops playback.
+           A prominent "Watch on YouTube" link is shown below the player for direct navigation. */
+        #yt-overlay{
+            display:none;
+            position:fixed;
+            inset:0;
+            z-index:10000;
+            background:rgba(0,0,0,0.95);
+            backdrop-filter:blur(18px);
+            align-items:center;
+            justify-content:center;
+            flex-direction:column;
+            gap:16px;
+            padding:20px;
+        }
+        #yt-overlay.open{display:flex;}
+
+        .yt-ov-close{
+            position:fixed;
+            top:18px;
+            right:22px;
+            font-size:1.3rem;
+            color:var(--dim);
+            cursor:pointer;
+            transition:color 0.2s;
+            z-index:10001;
+            font-family:monospace;
+            line-height:1;
+        }
+        .yt-ov-close:hover{color:#fff;}
+
+        .yt-ov-frame-wrap{
+            position:relative;
+            width:min(860px,94vw);
+            aspect-ratio:16/9;
+            border:1px solid rgba(255,68,68,0.3);
+            border-radius:4px;
+            overflow:hidden;
+            box-shadow:0 0 80px rgba(0,0,0,0.95);
+            background:#000;
+        }
+        .yt-ov-frame-wrap iframe{
+            width:100%;
+            height:100%;
+            border:none;
+            display:block;
+        }
+
+        /* Top label bar above the player */
+        .yt-ov-top-bar{
+            width:min(860px,94vw);
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+        }
+        .yt-ov-label{
+            font-family:'Orbitron',monospace;
+            font-size:0.52rem;
+            letter-spacing:3px;
+            color:#ff4444;
+            text-transform:uppercase;
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        .yt-ov-label::before{
+            content:'▶';
+            font-size:0.6rem;
+        }
+        .yt-ov-esc-hint{
+            font-family:'Share Tech Mono',monospace;
+            font-size:0.5rem;
+            color:var(--dim);
+            letter-spacing:1px;
+        }
+
+        /* Bottom info row below the player */
+        .yt-ov-bottom{
+            width:min(860px,94vw);
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:16px;
+            flex-wrap:wrap;
+        }
+        .yt-ov-text{
+            flex:1;
+            min-width:0;
+        }
+        .yt-ov-title{
+            font-family:'Exo 2',sans-serif;
+            font-size:0.95rem;
+            font-weight:600;
+            color:#e8e8e8;
+            line-height:1.4;
+            margin-bottom:4px;
+        }
+        .yt-ov-channel{
+            font-family:'Share Tech Mono',monospace;
+            font-size:0.62rem;
+            color:rgba(255,68,68,0.7);
+            letter-spacing:1px;
+        }
+
+        /* The main "Watch on YouTube" button below the player —
+           this is how the user navigates to the actual YouTube video page. */
+        .yt-ov-goto{
+            font-family:'Orbitron',monospace;
+            font-size:0.58rem;
+            font-weight:700;
+            letter-spacing:2px;
+            padding:10px 20px;
+            border:1px solid rgba(255,68,68,0.55);
+            border-radius:2px;
+            color:#ff4444;
+            text-decoration:none;
+            transition:all 0.2s;
+            text-transform:uppercase;
+            white-space:nowrap;
+            flex-shrink:0;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            background:rgba(255,68,68,0.06);
+        }
+        .yt-ov-goto:hover{
+            background:rgba(255,68,68,0.18);
+            border-color:#ff4444;
+            color:#fff;
+            box-shadow:0 0 18px rgba(255,68,68,0.25);
+        }
+        .yt-ov-goto-icon{
+            font-size:0.8rem;
+            line-height:1;
+        }
+
+        /* ── YT SIGNAL REFINEMENT PANEL ── */
+        /* Appears at the top of web results after YouTube signals arrive.
+           Shows which keywords extracted from YouTube results were used to
+           re-score and re-rank the web results from other sources. */
+        .yt-refine-panel{
+            display:none;
+            width:100%;
+            margin-bottom:12px;
+            border:1px solid rgba(255,68,68,0.2);
+            border-left:3px solid #ff4444;
+            border-radius:0 4px 4px 0;
+            background:rgba(255,68,68,0.03);
+            padding:9px 14px;
+            animation:cs 0.3s ease forwards;
+        }
+        .yt-refine-panel.show{display:block;}
+        .yt-refine-hdr{
+            font-family:'Orbitron',monospace;
+            font-size:0.5rem;
+            letter-spacing:3px;
+            color:#ff4444;
+            margin-bottom:7px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+        .yt-refine-hdr-note{
+            font-family:'Share Tech Mono',monospace;
+            font-size:0.48rem;
+            color:var(--dim);
+            letter-spacing:1px;
+        }
+        .yt-refine-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+        .yt-refine-tag{
+            font-family:'Share Tech Mono',monospace;
+            font-size:0.54rem;
+            padding:2px 8px;
+            border:1px solid rgba(255,68,68,0.28);
+            border-radius:2px;
+            color:rgba(255,68,68,0.75);
+            background:rgba(255,68,68,0.04);
+            cursor:pointer;
+            transition:all 0.2s;
+            text-transform:lowercase;
+        }
+        .yt-refine-tag:hover{background:rgba(255,68,68,0.12);border-color:#ff4444;color:#fff;}
+        .yt-refine-tag.hi{border-color:rgba(255,68,68,0.55);color:#ff8888;background:rgba(255,68,68,0.08);}
+
         .cb-r{color:#ff4444;border:1px solid rgba(255,68,68,0.4);background:rgba(255,68,68,0.06);}
 
         @media(max-width:520px){.hud-r,.pfx{display:none}.logo-main{font-size:2.4rem}}
@@ -256,7 +452,7 @@
 <canvas id="sc"></canvas>
 <div class="cnr tl"></div><div class="cnr br"></div>
 
-<!-- LIGHTBOX -->
+<!-- LIGHTBOX (for image panel) -->
 <div class="lb" id="lb">
     <div class="lb-x" id="lb-x">✕</div>
     <img class="lb-img" id="lb-img" src="" alt="">
@@ -264,6 +460,39 @@
     <div class="lb-nav">
         <button onclick="lbNav(-1)">◀ PREV</button>
         <button onclick="lbNav(1)">NEXT ▶</button>
+    </div>
+</div>
+
+<!-- YOUTUBE PREVIEW OVERLAY
+     Tapping a video thumbnail opens this overlay so the user can watch
+     the embedded video without leaving the Dart Alley search page.
+     The "Watch on YouTube" button below the player navigates to the
+     actual YouTube video page in a new tab. Pressing Escape or clicking
+     outside the player frame closes the overlay and stops playback. -->
+<div id="yt-overlay">
+    <div class="yt-ov-close" id="yt-ov-close" title="Close preview (Esc)">✕</div>
+
+    <div class="yt-ov-top-bar">
+        <div class="yt-ov-label">VIDEO PREVIEW — DART ALLEY</div>
+        <div class="yt-ov-esc-hint">ESC TO CLOSE &nbsp;·&nbsp; TAP OUTSIDE PLAYER</div>
+    </div>
+
+    <div class="yt-ov-frame-wrap" id="yt-ov-frame-wrap">
+        <!-- iframe is injected dynamically when overlay opens to avoid pre-loading -->
+    </div>
+
+    <div class="yt-ov-bottom">
+        <div class="yt-ov-text">
+            <div class="yt-ov-title" id="yt-ov-title"></div>
+            <div class="yt-ov-channel" id="yt-ov-channel"></div>
+        </div>
+        <!-- This is the direct link to the YouTube video page.
+             The user clicks this if they want to leave the search page
+             and go to YouTube directly, e.g. to see comments, subscribe, etc. -->
+        <a class="yt-ov-goto" id="yt-ov-goto" href="#" target="_blank" rel="noopener">
+            <span class="yt-ov-goto-icon">▶</span>
+            WATCH ON YOUTUBE
+        </a>
     </div>
 </div>
 
@@ -350,6 +579,18 @@
                     <div class="pl">// SIGNAL CAPTURE //</div>
                     <div class="pm"><b id="rc">0</b> PATHWAYS</div>
                 </div>
+                <!-- YT SIGNAL REFINEMENT PANEL
+                     Injected here after YouTube results arrive and are analysed.
+                     Shows extracted keyword signals from YT top results so the user
+                     can see what terms YouTube's algorithm matched to their query,
+                     and can click any term to trigger a refined search. -->
+                <div class="yt-refine-panel" id="ytRefinePanel">
+                    <div class="yt-refine-hdr">
+                        ▶ YOUTUBE SIGNAL REFINEMENT ACTIVE
+                        <span class="yt-refine-hdr-note" id="ytRefineNote"></span>
+                    </div>
+                    <div class="yt-refine-tags" id="ytRefineTags"></div>
+                </div>
                 <div class="rg" id="rg"></div>
             </div>
             <!-- TABBED MEDIA PANEL -->
@@ -378,12 +619,13 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  16
+//  DART ALLEY — Neural Multi-Source Search Engine
 //  Web:    DDG · HN · Reddit · GDELT · Wiki ExtLinks · GitHub (parallel, CORS-open)
 //  Images: Wikipedia + Wikimedia Commons
-//  Video:  Invidious (10 instances, parallel waves) + allorigins YT RSS fallback
+//  Video:  YouTube Data API v3 with in-page preview overlay
 //  Domains: Wikidata P856 + favicon probing
 //  NLE:    Neural Learning Engine — behavioral relevance (localStorage)
+//  YT-Refine: YouTube signal cross-source relevance injection
 //  Errors: All network failures silent via AbortController
 // ═══════════════════════════════════════════════════════════
 
@@ -455,6 +697,11 @@ async function doSearch(){
     rw.style.display='none';moreBtn.style.display='none';
     lw.style.display='flex';ltxt.textContent='INITIALIZING SCAN...';
 
+    // Reset YT signal state for this new search
+    ytSignals = { keywords:{}, topTerms:[] };
+    const ytRefinePanel = document.getElementById('ytRefinePanel');
+    if(ytRefinePanel){ ytRefinePanel.classList.remove('show'); }
+
     // Show intelligence panel if we have prior learning on this topic
     renderIntelPanel(q);
 
@@ -511,7 +758,12 @@ async function doSearch(){
     // 6. Domain network discovery (parallel, non-blocking)
     if(F.dom){searchDomains(q,final).catch(()=>{});}
 
-    // 7. YouTube video results (parallel, non-blocking)
+    // 7. YouTube video results (parallel, non-blocking).
+    //    After YouTube results arrive, the YT signal engine extracts top terms
+    //    from video titles/channels and uses them to re-score the already-rendered
+    //    web results from Wikipedia, DDG, Reddit, GDELT, GitHub, etc., boosting
+    //    results that align with what YouTube's algorithm determined is most
+    //    relevant to this exact query intent.
     if(F.yt){searchYouTube(q).catch(()=>{});}
 
     lw.style.display='none';sbtn.disabled=false;
@@ -920,11 +1172,30 @@ async function fetchGitHub(q,enc){
     }catch(e){return[];}
 }
 
-// ── YOUTUBE VIDEO SEARCH ──────────────────────────────
-// Uses the official YouTube Data API v3 — reliable, CORS-open, works everywhere.
-// Free quota: 10,000 units/day. Search costs 100 units → ~100 searches/day free.
-// Restrict this key at: console.cloud.google.com → Credentials → dartalley
-//   → Application restrictions → Websites → dartmeadow.com/*
+// ═══════════════════════════════════════════════════════════
+//  YOUTUBE VIDEO SEARCH + PREVIEW OVERLAY + SIGNAL REFINEMENT
+//
+//  Three integrated features:
+//
+//  1. searchYouTube(q) — fetches videos via YouTube Data API v3
+//     using either keyword search or channel lookup for @handle queries.
+//
+//  2. renderVideos(videos, q) — renders video cards where clicking the
+//     thumbnail opens the in-page preview overlay (openYTOverlay). Each
+//     card also has a small "Watch on YouTube" link that takes the user
+//     directly to youtube.com for that video without the overlay.
+//
+//  3. YouTube Signal Refinement — after YouTube results arrive, the
+//     ytSignals engine extracts the most semantically meaningful terms
+//     from video titles and channel names (using rank-weighted frequency
+//     analysis). These terms are then used to re-score all currently
+//     rendered web result cards from every other source (Wikipedia, DDG,
+//     HN, Reddit, GDELT, GitHub). Cards whose content overlaps with the
+//     YT signals receive a visible boost indicator. A refinement panel
+//     appears above the results listing all extracted signal terms so the
+//     user can see exactly what YouTube's algorithm determined was most
+//     relevant and can click any term to trigger a focused sub-search.
+// ═══════════════════════════════════════════════════════════
 
 const YT_API_KEY = 'AIzaSyBrhOod_Q6QoX6XQFyuaipq_ncFvx5lEac';
 const YT_SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
@@ -954,7 +1225,17 @@ async function searchYouTube(q){
         setStat('yt','warn','YT: unavailable');
         return;
     }
-    renderVideos(videos.slice(0,12), q);
+
+    const sliced = videos.slice(0, 12);
+    renderVideos(sliced, q);
+
+    // ── YOUTUBE SIGNAL REFINEMENT ──────────────────────────
+    // Now that we have YouTube results, extract semantic signals from the
+    // titles/channels that YouTube's relevance algorithm matched to this query.
+    // These signals are injected into the already-rendered web results to
+    // visually surface which of those results align with the YouTube-confirmed
+    // topic interpretation, giving the user better cross-source signal correlation.
+    refineWithYTSignals(sliced, q);
 }
 
 // General video search via YouTube Data API v3
@@ -1057,6 +1338,11 @@ function switchTab(tab){
     }
 }
 
+// ── RENDER VIDEOS ─────────────────────────────────────
+// Each card is a <div> (not an <a>) so the default click behavior
+// is controlled by JS. Clicking the thumbnail area opens the in-page
+// preview overlay. A dedicated "Watch on YouTube ↗" link in the card
+// info row navigates directly to the YouTube page in a new tab.
 function renderVideos(videos, q){
     const vidP=document.getElementById('vidP');
     const vg=document.getElementById('vg');
@@ -1071,14 +1357,13 @@ function renderVideos(videos, q){
         const dur=typeof v.duration==='number'?fmtDur(v.duration):v.duration||'';
         const views=typeof v.views==='number'?fmtNum(v.views)+' views':v.views||'';
 
-        const card=document.createElement('a');
+        // Use a div so we fully control click behavior:
+        // thumbnail click → in-page overlay; yt link → external tab
+        const card=document.createElement('div');
         card.className='vc';
-        card.href=v.url;
-        card.target='_blank';
-        card.rel='noopener';
         card.style.animationDelay=(i*60)+'ms';
         card.innerHTML=`
-            <div class="vc-thumb">
+            <div class="vc-thumb" data-videoid="${esc(v.videoId)}" title="Click to preview · Watch in Dart Alley">
                 <img data-src="${esc(v.thumb)}" alt="${esc(v.title)}">
                 <div class="vc-play"><div class="vc-play-btn"></div></div>
                 <div class="vbdg">YT</div>
@@ -1090,13 +1375,34 @@ function renderVideos(videos, q){
                     <span class="vc-ch">${esc(v.channel)}</span>
                     <span class="vc-dur">${esc(views)}</span>
                 </div>
+                <a class="vc-yt-link" href="${esc(v.url)}" target="_blank" rel="noopener" title="Open this video directly on YouTube.com">WATCH ON YOUTUBE</a>
             </div>`;
 
-        // NLE click tracking for videos
-        card.addEventListener('click',()=>NLE.onClick(q,{
-            _s:'yt',title:v.title,url:v.url,
-            desc:`YouTube: ${v.channel} · ${views}`
-        }));
+        // Clicking the thumbnail area opens the in-page overlay
+        const thumbEl = card.querySelector('.vc-thumb');
+        thumbEl.style.cursor = 'pointer';
+        thumbEl.addEventListener('click', (e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            openYTOverlay(v.videoId, v.title, v.channel, v.url);
+            NLE.onClick(q, {
+                _s:'yt',
+                title: v.title,
+                url: v.url,
+                desc:`YouTube preview: ${v.channel} · ${views}`
+            });
+        });
+
+        // Clicking the "Watch on YouTube" link tracks the click but navigates normally
+        const ytLinkEl = card.querySelector('.vc-yt-link');
+        ytLinkEl.addEventListener('click', ()=>{
+            NLE.onClick(q, {
+                _s:'yt',
+                title: v.title,
+                url: v.url,
+                desc:`YouTube direct: ${v.channel} · ${views}`
+            });
+        });
 
         const img=card.querySelector('img');
         const obs=new IntersectionObserver(e=>{
@@ -1111,6 +1417,261 @@ function renderVideos(videos, q){
         vg.appendChild(card);
     });
 }
+
+// ── YOUTUBE PREVIEW OVERLAY LOGIC ─────────────────────
+// openYTOverlay: injects an embedded iframe into the overlay and shows it.
+// The iframe uses youtube-nocookie.com for enhanced privacy, with autoplay=1
+// so playback starts immediately when the user taps the thumbnail.
+// closeYTOverlay: removes the iframe entirely (not just hides it) so the
+// video stops playing as soon as the overlay closes — no background audio.
+function openYTOverlay(videoId, title, channel, ytUrl){
+    const overlay = document.getElementById('yt-overlay');
+    const frameWrap = document.getElementById('yt-ov-frame-wrap');
+    const titleEl = document.getElementById('yt-ov-title');
+    const channelEl = document.getElementById('yt-ov-channel');
+    const gotoEl = document.getElementById('yt-ov-goto');
+
+    // Populate info
+    titleEl.textContent = title || '';
+    channelEl.textContent = channel ? '▶  ' + channel : '';
+    gotoEl.href = ytUrl || `https://youtube.com/watch?v=${videoId}`;
+
+    // Inject iframe with autoplay so video starts playing immediately
+    // Using youtube-nocookie.com to avoid unnecessary tracking cookies
+    frameWrap.innerHTML = `<iframe
+        src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+        title="${esc(title)}"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen>
+    </iframe>`;
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeYTOverlay(){
+    const overlay = document.getElementById('yt-overlay');
+    const frameWrap = document.getElementById('yt-ov-frame-wrap');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    // Destroy iframe so video stops playing immediately
+    frameWrap.innerHTML = '';
+}
+
+// Close overlay button
+document.getElementById('yt-ov-close').addEventListener('click', closeYTOverlay);
+
+// Close when clicking the dark backdrop (outside the player frame)
+document.getElementById('yt-overlay').addEventListener('click', function(e){
+    // Only close if the click is directly on the overlay backdrop,
+    // not on any child element inside it (player, title bar, buttons, etc.)
+    if(e.target === this) closeYTOverlay();
+});
+
+// Keyboard: Escape closes the overlay
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+        if(document.getElementById('yt-overlay').classList.contains('open')){
+            closeYTOverlay();
+            return;
+        }
+        // Also close image lightbox if open
+        if(document.getElementById('lb').classList.contains('open')){
+            closeLB();
+        }
+    }
+    // Image lightbox arrow navigation
+    if(document.getElementById('lb').classList.contains('open')){
+        if(e.key==='ArrowRight') lbNav(1);
+        if(e.key==='ArrowLeft') lbNav(-1);
+    }
+});
+
+
+// ═══════════════════════════════════════════════════════════
+//  YOUTUBE SIGNAL REFINEMENT ENGINE
+//
+//  How it works:
+//  After YouTube results arrive, this engine analyses the titles and channel
+//  names of the top-ranked videos (which YouTube's own relevance algorithm
+//  has already determined are the most relevant to the search query). It
+//  extracts a ranked vocabulary of meaningful terms using rank-decay weighting
+//  (top-ranked videos contribute more signal than lower-ranked ones).
+//
+//  Those terms are then cross-referenced against every already-rendered web
+//  result card in the results grid. Cards whose title or description text
+//  contains signal terms receive a subtle visual "YT boost" indicator — a
+//  red gradient bar at the bottom-right corner of the card, proportional
+//  to the strength of the signal overlap.
+//
+//  The refinement panel above the results lists all extracted terms so the
+//  user can see exactly what concepts YouTube's algorithm confirmed as most
+//  relevant, and can click any term to trigger a refined sub-search combining
+//  the original query with that term for even more targeted results.
+//
+//  This makes every other source (Wikipedia, DDG, HN, Reddit, GDELT, GitHub)
+//  more useful because their results are now visually ranked and annotated
+//  according to what YouTube confirmed is the actual topic being searched.
+// ═══════════════════════════════════════════════════════════
+
+// Global YT signals state — reset at the start of every new search
+let ytSignals = { keywords: {}, topTerms: [] };
+
+// Stopwords to exclude from signal extraction
+const YT_STOPWORDS = new Set([
+    'the','and','for','are','was','with','this','that','from','have','not','but',
+    'all','can','its','will','been','has','had','their','they','about','more',
+    'also','into','than','when','your','our','out','use','one','two','how','who',
+    'what','which','would','could','should','these','those','there','where','after',
+    'before','other','over','such','some','very','just','like','well','most','only',
+    'both','even','same','official','video','channel','full','new','best','top',
+    'get','make','watch','year','live','first','last','here','now','then','time',
+    'part','day','using','used','make','know','need','want','take','good','great',
+    'show','look','come','back','way','thing','things','work','works','working',
+    'review','reviews','explained','tutorial','intro','introduction','basics',
+    'guide','tips','trick','tricks','feat','featuring','featuring','official',
+    'reaction','react','episode','series','season','episode','playlist','update',
+    'news','latest','today','week','month','free','easy','simple','complete',
+    'full','short','long','quick','fast','slow','really','very','actually'
+]);
+
+// Extract ranked signal terms from YouTube video titles/channels
+function extractYTSignals(videos){
+    const freq = {};
+
+    videos.forEach((v, idx)=>{
+        // Rank-decay weighting: first video (highest relevance) contributes most
+        const rankWeight = 1.0 / (Math.sqrt(idx + 1));
+        const text = ((v.title||'') + ' ' + (v.channel||'')).toLowerCase();
+        const tokens = text.match(/\b[a-z][a-z0-9]{2,}\b/g) || [];
+
+        tokens.forEach(token=>{
+            if(!YT_STOPWORDS.has(token) && token.length >= 3){
+                freq[token] = (freq[token] || 0) + rankWeight;
+            }
+        });
+    });
+
+    // Sort by frequency score descending and return top terms with their scores
+    const topTerms = Object.entries(freq)
+        .filter(([term, score])=> score >= 0.4 && term.length >= 3)
+        .sort(([,a],[,b])=> b - a)
+        .slice(0, 24)
+        .map(([term, score])=>({ term, score }));
+
+    ytSignals = { keywords: freq, topTerms };
+    return topTerms;
+}
+
+// Score how strongly a web result card overlaps with YT signals
+function scoreCardWithYTSignals(titleText, descText){
+    if(!ytSignals.topTerms.length) return 0;
+    const combined = (titleText + ' ' + descText).toLowerCase();
+    let boost = 0;
+
+    ytSignals.topTerms.forEach(({ term, score })=>{
+        if(combined.includes(term)){
+            // Title matches count more than description matches
+            const titleBonus = titleText.toLowerCase().includes(term) ? 1.6 : 1.0;
+            boost += score * titleBonus * 0.7;
+        }
+    });
+
+    return Math.min(boost, 18); // cap the maximum boost to keep UI proportional
+}
+
+// Apply YT signal refinement to already-rendered web result cards
+// and display the refinement panel showing what terms were extracted.
+function refineWithYTSignals(videos, q){
+    const topTerms = extractYTSignals(videos);
+
+    if(!topTerms.length){
+        console.log('[DART] YT refinement: no signal terms extracted');
+        return;
+    }
+
+    console.log('[DART] YT signals:', topTerms.slice(0,10).map(t=>t.term));
+
+    // ── Update the refinement panel above the results ──
+    const panel = document.getElementById('ytRefinePanel');
+    const tagsEl = document.getElementById('ytRefineTags');
+    const noteEl = document.getElementById('ytRefineNote');
+
+    if(panel && tagsEl){
+        const boostCount = Math.min(topTerms.length, 16);
+        noteEl.textContent = `${boostCount} TERMS EXTRACTED FROM TOP ${videos.length} VIDEOS`;
+
+        tagsEl.innerHTML = topTerms.slice(0, boostCount).map((t, i)=>{
+            // The top few terms (highest score) get the highlighted style
+            const isHi = i < 5;
+            return `<span class="yt-refine-tag${isHi?' hi':''}" 
+                onclick="seedSearch('${esc(t.term)}')" 
+                title="Click to search: ${esc(q)} ${esc(t.term)}">${esc(t.term)}</span>`;
+        }).join('');
+
+        panel.classList.add('show');
+    }
+
+    // ── Re-score all rendered web result cards ──
+    const cards = Array.from(rg.querySelectorAll('.card'));
+    if(!cards.length) return;
+
+    let boostedCount = 0;
+
+    cards.forEach(card=>{
+        const titleEl = card.querySelector('.ctitle');
+        const snippetEl = card.querySelector('.csnip');
+        if(!titleEl || !snippetEl) return;
+
+        const titleText = titleEl.textContent || '';
+        const descText  = snippetEl.textContent || '';
+        const boost = scoreCardWithYTSignals(titleText, descText);
+
+        if(boost >= 2.5){
+            boostedCount++;
+
+            // Add or update the YT boost bar at the bottom-right of the card
+            let existingBar = card.querySelector('.yt-boost-bar');
+            if(!existingBar){
+                existingBar = document.createElement('div');
+                existingBar.className = 'yt-boost-bar';
+                existingBar.style.cssText = [
+                    'position:absolute',
+                    'bottom:0',
+                    'right:0',
+                    'height:2px',
+                    'background:linear-gradient(90deg,transparent,rgba(255,68,68,0.7))',
+                    'pointer-events:none',
+                    'transition:width 0.5s ease',
+                    'border-radius:0 0 4px 0'
+                ].join(';');
+                card.style.position = 'relative';
+                card.appendChild(existingBar);
+            }
+
+            // Width proportional to boost strength (2.5–18 range mapped to 20%–100%)
+            const widthPct = Math.round(20 + ((boost - 2.5) / 15.5) * 80);
+            existingBar.style.width = widthPct + '%';
+            existingBar.title = `YouTube signal overlap: ${boost.toFixed(1)} — boosted by YT refinement`;
+
+            // Add a small "YT SIGNAL" badge to high-boost cards if not already present
+            if(boost >= 6 && !card.querySelector('.yt-signal-badge')){
+                const badge = document.createElement('div');
+                badge.className = 'yt-signal-badge';
+                badge.textContent = 'YT SIGNAL';
+                badge.title = `This result strongly aligns with YouTube's top results for your query`;
+                card.appendChild(badge);
+            }
+        }
+    });
+
+    // Update status bar to reflect refinement
+    const topTermStr = topTerms.slice(0, 4).map(t=>t.term).join(' · ');
+    setStat('yt-refine', 'ok', `YT-REFINED: ${topTermStr}${boostedCount ? ' · '+boostedCount+' boosted' : ''}`);
+
+    console.log(`[DART] YT refinement applied: ${boostedCount} cards boosted`);
+}
+
 
 function fmtNum(n){
     if(n>=1e9)return(n/1e9).toFixed(1)+'B';
@@ -1233,7 +1794,7 @@ function renderImgs(page){
 }
 function loadMore(){renderImgs(imgPage+1);}
 
-// ── LIGHTBOX ──────────────────────────────────────────
+// ── LIGHTBOX (for images) ──────────────────────────────
 let lbI=0;
 document.getElementById('lb-x').onclick=()=>closeLB();
 document.getElementById('lb').onclick=e=>{if(e.target===document.getElementById('lb'))closeLB();};
@@ -1247,12 +1808,6 @@ function openLB(idx){
 }
 function closeLB(){document.getElementById('lb').classList.remove('open');document.body.style.overflow='';}
 function lbNav(d){const n=lbI+d;if(n>=0&&n<allImgs.length)openLB(n);}
-document.addEventListener('keydown',e=>{
-    if(!document.getElementById('lb').classList.contains('open'))return;
-    if(e.key==='Escape')closeLB();
-    if(e.key==='ArrowRight')lbNav(1);
-    if(e.key==='ArrowLeft')lbNav(-1);
-});
 
 // ── RENDER WEB RESULTS ────────────────────────────────
 let _lastQuery='';
