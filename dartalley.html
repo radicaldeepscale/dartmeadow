@@ -71,6 +71,28 @@
         .bscan:active{transform:translateY(0);}
         .bscan:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
 
+        /* SEARCH HISTORY DROPDOWN */
+        .sh-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#050d14;border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;z-index:9000;display:none;flex-direction:column;max-height:320px;overflow-y:auto;box-shadow:0 14px 40px rgba(0,0,0,0.75);scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+        .sh-drop.open{display:flex;}
+        .sh-drop::-webkit-scrollbar{width:4px;}
+        .sh-drop::-webkit-scrollbar-track{background:transparent;}
+        .sh-drop::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+        .sh-hdr{font-family:'Share Tech Mono',monospace;font-size:0.52rem;letter-spacing:2px;color:var(--dim);padding:7px 14px 5px;border-bottom:1px solid var(--border);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+        .sh-hdr-clear{color:rgba(255,107,53,0.55);cursor:pointer;letter-spacing:1px;font-size:0.5rem;transition:color 0.2s;}
+        .sh-hdr-clear:hover{color:var(--orange);}
+        .sh-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid rgba(0,229,255,0.05);font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--text);letter-spacing:0.5px;flex-shrink:0;}
+        .sh-item:last-child{border-bottom:none;}
+        .sh-item:hover,.sh-item.focused{background:rgba(0,229,255,0.07);}
+        .sh-item.focused{outline:none;}
+        .sh-icon{color:var(--dim);font-size:0.8rem;flex-shrink:0;width:14px;text-align:center;}
+        .sh-item:hover .sh-icon,.sh-item.focused .sh-icon{color:var(--cyan);}
+        .sh-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .sh-text em{font-style:normal;color:var(--cyan);}
+        .sh-del{color:var(--dim);font-size:0.75rem;padding:2px 5px;border-radius:2px;transition:all 0.15s;flex-shrink:0;opacity:0;margin-left:auto;}
+        .sh-item:hover .sh-del,.sh-item.focused .sh-del{opacity:1;}
+        .sh-del:hover{color:var(--orange);background:rgba(255,107,53,0.1);}
+        .sh-empty{font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--dim);padding:16px 14px;text-align:center;letter-spacing:1px;}
+
         /* FILTERS */
         .frow{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
         .ft{font-family:'Share Tech Mono',monospace;font-size:0.6rem;letter-spacing:1px;padding:5px 11px;border:1px solid var(--border);border-radius:2px;color:var(--dim);cursor:pointer;transition:all 0.2s;text-transform:uppercase;background:transparent;user-select:none;}
@@ -626,6 +648,11 @@
                 <input type="text" id="qi" placeholder="search anything across the Meadow..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                 <button class="bscan" id="sbtn" onclick="doSearch()">SCAN</button>
             </div>
+            <!-- SEARCH HISTORY DROPDOWN -->
+            <div class="sh-drop" id="shDrop">
+                <div class="sh-hdr">◈ SEARCH HISTORY <span class="sh-hdr-clear" id="shClearAll">✕ CLEAR ALL</span></div>
+                <div id="shList"></div>
+            </div>
         </div>
         <div class="frow">
             <button class="ft on-o" id="f-prio"  onclick="tF('prio', this)">◈ DART DOMAINS</button>
@@ -810,9 +837,194 @@ const qi=document.getElementById('qi'),lw=document.getElementById('lw'),
 
 qi.addEventListener('keypress',e=>{if(e.key==='Enter')doSearch();});
 
-// ── MAIN SEARCH ───────────────────────────────────────
+// ── SEARCH HISTORY ENGINE ──────────────────────────────
+// Stores up to 80 past queries in localStorage, shows a styled
+// dropdown with autocomplete as the user types, and supports
+// keyboard navigation (↑ ↓ Enter Escape Tab).
+
+const SH = (function(){
+    const KEY = 'dart_search_history';
+    const MAX  = 80;
+
+    // ── Persistence helpers ──────────────────────────────
+    function load(){
+        try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }
+        catch(e){ return []; }
+    }
+    function save(arr){
+        try{ localStorage.setItem(KEY, JSON.stringify(arr)); }
+        catch(e){}
+    }
+
+    // ── Add a query to history (dedup, most-recent-first) ─
+    function add(q){
+        if(!q||!q.trim()) return;
+        const clean = q.trim();
+        let arr = load().filter(s => s.toLowerCase() !== clean.toLowerCase());
+        arr.unshift(clean);
+        if(arr.length > MAX) arr = arr.slice(0, MAX);
+        save(arr);
+    }
+
+    // ── Remove one entry ─────────────────────────────────
+    function remove(q){
+        save(load().filter(s => s !== q));
+    }
+
+    // ── Clear all ────────────────────────────────────────
+    function clear(){
+        save([]);
+    }
+
+    // ── Filter history by current input ──────────────────
+    function match(input){
+        if(!input || !input.trim()) return load().slice(0, 12);
+        const lc = input.trim().toLowerCase();
+        return load().filter(s => s.toLowerCase().includes(lc)).slice(0, 12);
+    }
+
+    // ── Highlight matching portion of a string ────────────
+    function highlight(str, query){
+        if(!query || !query.trim()) return escHtml(str);
+        const lc  = str.toLowerCase();
+        const q   = query.trim().toLowerCase();
+        const idx = lc.indexOf(q);
+        if(idx < 0) return escHtml(str);
+        return escHtml(str.slice(0, idx)) +
+               '<em>' + escHtml(str.slice(idx, idx + q.length)) + '</em>' +
+               escHtml(str.slice(idx + q.length));
+    }
+
+    function escHtml(s){
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    return { add, remove, clear, match, highlight, load };
+})();
+
+// ── Dropdown DOM refs ──────────────────────────────────
+const shDrop     = document.getElementById('shDrop');
+const shList     = document.getElementById('shList');
+const shClearAll = document.getElementById('shClearAll');
+let shFocusIdx   = -1;   // keyboard-focused item index
+let shItems      = [];   // currently rendered items
+
+// ── Build & show the dropdown ──────────────────────────
+function shShow(){
+    const val     = qi.value;
+    const matches = SH.match(val);
+    shItems       = matches;
+    shFocusIdx    = -1;
+
+    if(matches.length === 0){
+        shList.innerHTML = '<div class="sh-empty">NO HISTORY YET</div>';
+    } else {
+        shList.innerHTML = matches.map((q, i) =>
+            `<div class="sh-item" data-idx="${i}" data-query="${q.replace(/"/g,'&quot;')}">
+                <span class="sh-icon">◷</span>
+                <span class="sh-text">${SH.highlight(q, val)}</span>
+                <span class="sh-del" title="Remove" data-del="${q.replace(/"/g,'&quot;')}">✕</span>
+             </div>`
+        ).join('');
+
+        // Click to select a history item
+        shList.querySelectorAll('.sh-item').forEach(el => {
+            el.addEventListener('mousedown', e => {
+                // If the delete button was clicked, remove and refresh
+                if(e.target.classList.contains('sh-del')){
+                    e.preventDefault();
+                    SH.remove(e.target.getAttribute('data-del'));
+                    shShow();
+                    return;
+                }
+                e.preventDefault();
+                const q = el.getAttribute('data-query');
+                qi.value = q;
+                shHide();
+                doSearch();
+            });
+        });
+    }
+
+    shDrop.classList.add('open');
+}
+
+// ── Hide the dropdown ──────────────────────────────────
+function shHide(){
+    shDrop.classList.remove('open');
+    shFocusIdx = -1;
+}
+
+// ── Move keyboard focus within list ───────────────────
+function shMoveFocus(dir){
+    const els = shList.querySelectorAll('.sh-item');
+    if(!els.length) return;
+    els.forEach(e => e.classList.remove('focused'));
+    shFocusIdx = shFocusIdx + dir;
+    if(shFocusIdx < 0)          shFocusIdx = els.length - 1;
+    if(shFocusIdx >= els.length) shFocusIdx = 0;
+    els[shFocusIdx].classList.add('focused');
+    // Preview the query in the input field
+    qi.value = shItems[shFocusIdx];
+}
+
+// ── Input event: show/refresh dropdown ────────────────
+qi.addEventListener('input', () => {
+    shShow();
+});
+
+// ── Focus event: show dropdown when clicking into field ─
+qi.addEventListener('focus', () => {
+    shShow();
+});
+
+// ── Keyboard navigation ────────────────────────────────
+qi.addEventListener('keydown', e => {
+    if(!shDrop.classList.contains('open')) return;
+
+    if(e.key === 'ArrowDown'){
+        e.preventDefault();
+        shMoveFocus(1);
+    } else if(e.key === 'ArrowUp'){
+        e.preventDefault();
+        shMoveFocus(-1);
+    } else if(e.key === 'Escape'){
+        shHide();
+    } else if(e.key === 'Tab'){
+        // Tab completes to the focused item if one is focused
+        if(shFocusIdx >= 0 && shItems[shFocusIdx]){
+            e.preventDefault();
+            qi.value = shItems[shFocusIdx];
+            shHide();
+        } else {
+            shHide();
+        }
+    }
+    // Enter is handled by the existing keypress listener above,
+    // but we also close the dropdown here
+    if(e.key === 'Enter'){
+        shHide();
+    }
+});
+
+// ── Clear all button ───────────────────────────────────
+shClearAll.addEventListener('mousedown', e => {
+    e.preventDefault();
+    SH.clear();
+    shShow();
+});
+
+// ── Hide dropdown when clicking outside ───────────────
+document.addEventListener('mousedown', e => {
+    if(!e.target.closest('.sf')){
+        shHide();
+    }
+});
+
+
 async function doSearch(){
     const q=qi.value.trim();if(!q)return;
+    SH.add(q);        // ← save to search history for autocomplete dropdown
     NLE.onSearch(q);  // ← record search intent
     sbtn.disabled=true;
     rg.innerHTML='';ig.innerHTML='';allImgs=[];imgPage=0;
