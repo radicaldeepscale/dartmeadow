@@ -1022,8 +1022,174 @@ document.addEventListener('mousedown', e => {
 });
 
 
+// ═══════════════════════════════════════════════════════════
+//  DART SAFE — Content Safety Filter
+//  Three-layer protection:
+//   Layer 1: Query gate  — blocks the entire search before any
+//            API call fires if the query matches adult/gore terms.
+//   Layer 2: Result filter — strips individual result cards that
+//            match blocked terms or come from blocked domains.
+//   Layer 3: Video filter — strips video results by title/channel.
+//  Word-boundary regex prevents false positives on legitimate
+//  searches (e.g. "sex education", "nudist colony history",
+//  "graphic novel", "execution of will", "strip mining").
+// ═══════════════════════════════════════════════════════════
+
+const SAFE = (() => {
+
+    // ── LAYER 1: Query-level block patterns ───────────────
+    // Any query matching these halts the entire search.
+    const Q_BLOCK = [
+        /\bporn(o|ography|hub|star|stars|site|film|films|video|videos)?\b/i,
+        /\bxxx\b/i,
+        /\bx-rated\b/i,
+        /\bnude(s|ity|ist\s+video|ist\s+photo|ist\s+film)?\b/i,
+        /\bnaked\s+(women|men|girls|boys|teen|teens|celebr)\b/i,
+        /\bnsfw\b/i,
+        /\bsex\s+(tape|video|videos|clip|clips|scene|scenes|act|acts)\b/i,
+        /\bsexual\s+(content|video|act|explicit)\b/i,
+        /\berotic(a|ally|film|video)?\b/i,
+        /\bhentai\b/i,
+        /\blive\s+sex\b/i,
+        /\bfetish\s+(video|porn|sex)\b/i,
+        /\bondage\s+(video|porn|sex|clip)\b/i,
+        /\bbdsm\b/i,
+        /\bescort\s+(service|ad|listing)\b/i,
+        /\bonlyfans\s+(leak|free|content)\b/i,
+        /\bcamgirl\b/i,
+        /\bchaturbate\b/i,
+        /\bleaked\s+(nude|sex|naked|intimate)\b/i,
+        /\bnude\s+(leak|photo|pic|video)\b/i,
+        /\b(creampie|gangbang|threesome\s+sex|orgy\s+video|milf\s+porn|dildo|vibrator|masturbat)\b/i,
+        /\bincest\b/i,
+        /\bchild\s+(porn|nude|naked|sex|sexual)\b/i,
+        /\bunderage\s+(sex|nude|naked|porn|photo)\b/i,
+        /\b(cp\s+porn|lolicon|shotacon|jailbait)\b/i,
+        // Gore / death / shock content
+        /\bbeheading\s+(video|footage|clip)\b/i,
+        /\bgorezone\b/i,
+        /\bliveleak\b/i,
+        /\bbestgore\b/i,
+        /\bgoregrish\b/i,
+        /\bgore\s+(video|footage|clip|site)\b/i,
+        /\bsnuff\s+film\b/i,
+        /\breach\s+death\s+video\b/i,
+        /\btorture\s+(video|footage|clip)\b/i,
+        /\bgraphic\s+(murder|killing|death|violence)\s+video\b/i,
+        /\bexecution\s+(video|footage|clip|recording)\b/i,
+        /\bsuicide\s+(video|footage|livestream|how\s+to)\b/i,
+        /\bself.?harm\s+(how|method|way|tip)\b/i,
+    ];
+
+    // ── LAYER 2: Blocked domains (any result from these is hidden) ─
+    const BLOCK_DOMAINS = new Set([
+        // Adult platforms
+        'pornhub.com','xvideos.com','xnxx.com','xhamster.com',
+        'redtube.com','youporn.com','tube8.com','spankbang.com',
+        'brazzers.com','bangbros.com','naughtyamerica.com',
+        'onlyfans.com','fansly.com','manyvids.com','loyalfans.com',
+        'chaturbate.com','myfreecams.com','cam4.com','stripchat.com',
+        'bongacams.com','livejasmin.com','jasmin.com',
+        'rule34.xxx','rule34.paheal.net','e621.net','gelbooru.com',
+        'danbooru.donmai.us','sankakucomplex.com','nhentai.net',
+        'hentaihaven.xxx','hanime.tv','fakku.net','hitomi.la',
+        'porntrex.com','tnaflix.com','slutload.com','drtuber.com',
+        'hdtube.xxx','4tube.com','fux.com','fuq.com','thumbzilla.com',
+        'empflix.com','porndig.com','vporn.com','hclips.com',
+        'txxx.com','upornia.com','ixxx.com','iceporn.com',
+        // Gore / shock sites
+        'liveleak.com','bestgore.com','goregrish.com','rotten.com',
+        'theync.com','kaotic.com','ogrish.com','efukt.com',
+        'crazyshit.com','hoodsite.com','documentspeopledigital.com',
+        'watchpeopledi.com','thisvid.com',
+    ]);
+
+    // ── LAYER 3: Result/video title/desc filter terms ─────
+    // Applied to individual result items. More targeted than query
+    // block — only trips on clearly adult/gore phrasing, not on
+    // educational or neutral use of sensitive words.
+    const R_BLOCK = [
+        /\bporn(o|ography|hub|star)?\b/i,
+        /\bxxx\b/i,
+        /\bnudity\b/i,
+        /\bnsfw\b/i,
+        /\berotic(a)?\b/i,
+        /\bhentai\b/i,
+        /\bonlyfans\b/i,
+        /\bchaturbate\b/i,
+        /\bbestgore\b/i,
+        /\bgoregrish\b/i,
+        /\bbeheading\b/i,
+        /\bsnuff\s+film\b/i,
+        /\bgore\s+video\b/i,
+        /\bexecution\s+video\b/i,
+        /\bdeath\s+footage\b/i,
+    ];
+
+    function domainOf(url){
+        try{ return new URL(url).hostname.replace(/^www\./,'').toLowerCase(); }
+        catch(e){ return ''; }
+    }
+
+    function isBlockedDomain(url){ return BLOCK_DOMAINS.has(domainOf(url)); }
+
+    // Layer 1 — returns true if the whole query should be blocked
+    function blockQuery(q){
+        return Q_BLOCK.some(p => p.test(q.trim()));
+    }
+
+    // Layer 2+3 — returns true if an individual result should be hidden
+    function blockResult(item){
+        const url  = item.url||'';
+        if(isBlockedDomain(url)) return true;
+        const text = ((item.title||'')+' '+(item.desc||'')+' '+url).toLowerCase();
+        return R_BLOCK.some(p => p.test(text));
+    }
+
+    // Filter a results array
+    function filterResults(items){
+        return (items||[]).filter(item => !blockResult(item));
+    }
+
+    // Filter video array (same logic, different field names)
+    function filterVideos(videos){
+        return (videos||[]).filter(v => {
+            if(isBlockedDomain(v.url||'')) return false;
+            const text = ((v.title||'')+' '+(v.channel||'')).toLowerCase();
+            return !R_BLOCK.some(p => p.test(text));
+        });
+    }
+
+    // Filter image array — strip any image whose source URL is a blocked domain
+    function filterImages(imgs){
+        return (imgs||[]).filter(img => {
+            if(isBlockedDomain(img.link||'')) return false;
+            if(isBlockedDomain(img.thumb||'')) return false;
+            return true;
+        });
+    }
+
+    return { blockQuery, blockResult, filterResults, filterVideos, filterImages };
+})();
+
 async function doSearch(){
     const q=qi.value.trim();if(!q)return;
+
+    // ── SAFE Layer 1: halt entire search on blocked query ─
+    if(SAFE.blockQuery(q)){
+        lw.style.display='none';
+        rw.style.display='none';
+        sbtn.disabled=false;
+        rg.innerHTML='';
+        rw.style.display='block';
+        rg.innerHTML=`<div class="nr">
+            <div class="nr-code" style="color:var(--orange);font-size:2rem;">⚠</div>
+            <div class="nr-msg" style="color:var(--orange);">CONTENT BLOCKED — SAFE SEARCH ACTIVE</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--dim);margin-top:10px;letter-spacing:1px;">This search engine filters adult and harmful content.</div>
+        </div>`;
+        setStat('safe','warn','SAFE: query blocked');
+        return;
+    }
     SH.add(q);        // ← save to search history for autocomplete dropdown
     NLE.onSearch(q);  // ← record search intent
     sbtn.disabled=true;
@@ -1097,6 +1263,9 @@ async function doSearch(){
     // Deduplicate
     const seen=new Set();
     let final=all.filter(r=>{const k=(r.url||r.title||'').toLowerCase();if(seen.has(k))return false;seen.add(k);return true;});
+
+    // ── SAFE Layer 2: strip blocked result items ──────────
+    final = SAFE.filterResults(final);
 
     // ── NLE: Re-rank results using learned model ──
     final = NLE.rankResults(q, final);
@@ -1562,8 +1731,51 @@ async function fetchGitHub(q,enc){
 //     relevant and can click any term to trigger a focused sub-search.
 // ═══════════════════════════════════════════════════════════
 
-const YT_API_KEY = 'AIzaSyBrhOod_Q6QoX6XQFyuaipq_ncFvx5lEac';
+// ═══════════════════════════════════════════════════════════
+//  YOUTUBE — Data API v3 + Invidious fallback + quota guard
+//  YouTube free quota = 10,000 units/day. search.list = 100u.
+//  That's ~100 searches/day. When quota is exhausted, Google
+//  returns HTTP 403 with reason "quotaExceeded". We detect this,
+//  flag it in sessionStorage, and automatically switch to
+//  Invidious (open-source YouTube frontend, free, no key,
+//  CORS-open). Session cache prevents re-burning quota on
+//  repeated identical searches.
+//  safeSearch:'strict' is set on every API call.
+// ═══════════════════════════════════════════════════════════
+
+const YT_API_KEY    = 'AIzaSyBrhOod_Q6QoX6XQFyuaipq_ncFvx5lEac';
 const YT_SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
+
+// Invidious public instances — tried in order until one works
+const YT_FALLBACK_INSTANCES = [
+    'https://inv.nadeko.net',
+    'https://invidious.privacydev.net',
+    'https://invidious.nerdvpn.de',
+    'https://invidious.io.lol',
+    'https://vid.puffyan.us',
+];
+
+const YT_QUOTA_FLAG   = 'dart_yt_quota_x'; // sessionStorage key
+const YT_CACHE_PFX    = 'dart_yc_';         // sessionStorage cache prefix
+
+function ytQuotaHit(){ return sessionStorage.getItem(YT_QUOTA_FLAG)==='1'; }
+function ytMarkQuota(){
+    sessionStorage.setItem(YT_QUOTA_FLAG,'1');
+    console.warn('[DART] YouTube quota exhausted — switching to Invidious fallback');
+    setStat('yt','warn','YT: QUOTA — using fallback');
+}
+
+function ytCacheGet(q){
+    try{
+        const d = JSON.parse(sessionStorage.getItem(YT_CACHE_PFX+q.toLowerCase())||'null');
+        if(!d) return null;
+        if(Date.now()-d.ts > 3600000) return null; // 1h TTL
+        return d.v;
+    }catch(e){ return null; }
+}
+function ytCacheSet(q, videos){
+    try{ sessionStorage.setItem(YT_CACHE_PFX+q.toLowerCase(), JSON.stringify({ts:Date.now(),v:videos})); }catch(e){}
+}
 
 function isChannelQuery(q){
     return /^@/.test(q.trim())||/\b(channel|youtube\.com\/@)\b/i.test(q);
@@ -1571,116 +1783,143 @@ function isChannelQuery(q){
 function cleanHandle(q){ return q.trim().replace(/^@/,''); }
 
 async function searchYouTube(q){
-    const raw=q.trim();
-    const isChannel=isChannelQuery(raw);
+    const raw = q.trim();
 
-    let videos=[];
-
-    if(isChannel){
-        // For @handle queries: search for the channel first, then get its videos
-        videos = await ytChannelVideos(cleanHandle(raw));
-    }
-
-    // If not a channel query or channel lookup got nothing, do keyword search
-    if(!videos.length){
-        videos = await ytSearch(raw);
-    }
-
-    if(!videos.length){
-        setStat('yt','warn','YT: unavailable');
+    // Session cache check — no quota burned on repeated searches
+    const cached = ytCacheGet(raw);
+    if(cached && cached.length){
+        console.log('[DART] YT cache hit:', raw, cached.length, 'items');
+        setStat('yt','ok','YT: '+cached.length+' (cached)');
+        const safe = SAFE.filterVideos(cached);
+        renderVideos(safe.slice(0,12), q);
+        refineWithYTSignals(safe.slice(0,12), q);
         return;
     }
 
-    const sliced = videos.slice(0, 12);
-    renderVideos(sliced, q);
+    let videos = [];
+    if(isChannelQuery(raw)) videos = await ytChannelVideos(cleanHandle(raw));
+    if(!videos.length)      videos = await ytSearch(raw);
 
-    // ── YOUTUBE SIGNAL REFINEMENT ──────────────────────────
-    // Now that we have YouTube results, extract semantic signals from the
-    // titles/channels that YouTube's relevance algorithm matched to this query.
-    // These signals are injected into the already-rendered web results to
-    // visually surface which of those results align with the YouTube-confirmed
-    // topic interpretation, giving the user better cross-source signal correlation.
+    if(!videos.length){ setStat('yt','warn','YT: unavailable'); return; }
+
+    ytCacheSet(raw, videos);
+    const safe = SAFE.filterVideos(videos);
+    const sliced = safe.slice(0,12);
+    renderVideos(sliced, q);
     refineWithYTSignals(sliced, q);
 }
 
-// General video search via YouTube Data API v3
+// ── Primary: YouTube Data API v3 ─────────────────────────
 async function ytSearch(q){
-    try{
-        const params=new URLSearchParams({
-            part:'snippet',
-            q,
-            type:'video',
-            maxResults:12,
-            key:YT_API_KEY
-        });
-        const r=await ft(`${YT_SEARCH_URL}?${params}`,10000);
-        if(!r.ok){
-            const err=await r.json().catch(()=>({}));
-            const msg=err?.error?.message||('HTTP '+r.status);
-            console.warn('[DART] YT API error:',msg);
-            setStat('yt','warn','YT: '+msg.slice(0,40));
+    if(!ytQuotaHit()){
+        try{
+            const params = new URLSearchParams({
+                part:'snippet', q, type:'video', maxResults:12,
+                safeSearch:'strict', key:YT_API_KEY
+            });
+            const r = await ft(`${YT_SEARCH_URL}?${params}`,10000);
+            if(r.ok){
+                const d = await r.json();
+                console.log('[DART] YT API ok, items:',(d.items||[]).length);
+                setStat('yt','ok','YT: '+(d.items||[]).length+' videos');
+                return (d.items||[]).map(item=>({
+                    videoId:  item.id?.videoId||'',
+                    title:    item.snippet?.title||'',
+                    channel:  item.snippet?.channelTitle||'',
+                    views:'', duration:'',
+                    thumb:    item.snippet?.thumbnails?.medium?.url
+                              ||`https://i.ytimg.com/vi/${item.id?.videoId}/mqdefault.jpg`,
+                    url:      `https://youtube.com/watch?v=${item.id?.videoId}`
+                })).filter(v=>v.videoId);
+            } else {
+                const err = await r.json().catch(()=>({}));
+                const reason = err?.error?.errors?.[0]?.reason||'';
+                const msg    = err?.error?.message||('HTTP '+r.status);
+                console.warn('[DART] YT API error:', msg, reason);
+                if(r.status===403 && (reason.includes('quota')||reason.includes('dailyLimit')||msg.toLowerCase().includes('quota'))){
+                    ytMarkQuota();
+                } else {
+                    setStat('yt','warn','YT: '+msg.slice(0,40));
+                    return [];
+                }
+            }
+        }catch(e){
+            console.warn('[DART] YT exception:',e.name, e.message);
+            setStat('yt','warn','YT: '+e.name);
             return [];
         }
-        const d=await r.json();
-        console.log('[DART] YT API ok, items:',(d.items||[]).length);
-        return (d.items||[]).map(item=>({
-            videoId: item.id?.videoId||'',
-            title:   item.snippet?.title||'',
-            channel: item.snippet?.channelTitle||'',
-            views:   '',
-            duration:'',
-            thumb:   item.snippet?.thumbnails?.medium?.url
-                     ||item.snippet?.thumbnails?.default?.url
-                     ||`https://i.ytimg.com/vi/${item.id?.videoId}/mqdefault.jpg`,
-            url:     `https://youtube.com/watch?v=${item.id?.videoId}`
-        })).filter(v=>v.videoId);
-    }catch(e){
-        console.warn('[DART] YT exception:',e.name, e.message);
-        setStat('yt','warn','YT: '+e.name);
-        return [];
     }
+    // Quota exhausted — fall through to Invidious
+    return ytInvidiousSearch(q);
 }
 
-// Channel search: find channel by handle/name, then return its latest videos
-async function ytChannelVideos(handle){
-    try{
-        // Step 1: find the channel
-        const sp=new URLSearchParams({
-            part:'snippet',
-            q:handle,
-            type:'channel',
-            maxResults:1,
-            key:YT_API_KEY
-        });
-        const r=await ft(`${YT_SEARCH_URL}?${sp}`,10000);
-        if(!r.ok) return [];
-        const d=await r.json();
-        const channelId=d.items?.[0]?.id?.channelId;
-        if(!channelId) return [];
+// ── Fallback: Invidious public API (no key, CORS-open) ───
+async function ytInvidiousSearch(q){
+    const enc = encodeURIComponent(q);
+    for(const base of YT_FALLBACK_INSTANCES){
+        try{
+            const r = await ft(`${base}/api/v1/search?q=${enc}&type=video&page=1`,8000);
+            if(!r.ok) continue;
+            const d = await r.json();
+            if(!Array.isArray(d)||!d.length) continue;
+            console.log('[DART] YT Invidious ok via', base, d.length,'items');
+            setStat('yt','ok','YT: '+d.length+' (fallback)');
+            return d.filter(v=>v.videoId).slice(0,12).map(v=>({
+                videoId:  v.videoId,
+                title:    v.title||'',
+                channel:  v.author||'',
+                views:    v.viewCount ? v.viewCount.toLocaleString()+' views' : '',
+                duration: v.lengthSeconds ? Math.floor(v.lengthSeconds/60)+':'+(v.lengthSeconds%60).toString().padStart(2,'0') : '',
+                thumb:    `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+                url:      `https://youtube.com/watch?v=${v.videoId}`
+            }));
+        }catch(e){ continue; }
+    }
+    console.warn('[DART] YT all Invidious instances failed');
+    setStat('yt','warn','YT: all sources unavailable');
+    return [];
+}
 
-        // Step 2: get latest videos from that channel
-        const vp=new URLSearchParams({
-            part:'snippet',
-            channelId,
-            type:'video',
-            order:'date',
-            maxResults:12,
-            key:YT_API_KEY
-        });
-        const r2=await ft(`${YT_SEARCH_URL}?${vp}`,10000);
-        if(!r2.ok) return [];
-        const d2=await r2.json();
-        return (d2.items||[]).map(item=>({
-            videoId: item.id.videoId,
-            title:   item.snippet.title,
-            channel: item.snippet.channelTitle,
-            views:   '',
-            duration:'',
-            thumb:   item.snippet.thumbnails?.medium?.url
-                     ||`https://i.ytimg.com/vi/${item.id.videoId}/mqdefault.jpg`,
-            url:     `https://youtube.com/watch?v=${item.id.videoId}`
-        })).filter(v=>v.videoId);
-    }catch(e){ return []; }
+// ── Channel lookup ────────────────────────────────────────
+async function ytChannelVideos(handle){
+    if(!ytQuotaHit()){
+        try{
+            const sp = new URLSearchParams({
+                part:'snippet', q:handle, type:'channel', maxResults:1,
+                safeSearch:'strict', key:YT_API_KEY
+            });
+            const r = await ft(`${YT_SEARCH_URL}?${sp}`,10000);
+            if(r.ok){
+                const d = await r.json();
+                const channelId = d.items?.[0]?.id?.channelId;
+                if(channelId){
+                    const vp = new URLSearchParams({
+                        part:'snippet', channelId, type:'video', order:'date',
+                        maxResults:12, safeSearch:'strict', key:YT_API_KEY
+                    });
+                    const r2 = await ft(`${YT_SEARCH_URL}?${vp}`,10000);
+                    if(r2.ok){
+                        const d2 = await r2.json();
+                        const items = (d2.items||[]).map(item=>({
+                            videoId: item.id.videoId,
+                            title:   item.snippet.title,
+                            channel: item.snippet.channelTitle,
+                            views:'', duration:'',
+                            thumb:   item.snippet.thumbnails?.medium?.url
+                                     ||`https://i.ytimg.com/vi/${item.id.videoId}/mqdefault.jpg`,
+                            url:     `https://youtube.com/watch?v=${item.id.videoId}`
+                        })).filter(v=>v.videoId);
+                        if(items.length) return items;
+                    }
+                }
+            } else {
+                const err = await r.json().catch(()=>({}));
+                const reason = err?.error?.errors?.[0]?.reason||'';
+                if(r.status===403&&(reason.includes('quota')||reason.includes('dailyLimit'))) ytMarkQuota();
+            }
+        }catch(e){}
+    }
+    return ytInvidiousSearch(handle);
 }
 
 
@@ -2205,6 +2444,9 @@ async function searchImages(q){
     allImgs=imgs
         .filter(i=>{if(seen.has(i.thumb))return false;seen.add(i.thumb);return true;})
         .sort((a,b)=>(b.relevance||0)-(a.relevance||0));
+
+    // ── SAFE: filter blocked image sources ────────────────
+    allImgs = SAFE.filterImages(allImgs);
 
     if(allImgs.length){
         setBadge('b-img','purp');
