@@ -1,0 +1,15 @@
+{
+  "name": "DART Meadow",
+  "short_name": "DART Meadow",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/static/dm512.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
