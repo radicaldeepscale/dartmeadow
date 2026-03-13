@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MANTIS RADAR</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/satellite.js@4.1.4/dist/satellite.min.js"></script>
+<style>
+:root{
+  --cyan:#00f5ff;--red:#ff3b3b;--green:#00ff88;--yellow:#ffd600;
+  --orange:#ff8800;--dim:rgba(0,245,255,0.07);--border:rgba(0,245,255,0.18);--bg:#030a0e;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--cyan);font-family:'Share Tech Mono',monospace;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:9000;}
+
+/* HEADER */
+header{height:56px;flex-shrink:0;padding:0 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(0,245,255,0.05) 0%,transparent 100%);z-index:100;}
+.logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.25rem;letter-spacing:.15em;text-shadow:0 0 18px var(--cyan),0 0 36px rgba(0,245,255,.25);}
+.logo sub{display:block;font-size:.58rem;font-weight:400;letter-spacing:.3em;color:rgba(0,245,255,.4);margin-top:1px;}
+.status-bar{display:flex;align-items:center;gap:16px;font-size:.68rem;letter-spacing:.08em;}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:pdot 1.5s ease-in-out infinite;display:inline-block;margin-right:5px;}
+.pulse-dot.red{background:var(--red);box-shadow:0 0 7px var(--red);}
+.pulse-dot.yellow{background:var(--yellow);box-shadow:0 0 7px var(--yellow);animation:none;}
+#clock{color:rgba(0,245,255,.55);}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+
+/* MIDDLE */
+#middle{flex:1;display:flex;overflow:hidden;min-height:0;}
+
+/* LEFT PANEL */
+#left-panel{width:300px;min-width:180px;max-width:460px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:10;background:var(--bg);}
+#left-resizer{position:absolute;top:0;right:-5px;width:10px;height:100%;cursor:col-resize;z-index:200;display:flex;align-items:center;justify-content:center;}
+#left-resizer::after{content:'';width:2px;height:50px;background:var(--border);border-radius:2px;transition:background .15s,box-shadow .15s;}
+#left-resizer:hover::after,.lr-drag::after{background:var(--cyan)!important;box-shadow:0 0 8px var(--cyan)!important;}
+
+/* MAP AREA */
+#map-area{flex:1;display:flex;align-items:flex-start;justify-content:flex-start;overflow:hidden;background:#040c12;position:relative;}
+#map-wrap,#globe-wrap{position:absolute;top:0;left:0;}
+#map{width:100%;height:100%;background:#06111a;}
+#globe-wrap{display:none;overflow:hidden;}
+#globe-canvas{display:block;}
+
+/* view tabs */
+#view-tabs{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:600;display:flex;border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.vtab{padding:5px 16px;background:rgba(3,10,14,.88);color:rgba(0,245,255,.5);font-family:'Orbitron',sans-serif;font-size:.55rem;font-weight:700;letter-spacing:.2em;cursor:pointer;transition:all .18s;border:none;backdrop-filter:blur(6px);}
+.vtab:first-child{border-right:1px solid var(--border);}
+.vtab.active{background:rgba(0,245,255,.12);color:var(--cyan);text-shadow:0 0 8px var(--cyan);}
+.vtab:hover:not(.active){background:rgba(0,245,255,.07);color:rgba(0,245,255,.75);}
+
+/* corners */
+.mc{position:absolute;width:20px;height:20px;pointer-events:none;z-index:500;}
+.mc.tl{top:6px;left:6px;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan);}
+.mc.tr{top:6px;right:6px;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan);}
+.mc.bl{bottom:6px;left:6px;border-bottom:2px solid var(--cyan);border-left:2px solid var(--cyan);}
+.mc.br{bottom:6px;right:6px;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan);}
+
+#map-hud,#globe-hud{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(3,10,14,.88);border:1px solid var(--border);padding:6px 16px;font-size:.6rem;letter-spacing:.1em;color:rgba(0,245,255,.55);backdrop-filter:blur(8px);display:flex;gap:16px;align-items:center;white-space:nowrap;}
+#map-hud strong,#globe-hud strong{color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:.68rem;}
+
+/* globe overlays */
+#globe-time-hud{position:absolute;top:44px;right:8px;z-index:500;background:rgba(3,10,14,.85);border:1px solid var(--border);padding:8px 12px;font-size:.6rem;line-height:2;color:rgba(0,245,255,.6);text-align:right;backdrop-filter:blur(6px);}
+#globe-time-hud strong{color:var(--cyan);font-family:'Orbitron',sans-serif;}
+#globe-sat-count{position:absolute;top:44px;left:8px;z-index:500;background:rgba(3,10,14,.85);border:1px solid var(--border);padding:8px 12px;font-size:.6rem;color:rgba(0,245,255,.55);backdrop-filter:blur(6px);line-height:1.9;}
+#globe-sat-count strong{font-family:'Orbitron',sans-serif;}
+#sat-tooltip{position:fixed;display:none;background:rgba(3,10,14,.97);border:1px solid rgba(0,245,255,.4);padding:8px 12px;font-size:.62rem;color:var(--cyan);pointer-events:none;white-space:nowrap;z-index:8000;line-height:1.8;}
+#sat-tooltip b{color:var(--yellow);font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:.1em;}
+#sat-status-bar{position:absolute;top:44px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(3,10,14,.85);border:1px solid rgba(0,245,255,.2);padding:4px 14px;font-size:.55rem;color:rgba(0,245,255,.5);backdrop-filter:blur(6px);white-space:nowrap;}
+
+/* loading */
+#loading-overlay,#globe-loading{position:absolute;inset:0;background:rgba(3,10,14,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:1000;}
+.spinner{width:36px;height:36px;border:2px solid rgba(0,245,255,.1);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite;box-shadow:0 0 10px rgba(0,245,255,.25);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:.25em;color:var(--cyan);animation:blink 1s step-end infinite;}
+.loading-sub{font-size:.55rem;color:rgba(0,245,255,.4);letter-spacing:.15em;text-align:center;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* FOOTER */
+#footer{height:210px;min-height:90px;max-height:340px;flex-shrink:0;border-top:1px solid var(--border);display:flex;position:relative;background:var(--bg);z-index:10;}
+#footer-resizer{position:absolute;top:-5px;left:0;width:100%;height:10px;cursor:row-resize;z-index:200;display:flex;align-items:center;justify-content:center;}
+#footer-resizer::after{content:'';width:60px;height:2px;background:var(--border);border-radius:2px;transition:background .15s,box-shadow .15s;}
+#footer-resizer:hover::after,.fr-drag::after{background:var(--cyan)!important;box-shadow:0 0 6px var(--cyan)!important;}
+.fc{flex:1;border-right:1px solid var(--border);padding:10px 13px;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.fc:last-child{border-right:none;}
+.fc-label{font-family:'Orbitron',sans-serif;font-size:.52rem;font-weight:700;letter-spacing:.22em;color:rgba(0,245,255,.4);text-transform:uppercase;margin-bottom:8px;flex-shrink:0;}
+.radius-row{display:flex;align-items:center;gap:10px;}
+.radius-row span{font-family:'Orbitron',sans-serif;font-size:.75rem;color:var(--cyan);white-space:nowrap;}
+input[type=range]{flex:1;accent-color:var(--cyan);cursor:pointer;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:8px;}
+.stat-item label{display:block;font-size:.52rem;color:rgba(0,245,255,.35);letter-spacing:.1em;margin-bottom:1px;}
+.stat-item value{font-size:.72rem;color:var(--cyan);}
+#detail-panel{overflow-y:auto;font-size:.66rem;flex:1;}
+#detail-panel::-webkit-scrollbar{width:2px;}
+#detail-panel::-webkit-scrollbar-thumb{background:var(--border);}
+.detail-field{margin-bottom:6px;}
+.detail-field label{display:block;font-size:.52rem;color:rgba(0,245,255,.35);letter-spacing:.16em;text-transform:uppercase;margin-bottom:1px;}
+.detail-field value{font-size:.7rem;color:var(--cyan);display:block;}
+.detail-field value.hi{color:var(--yellow);font-family:'Orbitron',sans-serif;font-size:.65rem;}
+.detail-field value.grn{color:var(--green);}
+.detail-field value.org{color:var(--orange);}
+.threat-bar-bg{height:4px;background:rgba(0,245,255,.1);border-radius:3px;overflow:hidden;margin-top:4px;}
+.threat-bar-fill{height:100%;border-radius:3px;transition:width .5s;background:linear-gradient(90deg,var(--green),var(--yellow),var(--red));}
+.info-box{background:rgba(255,214,0,.04);border:1px solid rgba(255,214,0,.18);border-radius:3px;padding:6px 9px;margin:5px 0;font-size:.58rem;color:rgba(255,214,0,.65);line-height:1.6;}
+.info-box.blue{background:rgba(0,245,255,.03);border-color:var(--border);color:rgba(0,245,255,.45);}
+.action-btn{padding:8px;background:transparent;border:1px solid var(--border);color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:.52rem;font-weight:700;letter-spacing:.18em;cursor:pointer;transition:all .18s;text-transform:uppercase;width:100%;flex-shrink:0;margin-bottom:5px;}
+.action-btn:hover{background:var(--dim);border-color:var(--cyan);box-shadow:0 0 10px rgba(0,245,255,.18);}
+.action-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+/* LEFT PANEL internals */
+.panel-section{border-bottom:1px solid var(--border);padding:9px 12px;flex-shrink:0;}
+.section-title{font-family:'Orbitron',sans-serif;font-size:.52rem;font-weight:700;letter-spacing:.22em;color:rgba(0,245,255,.45);text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.count-badge{background:rgba(0,245,255,.12);border:1px solid var(--border);border-radius:2px;padding:1px 6px;font-family:'Orbitron',sans-serif;font-size:.6rem;color:var(--cyan);}
+.coord-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.coord-item label{display:block;font-size:.52rem;color:rgba(0,245,255,.35);letter-spacing:.1em;margin-bottom:1px;}
+.coord-item value{font-size:.72rem;color:var(--cyan);}
+.radar-container{display:flex;justify-content:center;align-items:center;padding:12px;background:rgba(0,0,0,.18);flex-shrink:0;}
+.signal-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:9px 12px;flex-shrink:0;}
+.signal-card{background:var(--dim);border:1px solid var(--border);border-radius:3px;padding:7px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;}
+.signal-card:hover{background:rgba(0,245,255,.11);border-color:var(--cyan);}
+.signal-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,255,.04) 0%,transparent 60%);}
+.sig-label{font-family:'Orbitron',sans-serif;font-size:.48rem;font-weight:700;letter-spacing:.18em;color:rgba(0,245,255,.45);margin-bottom:4px;}
+.sig-status{font-size:.62rem;font-weight:bold;}
+.sig-hw{color:var(--yellow);}.sig-live{color:var(--green);}
+.sig-bars{display:flex;gap:2px;margin-top:4px;align-items:flex-end;height:12px;}
+.sig-bar{width:3px;background:rgba(0,245,255,.18);border-radius:1px;transition:height .3s,background .3s;}
+.sig-bar.active{background:var(--cyan);box-shadow:0 0 3px var(--cyan);}
+.list-header{padding:7px 12px 4px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-bottom:1px solid var(--border);}
+.drone-list{flex:1;overflow-y:auto;}
+.drone-list::-webkit-scrollbar{width:2px;}
+.drone-list::-webkit-scrollbar-thumb{background:var(--border);}
+.drone-item{padding:7px 12px;border-bottom:1px solid rgba(0,245,255,.05);cursor:pointer;transition:background .12s;display:flex;align-items:flex-start;gap:7px;}
+.drone-item:hover{background:var(--dim);}
+.drone-item.selected{background:rgba(0,245,255,.09);border-left:2px solid var(--cyan);}
+.drone-icon{font-size:.95rem;margin-top:1px;filter:drop-shadow(0 0 3px #00f5ff);}
+.drone-info{flex:1;min-width:0;}
+.drone-id{font-family:'Orbitron',sans-serif;font-size:.58rem;font-weight:700;color:var(--cyan);letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.drone-meta{font-size:.54rem;color:rgba(0,245,255,.42);margin-top:2px;line-height:1.5;}
+.drone-dist{font-family:'Orbitron',sans-serif;font-size:.54rem;color:var(--yellow);text-align:right;white-space:nowrap;}
+.empty-state{padding:22px 12px;text-align:center;color:rgba(0,245,255,.28);font-size:.66rem;line-height:2;}
+
+/* ── Dark map tiles: NO filter needed, using CartoDB dark_all ── */
+.leaflet-container{background:#06111a!important;}
+.drone-marker-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:14px;filter:drop-shadow(0 0 5px #00f5ff);}
+.leaflet-control-zoom a{background:rgba(3,10,14,.9)!important;color:var(--cyan)!important;border-color:var(--border)!important;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MANTIS RADAR<sub>RADICAL DEEPSCALE // AERIAL + ORBITAL SURVEILLANCE</sub></div>
+  <div class="status-bar">
+    <div><span class="pulse-dot" id="adsb-dot"></span><span id="adsb-status">ADS-B OFFLINE</span></div>
+    <div><span class="pulse-dot yellow" id="sat-dot"></span><span id="sat-status">ORBITAL OFFLINE</span></div>
+    <div><span class="pulse-dot yellow"></span><span>BT/RF NEEDS HW</span></div>
+    <div id="clock">--:--:--</div>
+  </div>
+</header>
+
+<div id="middle">
+  <div id="left-panel">
+    <div id="left-resizer"></div>
+    <div class="panel-section">
+      <div class="section-title">Your Position</div>
+      <div class="coord-grid">
+        <div class="coord-item"><label>LATITUDE</label><value id="my-lat">--</value></div>
+        <div class="coord-item"><label>LONGITUDE</label><value id="my-lon">--</value></div>
+        <div class="coord-item"><label>ACCURACY</label><value id="my-acc">--</value></div>
+        <div class="coord-item"><label>CONTACTS</label><value id="contact-count">0</value></div>
+      </div>
+    </div>
+    <div class="radar-container">
+      <canvas id="radar-canvas" width="200" height="200"></canvas>
+    </div>
+    <div class="signal-grid">
+      <div class="signal-card" onclick="showSignalInfo('adsb')">
+        <div class="sig-label">✈ ADS-B</div><div class="sig-status sig-live">LIVE</div><div class="sig-bars" id="bars-adsb"></div>
+      </div>
+      <div class="signal-card" onclick="showSignalInfo('orbital')">
+        <div class="sig-label">⊕ ORBITAL</div><div class="sig-status sig-live" id="sig-orbital-status">LOADING</div><div class="sig-bars" id="bars-orbital"></div>
+      </div>
+      <div class="signal-card" onclick="showSignalInfo('bluetooth')">
+        <div class="sig-label">⬡ BLUETOOTH</div><div class="sig-status sig-hw">NEEDS HW</div><div class="sig-bars" id="bars-bt"></div>
+      </div>
+      <div class="signal-card" onclick="showSignalInfo('wifi')">
+        <div class="sig-label">⊛ WI-FI</div><div class="sig-status sig-hw">NEEDS HW</div><div class="sig-bars" id="bars-wifi"></div>
+      </div>
+    </div>
+    <div class="list-header">
+      <div class="section-title" style="margin-bottom:0;flex:1;">Aircraft Contacts</div>
+      <span class="count-badge" id="list-count">0</span>
+    </div>
+    <div class="drone-list" id="drone-list"><div class="empty-state">◎ Waiting for location<br>to begin scan...</div></div>
+  </div>
+
+  <div id="map-area">
+    <div id="view-tabs">
+      <button class="vtab active" id="tab-aerial" onclick="switchTab('aerial')">✈ AERIAL</button>
+      <button class="vtab" id="tab-orbital" onclick="switchTab('orbital')">⊕ ORBITAL</button>
+    </div>
+
+    <!-- AERIAL -->
+    <div id="map-wrap">
+      <div id="map"></div>
+      <div class="mc tl"></div><div class="mc tr"></div><div class="mc bl"></div><div class="mc br"></div>
+      <div id="map-hud">
+        <div>RANGE <strong id="hud-range">--</strong> km</div>
+        <div>CONTACTS <strong id="hud-count">0</strong></div>
+        <div id="next-refresh" style="color:rgba(0,245,255,.4);font-size:.58rem;">NEXT SCAN: --s</div>
+      </div>
+      <div id="loading-overlay"><div class="spinner"></div><div class="loading-text">ACQUIRING POSITION...</div></div>
+    </div>
+
+    <!-- ORBITAL -->
+    <div id="globe-wrap">
+      <canvas id="globe-canvas"></canvas>
+      <div class="mc tl"></div><div class="mc tr"></div><div class="mc bl"></div><div class="mc br"></div>
+      <div id="globe-hud">
+        <div>TRACKED <strong id="glob-count">--</strong></div>
+        <div id="glob-hint" style="color:rgba(0,245,255,.4);font-size:.56rem;">DRAG TO ROTATE · SCROLL TO ZOOM · CLICK SATELLITE</div>
+      </div>
+      <div id="globe-time-hud">
+        <strong id="gt-utc">--:--:-- UTC</strong><br>
+        <span id="gt-local">LOCAL --:--:--</span><br>
+        <span id="gt-date">-- --- ----</span><br>
+        <span id="gt-tz">TZ: --</span>
+      </div>
+      <div id="globe-sat-count">
+        <strong style="color:var(--cyan)" id="gs-leo">-- LEO</strong><br>
+        <strong style="color:var(--yellow)" id="gs-meo">-- MEO</strong><br>
+        <strong style="color:var(--orange)" id="gs-geo">-- GEO</strong>
+      </div>
+      <div id="sat-status-bar" id="globe-status-bar">LOADING TLE DATA...</div>
+      <div id="globe-loading"><div class="spinner"></div><div class="loading-text">LOADING ORBITAL DATA</div><div class="loading-sub" id="globe-load-sub">CONNECTING TO CELESTRAK...</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="sat-tooltip"></div>
+
+<div id="footer">
+  <div id="footer-resizer"></div>
+  <div class="fc" style="flex:1;min-width:160px;">
+    <div class="fc-label" id="fc1-label">Scan Radius</div>
+    <div id="fc1-aerial">
+      <div class="radius-row">
+        <input type="range" id="radius-slider" min="10" max="200" value="50" step="10">
+        <span><span id="radius-val">50</span> km</span>
+      </div>
+    </div>
+    <div id="fc1-orbital" style="display:none;">
+      <div style="font-size:.58rem;color:rgba(0,245,255,.4);line-height:2;">
+        🖱 Drag → rotate globe<br>
+        🔃 Scroll → zoom in/out<br>
+        👆 Click dot → orbit trace
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-item"><label>LAT</label><value id="f-lat">--</value></div>
+      <div class="stat-item"><label>LON</label><value id="f-lon">--</value></div>
+      <div class="stat-item"><label>ACCURACY</label><value id="f-acc">--</value></div>
+      <div class="stat-item"><label id="f-count-label">AIRCRAFT</label><value id="f-contacts">0</value></div>
+    </div>
+  </div>
+  <div class="fc" style="flex:2.6;min-width:180px;">
+    <div class="fc-label">Contact Detail</div>
+    <div id="detail-panel"><div style="color:rgba(0,245,255,.22);font-size:.62rem;text-align:center;padding:14px 0;line-height:2.4;">⊕ Select a contact from the list<br><span style="font-size:.54rem;color:rgba(0,245,255,.14);">or click any satellite on the globe</span></div></div>
+  </div>
+  <div class="fc" style="flex:.75;min-width:110px;">
+    <div class="fc-label">Actions</div>
+    <button class="action-btn" id="refresh-btn" onclick="fetchAircraft()">⟳ REFRESH SCAN</button>
+    <button class="action-btn" id="sat-refresh-btn" onclick="fetchSatelliteData(true)" style="display:none;">⟳ RELOAD TLEs</button>
+    <div id="footer-countdown" style="margin-top:4px;font-size:.58rem;color:rgba(0,245,255,.35);text-align:center;">NEXT SCAN: --s</div>
+    <div style="margin-top:6px;font-size:.52rem;color:rgba(0,245,255,.2);text-align:center;line-height:1.6;">Auto-refresh 30s<br>OpenSky Network<br>CelesTrak TLEs</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════════
+//  SHARED STATE
+// ══════════════════════════════════════════════════════════
+let myLat=null,myLon=null,myAcc=null;
+let currentTab='aerial';
+
+// Aerial
+let aircraftData=[];
+let selectedIcao=null;
+let leafMap=null;
+let userMarker=null,userAccCircle=null,scanCircle=null;
+let aircraftMarkers={};
+let radarBlips=[];
+let scanRadius=50;
+let refreshTimer=null,refreshCountdown=30;
+let aerialLoading=false;
+let watchId=null;
+
+// Orbital
+let glbRenderer=null,glbScene=null,glbCamera=null;
+let glbFrame=null;
+let earthGroup=null,satGroup=null,earthMesh=null;
+let satData=[];
+let satPoints=null,satPositions=null,satColors=null;
+let orbitTraceObj=null;
+let selectedGlobeSat=null;
+let isDragging=false,dragMoved=false;
+let lastMX=0,lastMY=0;
+let rotTargetY=0.4,rotTargetX=0.25;
+let rotCurrY=0.4,rotCurrX=0.25;
+let camDist=3.0;
+let sunDirVec=null;
+let lastSatPropTime=0;
+let globeInited=false;
+let leoCnt=0,meoCnt=0,geoCnt=0;
+
+// ══════════════════════════════════════════════════════════
+//  LAYOUT — square map/globe + resize handles
+// ══════════════════════════════════════════════════════════
+function sizeViews(){
+  const area=document.getElementById('map-area');
+  const mw=document.getElementById('map-wrap');
+  const gw=document.getElementById('globe-wrap');
+  const gc=document.getElementById('globe-canvas');
+  const W=area.offsetWidth,H=area.offsetHeight;
+  const side=Math.min(W,H);
+  [mw,gw].forEach(el=>{el.style.width=side+'px';el.style.height=side+'px';});
+  gc.width=side;gc.height=side;
+  if(leafMap)setTimeout(()=>leafMap.invalidateSize(),50);
+  if(glbRenderer){
+    glbRenderer.setSize(side,side);
+    if(glbCamera){glbCamera.aspect=1;glbCamera.updateProjectionMatrix();}
+  }
+}
+window.addEventListener('resize',sizeViews);
+setTimeout(sizeViews,120);
+
+// Left panel resize
+(function(){
+  const r=document.getElementById('left-resizer');
+  const p=document.getElementById('left-panel');
+  let drag=false,sx=0,sw=0;
+  r.addEventListener('mousedown',e=>{drag=true;sx=e.clientX;sw=p.offsetWidth;document.body.classList.add('lr-drag');document.body.style.cursor='col-resize';document.body.style.userSelect='none';});
+  document.addEventListener('mousemove',e=>{if(!drag)return;p.style.width=Math.max(180,Math.min(460,sw+e.clientX-sx))+'px';sizeViews();});
+  document.addEventListener('mouseup',()=>{if(!drag)return;drag=false;document.body.classList.remove('lr-drag');document.body.style.cursor='';document.body.style.userSelect='';sizeViews();});
+})();
+
+// Footer resize
+(function(){
+  const r=document.getElementById('footer-resizer');
+  const f=document.getElementById('footer');
+  let drag=false,sy=0,sh=0;
+  r.addEventListener('mousedown',e=>{drag=true;sy=e.clientY;sh=f.offsetHeight;document.body.classList.add('fr-drag');document.body.style.cursor='row-resize';document.body.style.userSelect='none';});
+  document.addEventListener('mousemove',e=>{if(!drag)return;f.style.height=Math.max(90,Math.min(340,sh+(sy-e.clientY)))+'px';sizeViews();});
+  document.addEventListener('mouseup',()=>{if(!drag)return;drag=false;document.body.classList.remove('fr-drag');document.body.style.cursor='';document.body.style.userSelect='';sizeViews();});
+})();
+
+// ══════════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ══════════════════════════════════════════════════════════
+function switchTab(tab){
+  currentTab=tab;
+  const aerial=(tab==='aerial');
+  document.getElementById('map-wrap').style.display=aerial?'block':'none';
+  document.getElementById('globe-wrap').style.display=aerial?'none':'block';
+  document.getElementById('tab-aerial').classList.toggle('active',aerial);
+  document.getElementById('tab-orbital').classList.toggle('active',!aerial);
+  document.getElementById('refresh-btn').style.display=aerial?'':'none';
+  document.getElementById('sat-refresh-btn').style.display=aerial?'none':'';
+  document.getElementById('fc1-aerial').style.display=aerial?'':'none';
+  document.getElementById('fc1-orbital').style.display=aerial?'none':'';
+  document.getElementById('fc1-label').textContent=aerial?'Scan Radius':'Globe Controls';
+  document.getElementById('f-count-label').textContent=aerial?'AIRCRAFT':'SATELLITES';
+  document.getElementById('f-contacts').textContent=aerial?aircraftData.length:satData.length;
+  if(aerial){
+    if(glbFrame){cancelAnimationFrame(glbFrame);glbFrame=null;}
+    if(leafMap)setTimeout(()=>leafMap.invalidateSize(),80);
+  } else {
+    if(!globeInited){initGlobe();}
+    else{sizeViews();if(!glbFrame)glbFrame=requestAnimationFrame(renderGlobe);}
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  CLOCK + TIME HUD
+// ══════════════════════════════════════════════════════════
+function updateClock(){
+  const n=new Date();
+  const utc=n.toUTCString().split(' ')[4];
+  document.getElementById('clock').textContent=utc+' UTC';
+  document.getElementById('gt-utc').textContent=utc+' UTC';
+  document.getElementById('gt-local').textContent='LOCAL '+n.toLocaleTimeString();
+  document.getElementById('gt-date').textContent=n.toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  try{document.getElementById('gt-tz').textContent='TZ: '+Intl.DateTimeFormat().resolvedOptions().timeZone;}catch(e){}
+}
+setInterval(updateClock,1000);updateClock();
+
+// ══════════════════════════════════════════════════════════
+//  MINI RADAR CANVAS
+// ══════════════════════════════════════════════════════════
+const radarEl=document.getElementById('radar-canvas');
+const rctx=radarEl.getContext('2d');
+let sweepAngle=0;
+function drawRadar(){
+  const W=radarEl.width,H=radarEl.height,cx=W/2,cy=H/2,r=W/2-4;
+  rctx.clearRect(0,0,W,H);
+  rctx.fillStyle='rgba(0,10,14,.96)';rctx.beginPath();rctx.arc(cx,cy,r,0,Math.PI*2);rctx.fill();
+  for(let i=1;i<=4;i++){rctx.beginPath();rctx.arc(cx,cy,r*i/4,0,Math.PI*2);rctx.strokeStyle=`rgba(0,245,255,${i===4?.2:.07})`;rctx.lineWidth=1;rctx.stroke();}
+  rctx.strokeStyle='rgba(0,245,255,.07)';rctx.lineWidth=1;
+  rctx.beginPath();rctx.moveTo(cx,cy-r);rctx.lineTo(cx,cy+r);rctx.stroke();
+  rctx.beginPath();rctx.moveTo(cx-r,cy);rctx.lineTo(cx+r,cy);rctx.stroke();
+  rctx.save();rctx.translate(cx,cy);rctx.rotate(sweepAngle);
+  rctx.beginPath();rctx.moveTo(0,0);rctx.arc(0,0,r,-Math.PI/2,-Math.PI/2+Math.PI*.6,false);rctx.closePath();
+  const sg=rctx.createRadialGradient(0,0,0,0,0,r);
+  sg.addColorStop(0,'rgba(0,245,255,0)');sg.addColorStop(.6,'rgba(0,245,255,.06)');sg.addColorStop(1,'rgba(0,245,255,0)');
+  rctx.fillStyle=sg;rctx.fill();
+  rctx.beginPath();rctx.moveTo(0,0);rctx.lineTo(0,-r);rctx.strokeStyle='rgba(0,245,255,.55)';rctx.lineWidth=1.5;rctx.stroke();
+  rctx.restore();
+  radarBlips.forEach(b=>{
+    b.fade=Math.max(0,b.fade-.007);
+    rctx.beginPath();rctx.arc(cx+b.x*(r-6),cy+b.y*(r-6),3,0,Math.PI*2);
+    rctx.fillStyle=`rgba(0,245,255,${b.fade})`;rctx.shadowColor='rgba(0,245,255,.8)';rctx.shadowBlur=6;rctx.fill();rctx.shadowBlur=0;
+  });
+  rctx.beginPath();rctx.arc(cx,cy,r,0,Math.PI*2);rctx.strokeStyle='rgba(0,245,255,.22)';rctx.lineWidth=1.5;rctx.stroke();
+  rctx.beginPath();rctx.arc(cx,cy,3,0,Math.PI*2);rctx.fillStyle='#00f5ff';rctx.fill();
+  sweepAngle+=.025;requestAnimationFrame(drawRadar);
+}
+drawRadar();
+
+// ══════════════════════════════════════════════════════════
+//  SIGNAL BARS
+// ══════════════════════════════════════════════════════════
+function animateBars(id,active,count){
+  const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<8;i++){const b=document.createElement('div');b.className='sig-bar'+(active&&i<count?' active':'');b.style.height=(4+Math.random()*10)+'px';el.appendChild(b);}
+}
+setInterval(()=>{
+  animateBars('bars-adsb',true,Math.floor(2+Math.random()*5));
+  animateBars('bars-orbital',satData.length>0,Math.floor(4+Math.random()*4));
+  animateBars('bars-bt',false,0);animateBars('bars-wifi',false,0);
+},900);
+
+// ══════════════════════════════════════════════════════════
+//  AERIAL MAP INIT — CartoDB Dark tiles
+// ══════════════════════════════════════════════════════════
+function initMap(lat,lon){
+  if(leafMap)return;
+  sizeViews();
+  leafMap=L.map('map',{center:[lat,lon],zoom:9,zoomControl:true,attributionControl:false});
+
+  // ── Dark tiles from CartoDB (no CSS filter hack needed) ──
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    maxZoom:20,
+    subdomains:'abcd'
+  }).addTo(leafMap);
+
+  const markerHtml=`
+    <style>@keyframes upr{0%{transform:translate(-50%,-50%) scale(.5);opacity:.9}100%{transform:translate(-50%,-50%) scale(2.6);opacity:0}}</style>
+    <div style="position:relative;width:20px;height:20px;">
+      <div style="position:absolute;top:50%;left:50%;width:36px;height:36px;border-radius:50%;background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.5);animation:upr 2s ease-out infinite;"></div>
+      <div style="position:absolute;top:50%;left:50%;width:36px;height:36px;border-radius:50%;background:rgba(0,245,255,.04);border:1px solid rgba(0,245,255,.3);animation:upr 2s ease-out .7s infinite;"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#00f5ff;box-shadow:0 0 0 2px rgba(0,245,255,.4),0 0 12px #00f5ff;z-index:3;"></div>
+      <div style="position:absolute;top:50%;left:-12px;width:9px;height:1px;background:#00f5ff;opacity:.7;transform:translateY(-50%);"></div>
+      <div style="position:absolute;top:50%;right:-12px;width:9px;height:1px;background:#00f5ff;opacity:.7;transform:translateY(-50%);"></div>
+      <div style="position:absolute;left:50%;top:-12px;height:9px;width:1px;background:#00f5ff;opacity:.7;transform:translateX(-50%);"></div>
+      <div style="position:absolute;left:50%;bottom:-12px;height:9px;width:1px;background:#00f5ff;opacity:.7;transform:translateX(-50%);"></div>
+    </div>`;
+  userMarker=L.marker([lat,lon],{icon:L.divIcon({className:'',html:markerHtml,iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:2000})
+    .addTo(leafMap).bindTooltip('◉ YOUR POSITION',{permanent:false,direction:'top',offset:[0,-16]});
+  userAccCircle=L.circle([lat,lon],{radius:Math.max(myAcc||50,10),color:'rgba(0,245,255,.5)',fillColor:'rgba(0,245,255,.05)',fillOpacity:1,weight:1}).addTo(leafMap);
+  scanCircle=L.circle([lat,lon],{radius:scanRadius*1000,color:'rgba(0,245,255,.28)',fillColor:'rgba(0,245,255,.02)',fillOpacity:1,weight:1,dashArray:'5 7'}).addTo(leafMap);
+  setTimeout(()=>leafMap.invalidateSize(),300);
+}
+
+function updateUserOnMap(lat,lon,acc){
+  if(!leafMap)return;
+  const ll=L.latLng(lat,lon);
+  if(userMarker)userMarker.setLatLng(ll);
+  if(userAccCircle){userAccCircle.setLatLng(ll);userAccCircle.setRadius(Math.max(acc||50,10));}
+  if(scanCircle){scanCircle.setLatLng(ll);scanCircle.setRadius(scanRadius*1000);}
+}
+
+// ══════════════════════════════════════════════════════════
+//  GEOLOCATION
+// ══════════════════════════════════════════════════════════
+function startTracking(){
+  if(!navigator.geolocation){onGeoError();return;}
+  navigator.geolocation.getCurrentPosition(onPosition,onGeoError,{enableHighAccuracy:true,maximumAge:0,timeout:12000});
+  watchId=navigator.geolocation.watchPosition(onPositionUpdate,null,{enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+}
+function onPosition(pos){
+  myLat=pos.coords.latitude;myLon=pos.coords.longitude;myAcc=pos.coords.accuracy;
+  updateCoordUI(myLat,myLon,myAcc);
+  document.getElementById('loading-overlay').style.display='none';
+  initMap(myLat,myLon);fetchAircraft();startRefreshTimer();
+  if(globeInited)updateUserGlobeMarker();
+}
+function onPositionUpdate(pos){
+  const lat=pos.coords.latitude,lon=pos.coords.longitude,acc=pos.coords.accuracy;
+  if(myLat!==null&&haversine(myLat,myLon,lat,lon)*1000<2)return;
+  myLat=lat;myLon=lon;myAcc=acc;
+  updateCoordUI(lat,lon,acc);
+  document.getElementById('loading-overlay').style.display='none';
+  if(!leafMap){initMap(lat,lon);fetchAircraft();startRefreshTimer();}
+  else{
+    updateUserOnMap(lat,lon,acc);
+    aircraftData.forEach(a=>{a.distance=haversine(myLat,myLon,a.latitude,a.longitude);});
+    aircraftData.sort((a,b)=>a.distance-b.distance);
+    if(currentTab==='aerial')updateUI();
+  }
+  if(globeInited)updateUserGlobeMarker();
+}
+function updateCoordUI(lat,lon,acc){
+  const ls=lat.toFixed(5)+'°',lns=lon.toFixed(5)+'°',as=Math.round(acc)+'m';
+  ['my-lat','f-lat'].forEach(id=>document.getElementById(id).textContent=ls);
+  ['my-lon','f-lon'].forEach(id=>document.getElementById(id).textContent=lns);
+  ['my-acc','f-acc'].forEach(id=>document.getElementById(id).textContent=as);
+}
+function onGeoError(){
+  document.querySelector('#loading-overlay .loading-text').textContent='LOCATION DENIED — DEFAULT: NYC';
+  setTimeout(()=>{
+    myLat=40.7128;myLon=-74.0060;myAcc=100;
+    updateCoordUI(myLat,myLon,myAcc);
+    document.getElementById('loading-overlay').style.display='none';
+    initMap(myLat,myLon);fetchAircraft();startRefreshTimer();
+  },1500);
+}
+
+// ══════════════════════════════════════════════════════════
+//  OPENSKY API
+// ══════════════════════════════════════════════════════════
+async function fetchAircraft(){
+  if(!myLat||!myLon||aerialLoading)return;
+  aerialLoading=true;
+  const btn=document.getElementById('refresh-btn');
+  btn.disabled=true;btn.textContent='⟳ SCANNING...';
+  document.getElementById('adsb-status').textContent='ADS-B SCANNING';
+  document.getElementById('adsb-dot').className='pulse-dot yellow';
+  const deg=scanRadius/111.32;
+  const lamin=myLat-deg,lamax=myLat+deg;
+  const lomin=myLon-deg/Math.cos(myLat*Math.PI/180),lomax=myLon+deg/Math.cos(myLat*Math.PI/180);
+  try{
+    const res=await fetch(`https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`);
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    aircraftData=(data.states||[]).map(s=>({icao24:s[0],callsign:(s[1]||'').trim()||s[0].toUpperCase(),origin_country:s[2],longitude:s[5],latitude:s[6],altitude:s[7],on_ground:s[8],velocity:s[9],true_track:s[10],vertical_rate:s[11]})).filter(a=>a.latitude&&a.longitude);
+    aircraftData.forEach(a=>{a.distance=haversine(myLat,myLon,a.latitude,a.longitude);});
+    aircraftData.sort((a,b)=>a.distance-b.distance);
+    updateUI();updateLeafletMarkers();updateRadarBlips();
+    document.getElementById('adsb-status').textContent='ADS-B LIVE';
+    document.getElementById('adsb-dot').className='pulse-dot';
+  }catch(e){
+    document.getElementById('adsb-status').textContent='ADS-B ERROR';
+    document.getElementById('adsb-dot').className='pulse-dot red';
+    document.getElementById('drone-list').innerHTML=`<div class="empty-state">⚠ OpenSky error<br>${e.message}<br><br>Rate limited? Wait 10s.</div>`;
+  }
+  aerialLoading=false;btn.disabled=false;btn.textContent='⟳ REFRESH SCAN';refreshCountdown=30;
+}
+
+function updateUI(){
+  const c=aircraftData.length;
+  ['contact-count','f-contacts','list-count','hud-count'].forEach(id=>document.getElementById(id).textContent=c);
+  document.getElementById('hud-range').textContent=scanRadius;
+  const list=document.getElementById('drone-list');
+  if(!c){list.innerHTML='<div class="empty-state">◎ No aircraft in range.<br>Try increasing radius.</div>';return;}
+  list.innerHTML='';
+  aircraftData.forEach(a=>{
+    const d=document.createElement('div');
+    d.className='drone-item'+(a.icao24===selectedIcao?' selected':'');d.onclick=()=>selectAircraft(a.icao24);
+    d.innerHTML=`<div class="drone-icon">${a.on_ground?'🚁':'✈'}</div><div class="drone-info"><div class="drone-id">${a.callsign}</div><div class="drone-meta">${a.origin_country||'Unknown'}<br>Alt:${a.altitude?Math.round(a.altitude)+'m':'GND'} · ${a.velocity?Math.round(a.velocity)+'m/s':'--'}</div></div><div class="drone-dist">${a.distance.toFixed(1)}<br>km</div>`;
+    list.appendChild(d);
+  });
+}
+function selectAircraft(icao){
+  selectedIcao=icao;
+  const a=aircraftData.find(x=>x.icao24===icao);if(!a)return;
+  document.querySelectorAll('.drone-item').forEach(el=>el.classList.remove('selected'));
+  const idx=aircraftData.findIndex(x=>x.icao24===icao);
+  const items=document.querySelectorAll('.drone-item');
+  if(items[idx])items[idx].classList.add('selected');
+  if(leafMap&&a.latitude&&a.longitude)leafMap.panTo([a.latitude,a.longitude]);
+  const threat=Math.min(100,Math.round((1-a.distance/scanRadius)*100));
+  document.getElementById('detail-panel').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;">
+      <div class="detail-field"><label>ICAO24</label><value class="hi">${a.icao24.toUpperCase()}</value></div>
+      <div class="detail-field"><label>Callsign</label><value>${a.callsign}</value></div>
+      <div class="detail-field"><label>Country</label><value>${a.origin_country||'Unknown'}</value></div>
+      <div class="detail-field"><label>Signal</label><value class="grn">ADS-B</value></div>
+      <div class="detail-field"><label>Status</label><value>${a.on_ground?'🟡 GND':'🟢 AIR'}</value></div>
+      <div class="detail-field"><label>Altitude</label><value>${a.altitude?Math.round(a.altitude)+'m':'GND'}</value></div>
+      <div class="detail-field"><label>Speed</label><value>${a.velocity?Math.round(a.velocity)+'m/s':'--'}</value></div>
+      <div class="detail-field"><label>Heading</label><value>${a.true_track?Math.round(a.true_track)+'°':'--'}</value></div>
+      <div class="detail-field"><label>Vert Rate</label><value>${a.vertical_rate?(a.vertical_rate>0?'▲':'▼')+Math.abs(Math.round(a.vertical_rate))+'m/s':'--'}</value></div>
+      <div class="detail-field"><label>Distance</label><value class="hi">${a.distance.toFixed(2)} km</value></div>
+    </div>
+    <div style="margin-top:6px;">
+      <div style="display:flex;justify-content:space-between;font-size:.52rem;color:rgba(0,245,255,.35);letter-spacing:.1em;margin-bottom:3px;"><span>PROXIMITY INDEX</span><span>${threat}%</span></div>
+      <div class="threat-bar-bg"><div class="threat-bar-fill" style="width:${threat}%"></div></div>
+    </div>`;
+}
+function updateLeafletMarkers(){
+  if(!leafMap)return;
+  Object.values(aircraftMarkers).forEach(m=>leafMap.removeLayer(m));aircraftMarkers={};
+  aircraftData.forEach(a=>{
+    const icon=L.divIcon({className:'',html:`<div class="drone-marker-icon">${a.on_ground?'🚁':'✈'}</div>`,iconSize:[20,20],iconAnchor:[10,10]});
+    const m=L.marker([a.latitude,a.longitude],{icon}).bindTooltip(`<b>${a.callsign}</b><br>${a.distance.toFixed(1)}km · ${a.altitude?Math.round(a.altitude)+'m':'GND'}`).on('click',()=>selectAircraft(a.icao24)).addTo(leafMap);
+    aircraftMarkers[a.icao24]=m;
+  });
+}
+function updateRadarBlips(){
+  radarBlips=[];
+  aircraftData.forEach(a=>{
+    const dx=(a.longitude-myLon)/(scanRadius/111.32/Math.cos(myLat*Math.PI/180));
+    const dy=-(a.latitude-myLat)/(scanRadius/111.32);
+    if(Math.sqrt(dx*dx+dy*dy)<=1)radarBlips.push({x:dx,y:dy,fade:1});
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════════════
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function latLonToV3(lat,lon,r){
+  const la=lat*Math.PI/180,lo=lon*Math.PI/180;
+  return new THREE.Vector3(r*Math.cos(la)*Math.cos(lo),r*Math.sin(la),-r*Math.cos(la)*Math.sin(lo));
+}
+
+// ══════════════════════════════════════════════════════════
+//  REFRESH / RADIUS
+// ══════════════════════════════════════════════════════════
+function startRefreshTimer(){
+  clearInterval(refreshTimer);refreshCountdown=30;
+  refreshTimer=setInterval(()=>{
+    refreshCountdown--;
+    const t=`NEXT SCAN: ${refreshCountdown}s`;
+    document.getElementById('next-refresh').textContent=t;
+    document.getElementById('footer-countdown').textContent=t;
+    if(refreshCountdown<=0)fetchAircraft();
+  },1000);
+}
+document.getElementById('radius-slider').addEventListener('input',function(){
+  scanRadius=parseInt(this.value);
+  document.getElementById('radius-val').textContent=scanRadius;
+  document.getElementById('hud-range').textContent=scanRadius;
+  if(scanCircle)scanCircle.setRadius(scanRadius*1000);
+});
+document.getElementById('radius-slider').addEventListener('change',()=>fetchAircraft());
+
+// ══════════════════════════════════════════════════════════
+//  SIGNAL INFO PANEL
+// ══════════════════════════════════════════════════════════
+function showSignalInfo(type){
+  const info={
+    adsb:{title:'ADS-B / Mode S',color:'grn',status:'🟢 LIVE',desc:'Aircraft broadcast position, altitude, speed & ID on 1090 MHz via OpenSky Network API.'},
+    orbital:{title:'Orbital Tracking',color:'grn',status:'🟢 LIVE',desc:'Real-time satellite positions from CelesTrak TLE database, propagated with SGP4. Switch to ORBITAL tab for the 3D globe view.'},
+    bluetooth:{title:'Bluetooth BLE',color:'hi',status:'🟡 HARDWARE REQUIRED',desc:'FAA Remote ID uses BT5-LR at 2.4 GHz. Needs Raspberry Pi + bluez stack. Range ~300m.'},
+    wifi:{title:'Wi-Fi NAN',color:'hi',status:'🟡 HARDWARE REQUIRED',desc:'FAA Remote ID over Wi-Fi NAN (2.4/5 GHz). Needs adapter in monitor mode. Range ~1km.'}
+  };
+  const d=info[type];
+  document.getElementById('detail-panel').innerHTML=`
+    <div class="detail-field"><label>Protocol</label><value class="${d.color}">${d.title}</value></div>
+    <div class="detail-field"><label>Status</label><value>${d.status}</value></div>
+    <div class="info-box">${d.desc}</div>
+    ${type!=='adsb'&&type!=='orbital'?'<div class="info-box blue">💡 Hardware: Raspberry Pi 4 · Alfa AWUS036ACM · RTL-SDR V3 · OpenDroneID receiver</div>':''}`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  3D GLOBE — INIT
+// ══════════════════════════════════════════════════════════
+function initGlobe(){
+  globeInited=true;
+  sizeViews();
+  const canvas=document.getElementById('globe-canvas');
+  const side=parseInt(document.getElementById('globe-wrap').style.width)||600;
+
+  glbRenderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+  glbRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  glbRenderer.setClearColor(0x000508,1);
+  glbRenderer.setSize(side,side);
+
+  glbScene=new THREE.Scene();
+  glbCamera=new THREE.PerspectiveCamera(45,1,0.01,200);
+  glbCamera.position.set(0,0,camDist);
+
+  sunDirVec=new THREE.Vector3(1,0,0);
+  earthGroup=new THREE.Group();
+  satGroup=new THREE.Group();
+
+  glbScene.add(new THREE.AmbientLight(0x08101e,2));
+  const sl=new THREE.DirectionalLight(0x5577ff,4);sl.name='sunLight';glbScene.add(sl);
+
+  // Earth — day/night shader (mobile-safe: explicit floats, no vUv, no comments)
+  const _vs=[
+    'varying vec3 vNormal;',
+    'void main(){',
+    '  vNormal=normalize(normalMatrix*normal);',
+    '  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);',
+    '}'
+  ].join('\n');
+  const _fs=[
+    'uniform vec3 sunDir;',
+    'varying vec3 vNormal;',
+    'void main(){',
+    '  float d=dot(vNormal,normalize(sunDir));',
+    '  float t=smoothstep(-0.15,0.18,d);',
+    '  vec3 dayCol=vec3(0.03,0.14,0.42);',
+    '  vec3 nightCol=vec3(0.005,0.015,0.048);',
+    '  vec3 col=mix(nightCol,dayCol,t);',
+    '  float nc=pow(clamp(-d,0.0,1.0),0.9)*0.09;',
+    '  col+=vec3(0.9,0.7,0.3)*nc;',
+    '  float tg=clamp(1.0-abs(d)*6.0,0.0,1.0);',
+    '  col+=vec3(0.1,0.4,0.9)*tg*0.15;',
+    '  float rim=1.0-abs(dot(vNormal,vec3(0.0,0.0,1.0)));',
+    '  col+=vec3(0.0,0.3,0.8)*pow(rim,5.0)*0.3;',
+    '  gl_FragColor=vec4(col,1.0);',
+    '}'
+  ].join('\n');
+  const earthMat=new THREE.ShaderMaterial({uniforms:{sunDir:{value:sunDirVec}},vertexShader:_vs,fragmentShader:_fs});
+  earthMesh=new THREE.Mesh(new THREE.SphereGeometry(1,64,32),earthMat);
+  earthGroup.add(earthMesh);
+
+  // Atmosphere shell
+  earthGroup.add(new THREE.Mesh(
+    new THREE.SphereGeometry(1.025,32,16),
+    new THREE.MeshPhongMaterial({color:0x0044bb,transparent:true,opacity:.07,side:THREE.BackSide})
+  ));
+
+  buildGridLines();
+  buildStars();
+  glbScene.add(earthGroup);
+  glbScene.add(satGroup);
+  setupGlobeInteraction();
+
+  if(myLat!==null)updateUserGlobeMarker();
+
+  // Load continents + satellites in parallel
+  loadContinentLines();
+  if(satData.length>0)buildSatPoints();
+  // else satellite data fetched separately in background already
+
+  glbFrame=requestAnimationFrame(renderGlobe);
+}
+
+// ── Grid ──
+function buildGridLines(){
+  const faint=new THREE.LineBasicMaterial({color:0x00f5ff,transparent:true,opacity:.055});
+  const med  =new THREE.LineBasicMaterial({color:0x00f5ff,transparent:true,opacity:.2});
+  const tropic=new THREE.LineBasicMaterial({color:0x00f5ff,transparent:true,opacity:.1});
+
+  for(let lat=-60;lat<=60;lat+=30){
+    const pts=[];for(let lo=0;lo<=360;lo+=2)pts.push(latLonToV3(lat,lo,1.002));
+    earthGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lat===0?med:faint));
+  }
+  [23.5,-23.5,66.5,-66.5].forEach(lat=>{
+    const pts=[];for(let lo=0;lo<=360;lo+=2)pts.push(latLonToV3(lat,lo,1.002));
+    earthGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),tropic));
+  });
+  for(let lo=0;lo<360;lo+=30){
+    const pts=[];for(let lat=-88;lat<=88;lat+=2)pts.push(latLonToV3(lat,lo,1.002));
+    earthGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lo===0?med:faint));
+  }
+}
+
+// ── Stars ──
+function buildStars(){
+  const n=3500,pos=new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    const phi=Math.acos(2*Math.random()-1),theta=2*Math.PI*Math.random(),r=50+Math.random()*25;
+    pos[i*3]=r*Math.sin(phi)*Math.cos(theta);
+    pos[i*3+1]=r*Math.cos(phi);
+    pos[i*3+2]=r*Math.sin(phi)*Math.sin(theta);
+  }
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  glbScene.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xffffff,size:.14,transparent:true,opacity:.7})));
+}
+
+// ── Continent / coastline lines ──
+async function loadContinentLines(){
+  const SOURCES=[
+    'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_coastline.geojson',
+    'https://api.allorigins.win/raw?url='+encodeURIComponent('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_coastline.geojson')
+  ];
+  const BORDER_SOURCES=[
+    'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_boundary_lines_land.geojson',
+    'https://api.allorigins.win/raw?url='+encodeURIComponent('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_boundary_lines_land.geojson')
+  ];
+
+  let loaded=false;
+  for(const url of SOURCES){
+    try{
+      const res=await fetchWithTimeout(url,10000);
+      if(!res.ok)continue;
+      const gj=await res.json();
+      drawGeoJsonLines(gj,0x00f5ff,0.45);
+      loaded=true;break;
+    }catch(e){console.warn('Coastline source failed:',url);}
+  }
+  if(!loaded)console.warn('All coastline sources failed — globe shown without outlines');
+
+  for(const url of BORDER_SOURCES){
+    try{
+      const res=await fetchWithTimeout(url,10000);
+      if(!res.ok)continue;
+      const gj=await res.json();
+      drawGeoJsonLines(gj,0x00c8d8,0.22);
+      break;
+    }catch(e){console.warn('Border source failed:',url);}
+  }
+}
+
+function drawGeoJsonLines(geojson,hexColor,opacity){
+  if(!glbScene||!earthGroup)return;
+  const mat=new THREE.LineBasicMaterial({color:hexColor,transparent:true,opacity,linewidth:1});
+  const features=geojson.features||[];
+  features.forEach(f=>{
+    if(!f.geometry)return;
+    const type=f.geometry.type;
+    const rings=type==='LineString'?[f.geometry.coordinates]:
+                 type==='MultiLineString'?f.geometry.coordinates:
+                 type==='Polygon'?f.geometry.coordinates:
+                 type==='MultiPolygon'?f.geometry.coordinates.flat():[];
+    rings.forEach(ring=>{
+      if(!ring||ring.length<2)return;
+      const pts=ring.map(([lo,la])=>latLonToV3(la,lo,1.0025));
+      const geo=new THREE.BufferGeometry().setFromPoints(pts);
+      earthGroup.add(new THREE.Line(geo,mat));
+    });
+  });
+}
+
+// ── User location marker on globe ──
+function updateUserGlobeMarker(){
+  if(!glbScene||myLat===null)return;
+  ['userDot','userRing'].forEach(n=>{const o=glbScene.getObjectByName(n);if(o)glbScene.remove(o);});
+
+  const pos=latLonToV3(myLat,myLon,1.028);
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(.020,8,8),new THREE.MeshBasicMaterial({color:0xffd600}));
+  dot.position.copy(pos);dot.name='userDot';
+  glbScene.add(dot);
+
+  const N=pos.clone().normalize();
+  const T=new THREE.Vector3(N.y,-N.x,0).normalize();
+  const B=N.clone().cross(T).normalize();
+  const ringPts=[];
+  for(let a=0;a<=360;a+=6){
+    const ar=a*Math.PI/180,rv=0.045;
+    ringPts.push(pos.clone().add(T.clone().multiplyScalar(rv*Math.cos(ar))).add(B.clone().multiplyScalar(rv*Math.sin(ar))));
+  }
+  const ring=new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts),new THREE.LineBasicMaterial({color:0xffd600,transparent:true,opacity:.75}));
+  ring.name='userRing';
+  glbScene.add(ring);
+}
+
+// ══════════════════════════════════════════════════════════
+//  SATELLITE TLE FETCH — with CORS proxy fallback
+// ══════════════════════════════════════════════════════════
+
+// ── safe fetch with timeout — Promise.race, no AbortController DOMException ──
+function fetchWithTimeout(url,ms){
+  const t=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms));
+  return Promise.race([fetch(url),t]);
+}
+
+async function fetchTLE(url){
+  // Try direct first (CelesTrak sends CORS headers on live domains)
+  try{
+    const r=await fetchWithTimeout(url,8000);
+    if(r.ok){const t=await r.text();if(t&&t.includes('1 ')&&t.includes('2 '))return t;}
+  }catch(e){}
+  // CORS proxy fallback
+  try{
+    const proxyUrl='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
+    const r=await fetchWithTimeout(proxyUrl,12000);
+    if(r.ok){const t=await r.text();if(t&&t.includes('1 '))return t;}
+  }catch(e){}
+  return '';
+}
+
+async function fetchSatelliteData(forceReload){
+  document.getElementById('sat-status').textContent='ORBITAL LOADING';
+  document.getElementById('sat-dot').className='pulse-dot yellow';
+  document.getElementById('sig-orbital-status').textContent='LOADING';
+  const sb=document.getElementById('sat-status-bar');if(sb)sb.textContent='FETCHING TLE DATA...';
+
+  // Fetch multiple catalogs for good coverage
+  const catalogs=[
+    {url:'https://celestrak.org/pub/TLE/visual.txt',   label:'visual'},
+    {url:'https://celestrak.org/pub/TLE/stations.txt', label:'stations'},
+    {url:'https://celestrak.org/pub/TLE/active.txt',   label:'active'},
+  ];
+
+  let combined='';
+  for(const cat of catalogs){
+    if(sb)sb.textContent=`FETCHING ${cat.label.toUpperCase()} TLEs...`;
+    const text=await fetchTLE(cat.url);
+    if(text)combined+=text+'\n';
+    // After visual+stations we already have ~170 sats — show them immediately
+    if(combined.length>1000&&cat.label==='stations'){
+      const partial=parseTLEs(combined);
+      if(partial.length>0){
+        satData=partial;
+        if(globeInited)buildSatPoints();
+        updateSatUI();
+      }
+    }
+  }
+
+  if(!combined.trim()){
+    // Absolute fallback — embed ISS + Tiangong + Hubble TLEs
+    combined=`ISS (ZARYA)\n1 25544U 98067A   25072.50000000  .00020000  00000-0  23000-3 0  9997\n2 25544  51.6404 100.0000 0002345 100.0000 260.0000 15.49500000454321\nTIANGONG\n1 48274U 21035A   25072.50000000  .00010000  00000-0  12000-3 0  9993\n2 48274  41.4756 200.0000 0005678 200.0000 160.0000 15.60100000234567\nHST\n1 20580U 90037B   25072.50000000  .00001000  00000-0  50000-4 0  9998\n2 20580  28.4697 150.0000 0002567 150.0000 210.0000 15.09300000234567`;
+  }
+
+  satData=parseTLEs(combined);
+  updateSatUI();
+
+  const gl=document.getElementById('globe-loading');
+  if(gl)gl.style.display='none';
+  if(sb)sb.textContent=`${satData.length} SATELLITES TRACKED`;
+
+  if(globeInited)buildSatPoints();
+}
+
+function parseTLEs(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const sats=[];
+  const seen=new Set();
+  let i=0;
+  while(i<lines.length-2){
+    const l1=lines[i+1],l2=lines[i+2];
+    if(l1&&l2&&l1.length>=69&&l2.length>=69&&l1[0]==='1'&&l2[0]==='2'){
+      const name=lines[i];
+      const id=l1.substring(2,7).trim();
+      if(!seen.has(id)){
+        seen.add(id);
+        try{
+          const satrec=satellite.twoline2satrec(l1,l2);
+          if(satrec&&!satrec.error)sats.push({name,satrec,lat:0,lon:0,alt:0,x:0,y:0,z:0});
+        }catch(e){}
+      }
+      i+=3;
+    } else {i++;}
+  }
+  return sats;
+}
+
+function updateSatUI(){
+  document.getElementById('glob-count').textContent=satData.length;
+  document.getElementById('f-contacts').textContent=currentTab==='orbital'?satData.length:aircraftData.length;
+  document.getElementById('sat-status').textContent='ORBITAL LIVE';
+  document.getElementById('sat-dot').className='pulse-dot';
+  document.getElementById('sig-orbital-status').textContent='LIVE';
+}
+
+// ══════════════════════════════════════════════════════════
+//  SATELLITE POINTS GEOMETRY
+// ══════════════════════════════════════════════════════════
+function buildSatPoints(){
+  if(satPoints){satGroup.remove(satPoints);satPoints=null;}
+  const n=satData.length;
+  if(!n)return;
+
+  satPositions=new Float32Array(n*3);
+  satColors=new Float32Array(n*3);
+
+  // Glow dot texture
+  const tc=document.createElement('canvas');tc.width=64;tc.height=64;
+  const tx=tc.getContext('2d');
+  const gr=tx.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,255,255,1)');
+  gr.addColorStop(.25,'rgba(255,255,255,.9)');
+  gr.addColorStop(.6,'rgba(0,245,255,.5)');
+  gr.addColorStop(1,'rgba(0,0,0,0)');
+  tx.fillStyle=gr;tx.fillRect(0,0,64,64);
+
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(satPositions,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(satColors,3));
+  const mat=new THREE.PointsMaterial({
+    size:.03,vertexColors:true,transparent:true,opacity:.95,
+    sizeAttenuation:true,map:new THREE.CanvasTexture(tc),
+    alphaTest:.04,depthWrite:false
+  });
+  satPoints=new THREE.Points(geo,mat);
+  satGroup.add(satPoints);
+  updateSatellitePositions();
+}
+
+function updateSatellitePositions(){
+  if(!satData.length||!satPositions)return;
+  const now=new Date();
+  leoCnt=0;meoCnt=0;geoCnt=0;
+
+  for(let i=0;i<satData.length;i++){
+    try{
+      const pv=satellite.propagate(satData[i].satrec,now);
+      if(!pv||!pv.position||typeof pv.position.x!=='number'||isNaN(pv.position.x)){
+        satPositions[i*3]=satPositions[i*3+1]=satPositions[i*3+2]=0;continue;
+      }
+      const gmst=satellite.gstime(now);
+      const geo=satellite.eciToGeodetic(pv.position,gmst);
+      const la=satellite.degreesLat(geo.latitude);
+      const lo=satellite.degreesLong(geo.longitude);
+      const alt=Math.max(0,geo.height);
+      satData[i].lat=la;satData[i].lon=lo;satData[i].alt=alt;
+      const r=1+alt/6371;
+      const v=latLonToV3(la,lo,r);
+      satPositions[i*3]=v.x;satPositions[i*3+1]=v.y;satPositions[i*3+2]=v.z;
+      satData[i].x=v.x;satData[i].y=v.y;satData[i].z=v.z;
+
+      // Color by type/altitude
+      const nm=satData[i].name.toUpperCase();
+      if(nm.includes('ISS')||nm.includes('ZARYA')||nm.includes('TIANGONG')||nm.includes('CSS')){
+        satColors[i*3]=0;satColors[i*3+1]=1;satColors[i*3+2]=.4;// bright green
+      } else if(nm.includes('STARLINK')){
+        satColors[i*3]=0;satColors[i*3+1]=.8;satColors[i*3+2]=1;// cyan-blue
+      } else if(alt<2000){
+        satColors[i*3]=0;satColors[i*3+1]=.96;satColors[i*3+2]=1;leoCnt++;
+      } else if(alt<35000){
+        satColors[i*3]=1;satColors[i*3+1]=.84;satColors[i*3+2]=0;meoCnt++;
+      } else {
+        satColors[i*3]=1;satColors[i*3+1]=.53;satColors[i*3+2]=0;geoCnt++;
+      }
+    }catch(e){
+      satPositions[i*3]=satPositions[i*3+1]=satPositions[i*3+2]=0;
+    }
+  }
+
+  if(satPoints){
+    satPoints.geometry.attributes.position.needsUpdate=true;
+    satPoints.geometry.attributes.color.needsUpdate=true;
+  }
+  document.getElementById('gs-leo').textContent=leoCnt+' LEO';
+  document.getElementById('gs-meo').textContent=meoCnt+' MEO';
+  document.getElementById('gs-geo').textContent=geoCnt+' GEO';
+}
+
+// ══════════════════════════════════════════════════════════
+//  ORBIT TRACE
+// ══════════════════════════════════════════════════════════
+function showOrbitTrace(sat){
+  if(orbitTraceObj){satGroup.remove(orbitTraceObj);orbitTraceObj=null;}
+  const now=new Date();
+  let periodMin=90;
+  try{if(sat.satrec.no>0)periodMin=2*Math.PI/sat.satrec.no;}catch(e){}
+  periodMin=Math.min(Math.max(periodMin,80),1440);
+
+  const steps=240;
+  const dt=periodMin/steps;
+  const segs=[];
+  let prevPt=null;
+
+  for(let i=0;i<=steps;i++){
+    const t=new Date(now.getTime()+(i*dt-periodMin/2)*60000);
+    try{
+      const pv=satellite.propagate(sat.satrec,t);
+      if(!pv||!pv.position||isNaN(pv.position.x)){prevPt=null;continue;}
+      const gmst=satellite.gstime(t);
+      const g=satellite.eciToGeodetic(pv.position,gmst);
+      const la=satellite.degreesLat(g.latitude);
+      const lo=satellite.degreesLong(g.longitude);
+      const r=1+Math.max(0,g.height)/6371;
+      const v=latLonToV3(la,lo,r);
+      if(prevPt)segs.push(prevPt.clone(),v.clone());
+      prevPt=v;
+    }catch(e){prevPt=null;}
+  }
+
+  if(!segs.length)return;
+  const geo=new THREE.BufferGeometry().setFromPoints(segs);
+  // Color gradient effect via vertex colors
+  const colors=new Float32Array(segs.length*3);
+  for(let i=0;i<segs.length;i++){
+    const t=i/segs.length;
+    colors[i*3]=0;colors[i*3+1]=.6+t*.4;colors[i*3+2]=.3+t*.2;// green gradient
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  const mat=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.7,linewidth:1});
+  orbitTraceObj=new THREE.LineSegments(geo,mat);
+  satGroup.add(orbitTraceObj);
+}
+
+// ══════════════════════════════════════════════════════════
+//  SUN DIRECTION
+// ══════════════════════════════════════════════════════════
+function computeSunDir(){
+  const n=new Date();
+  const JD=n.getTime()/86400000+2440587.5;
+  const day=JD-2451545.0;
+  const L=((280.460+.9856474*day)%360+360)%360;
+  const g=((357.528+.9856003*day)%360+360)%360*Math.PI/180;
+  const lam=(L+1.915*Math.sin(g)+.020*Math.sin(2*g))*Math.PI/180;
+  const eps=23.439*Math.PI/180;
+  const dec=Math.asin(Math.sin(eps)*Math.sin(lam));
+  const RA=Math.atan2(Math.cos(eps)*Math.sin(lam),Math.cos(lam));
+  let GMST=0;try{GMST=satellite.gstime(n);}catch(e){}
+  const subLon=((-( GMST-RA))*180/Math.PI%360+540)%360-180;
+  return latLonToV3(dec*180/Math.PI,subLon,1).normalize();
+}
+
+// ══════════════════════════════════════════════════════════
+//  GLOBE RENDER LOOP
+// ══════════════════════════════════════════════════════════
+function renderGlobe(){
+  glbFrame=requestAnimationFrame(renderGlobe);
+
+  // Direct rotation — no damping
+  rotCurrY=rotTargetY;
+  rotCurrX=rotTargetX;
+  const cx=camDist*Math.sin(rotCurrY)*Math.cos(rotCurrX);
+  const cy=camDist*Math.sin(rotCurrX);
+  const cz=camDist*Math.cos(rotCurrY)*Math.cos(rotCurrX);
+  glbCamera.position.set(cx,cy,cz);
+  glbCamera.lookAt(0,0,0);
+
+  // Update sun + satellite positions every 1.5s
+  const now=Date.now();
+  if(now-lastSatPropTime>1500){
+    lastSatPropTime=now;
+    const sd=computeSunDir();
+    sunDirVec.copy(sd);
+    if(earthMesh)earthMesh.material.uniforms.sunDir.value.copy(sd);
+    const sl=glbScene.getObjectByName('sunLight');
+    if(sl){sl.position.set(sd.x*80,sd.y*80,sd.z*80);}
+    if(satData.length)updateSatellitePositions();
+  }
+
+  glbRenderer.render(glbScene,glbCamera);
+}
+
+// ══════════════════════════════════════════════════════════
+//  GLOBE INTERACTION — INVERTED DRAG (swipe matches direction)
+// ══════════════════════════════════════════════════════════
+function setupGlobeInteraction(){
+  const canvas=document.getElementById('globe-canvas');
+
+  canvas.addEventListener('mousedown',e=>{
+    isDragging=true;dragMoved=false;
+    lastMX=e.clientX;lastMY=e.clientY;
+    canvas.style.cursor='grabbing';
+  });
+
+  document.addEventListener('mousemove',e=>{
+    if(!isDragging){handleSatHover(e);return;}
+    const dx=e.clientX-lastMX,dy=e.clientY-lastMY;
+    if(Math.abs(dx)+Math.abs(dy)>2)dragMoved=true;
+    // ── INVERTED: subtract dx so swiping left = globe moves left ──
+    rotTargetY-=dx*.005;
+    rotTargetX+=dy*.005;
+    rotTargetX=Math.max(-Math.PI*.48,Math.min(Math.PI*.48,rotTargetX));
+    lastMX=e.clientX;lastMY=e.clientY;
+  });
+
+  document.addEventListener('mouseup',e=>{
+    if(isDragging){
+      if(!dragMoved)handleSatClick(e);
+      isDragging=false;
+      canvas.style.cursor='grab';
+    }
+  });
+
+  canvas.addEventListener('mouseleave',()=>{
+    document.getElementById('sat-tooltip').style.display='none';
+  });
+
+  canvas.style.cursor='grab';
+
+  canvas.addEventListener('wheel',e=>{
+    camDist=Math.max(1.4,Math.min(9,camDist+e.deltaY*.003));
+  },{passive:true});
+
+  // ── TOUCH — also inverted ──
+  let lastTX=0,lastTY=0;
+  canvas.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){isDragging=true;dragMoved=false;lastTX=e.touches[0].clientX;lastTY=e.touches[0].clientY;}
+  },{passive:true});
+
+  canvas.addEventListener('touchmove',e=>{
+    if(!isDragging||e.touches.length!==1)return;
+    const dx=e.touches[0].clientX-lastTX,dy=e.touches[0].clientY-lastTY;
+    if(Math.abs(dx)+Math.abs(dy)>2)dragMoved=true;
+    // ── INVERTED ──
+    rotTargetY-=dx*.005;
+    rotTargetX+=dy*.005;
+    rotTargetX=Math.max(-Math.PI*.48,Math.min(Math.PI*.48,rotTargetX));
+    lastTX=e.touches[0].clientX;lastTY=e.touches[0].clientY;
+    e.preventDefault();
+  },{passive:false});
+
+  canvas.addEventListener('touchend',()=>{isDragging=false;});
+
+  // Pinch-to-zoom
+  let lastPinchDist=0;
+  canvas.addEventListener('touchstart',e=>{
+    if(e.touches.length===2)lastPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  },{passive:true});
+  canvas.addEventListener('touchmove',e=>{
+    if(e.touches.length!==2)return;
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    camDist=Math.max(1.4,Math.min(9,camDist-(d-lastPinchDist)*.012));
+    lastPinchDist=d;
+  },{passive:true});
+}
+
+// ── Raycasting ──
+const _ray=new THREE.Raycaster();
+_ray.params.Points={threshold:.04};
+const _m2d=new THREE.Vector2();
+
+function getSatAt(e){
+  if(!satPoints||!satData.length)return -1;
+  const canvas=document.getElementById('globe-canvas');
+  const rect=canvas.getBoundingClientRect();
+  _m2d.set(
+    ((e.clientX-rect.left)/canvas.offsetWidth)*2-1,
+    -((e.clientY-rect.top)/canvas.offsetHeight)*2+1
+  );
+  _ray.setFromCamera(_m2d,glbCamera);
+  const hits=_ray.intersectObject(satPoints);
+  return hits.length?hits[0].index:-1;
+}
+
+function handleSatHover(e){
+  const idx=getSatAt(e);
+  const tip=document.getElementById('sat-tooltip');
+  if(idx>=0&&idx<satData.length&&(satPositions[idx*3]!==0||satPositions[idx*3+1]!==0)){
+    const s=satData[idx];
+    const altType=s.alt<2000?`<span style="color:var(--cyan)">LEO</span>`:s.alt<35000?`<span style="color:var(--yellow)">MEO</span>`:`<span style="color:var(--orange)">GEO</span>`;
+    tip.innerHTML=`<b>${s.name}</b><br>Alt: ${Math.round(s.alt)} km ${altType}<br>Lat: ${s.lat.toFixed(2)}°&nbsp;&nbsp;Lon: ${s.lon.toFixed(2)}°`;
+    tip.style.display='block';
+    tip.style.left=(e.clientX+16)+'px';
+    tip.style.top=(e.clientY-10)+'px';
+    document.getElementById('globe-canvas').style.cursor='crosshair';
+  } else {
+    tip.style.display='none';
+    document.getElementById('globe-canvas').style.cursor='grab';
+  }
+}
+
+function handleSatClick(e){
+  const idx=getSatAt(e);
+  if(idx<0||idx>=satData.length)return;
+  const s=satData[idx];
+  if(satPositions[idx*3]===0&&satPositions[idx*3+1]===0)return;
+  selectedGlobeSat=s;
+  showOrbitTrace(s);
+  document.getElementById('sat-tooltip').style.display='none';
+  showSatDetail(s);
+}
+
+function showSatDetail(s){
+  const aClass=s.alt<2000?'grn':s.alt<35000?'hi':'org';
+  const aLabel=s.alt<2000?'LEO':s.alt<35000?'MEO':'GEO';
+  const period=s.satrec?.no>0?(2*Math.PI/s.satrec.no).toFixed(1):'--';
+  const inc=s.satrec?.inclo?(s.satrec.inclo*180/Math.PI).toFixed(1):'--';
+  const ecc=s.satrec?.ecco?s.satrec.ecco.toFixed(7):'--';
+  document.getElementById('detail-panel').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;">
+      <div class="detail-field" style="grid-column:1/-1;"><label>Satellite Name</label><value class="hi" style="font-size:.68rem;">${s.name}</value></div>
+      <div class="detail-field"><label>Orbit Class</label><value class="${aClass}">${aLabel}</value></div>
+      <div class="detail-field"><label>Altitude</label><value>${Math.round(s.alt)} km</value></div>
+      <div class="detail-field"><label>Period</label><value>${period} min</value></div>
+      <div class="detail-field"><label>Inclination</label><value>${inc}°</value></div>
+      <div class="detail-field"><label>Eccentricity</label><value>${ecc}</value></div>
+      <div class="detail-field"><label>NORAD ID</label><value>${s.satrec?.satnum||'--'}</value></div>
+      <div class="detail-field"><label>Latitude</label><value>${s.lat.toFixed(3)}°</value></div>
+      <div class="detail-field"><label>Longitude</label><value>${s.lon.toFixed(3)}°</value></div>
+    </div>
+    <div class="info-box blue" style="margin-top:6px;font-size:.56rem;">
+      ◉ Orbit trace active on globe<br>
+      Source: CelesTrak TLE / SGP4 propagation<br>
+      <span style="color:rgba(0,245,255,.35)">Cyan=LEO · Yellow=MEO · Orange=GEO · Green=Stations</span>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════════
+startTracking();
+fetchSatelliteData(false);// pre-fetch TLEs in background before orbital tab opens
+</script>
+</body>
+</html>
