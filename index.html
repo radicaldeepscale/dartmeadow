@@ -436,7 +436,7 @@
     }
     #chat-header { text-align: center; margin-bottom: 30px; }
     #chat-header .chat-logo { width: 400px; margin-top: 150px; object-fit: contain;}
-    #chat-header2 .chat-logo2 { width: 875px; margin-top: 150px; object-fit: contain;}
+    #chat-header2 .chat-logo2 { width: 675px; margin-top: 150px; object-fit: contain;}
     #chat-header3 .chat-logo3 { width: 400px; margin-top: 150px; object-fit: contain;}
     #messageWindow {
       height: 300px; border: 1px solid var(--theme-input-border); padding: 8px;
@@ -536,7 +536,63 @@
     color: #000;
     box-shadow: 0 0 15px #00e5ff;
 }
-      
+
+/* ── Initialize DART Meadow Button ── */
+#initDartMeadowBtn {
+  display: block;
+  margin: 32px auto 0;
+  padding: 16px 42px;
+  background: transparent;
+  border: 1px solid #00f5ff;
+  border-radius: 3px;
+  color: #00f5ff;
+  font-family: 'Orbitron', 'Segoe UI', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  text-shadow: 0 0 10px rgba(0,245,255,0.5);
+  box-shadow: 0 0 12px rgba(0,245,255,0.15), inset 0 0 12px rgba(0,245,255,0.04);
+}
+#initDartMeadowBtn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(0,245,255,0.08) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.55s ease;
+}
+#initDartMeadowBtn:hover::before {
+  transform: translateX(100%);
+}
+#initDartMeadowBtn:hover {
+  background: rgba(0,245,255,0.12);
+  color: #ffffff;
+  box-shadow: 0 0 28px rgba(0,245,255,0.55), 0 0 8px rgba(0,245,255,0.3), inset 0 0 18px rgba(0,245,255,0.08);
+  text-shadow: 0 0 18px rgba(0,245,255,0.9);
+}
+#initDartMeadowBtn:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 40px rgba(0,245,255,0.7);
+}
+.dart-btn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 28px;
+}
+.dart-btn-sub {
+  margin-top: 10px;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.48rem;
+  letter-spacing: 0.28em;
+  color: rgba(0,245,255,0.38);
+  text-transform: uppercase;
+}
 
 </style>
 </head>
@@ -891,6 +947,14 @@ Radical Deepscale
           alt="DART";
         />
       </div>
+      
+          <!-- ── Initialize DART Meadow ── -->
+    <div class="dart-btn-wrap">
+      <button id="initDartMeadowBtn" onclick="location.href='https://dartmeadow.com/dartmeadow_v5.html'">
+        Initialize DART Meadow
+      </button>
+      <span class="dart-btn-sub">Zero Gravity Skyboard · Interstellar Flight</span>
+    </div>
    <div id="chat-header2">
   <a href="https://extensions.blender.org/author/6230/" target="_blank">
     <img
@@ -909,6 +973,9 @@ Radical Deepscale
     />
   </a>
 </div>
+
+
+
     </div>
   </div>
 
