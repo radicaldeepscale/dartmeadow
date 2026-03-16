@@ -1,281 +1,1574 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Galactic Report Generator - DART Meadow</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 40px; background: #1a1a2e; color: white; text-align: center; }
-        .container { max-width: 600px; margin: 0 auto; background: #16213e; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        h2 { color: #4db5ff; margin-top: 0; }
-        p { color: #ccc; }
-        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #e94560; color: white; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; width: 100%; margin-top: 20px; }
-        button:hover { background: #c1364d; }
-        button:disabled { background: #555; cursor: wait; }
-        .status { font-size: 12px; margin-top: 10px; color: #888; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galactic Colonization Report — DART Meadow</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@200;300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #050a0f;
+    --bg2:       #080f18;
+    --bg3:       #0b1622;
+    --panel:     #0d1c2e;
+    --panel2:    #0f2236;
+    --border:    #1a3a5c;
+    --border2:   #234d72;
+    --accent:    #00d4ff;
+    --accent2:   #ff4d6d;
+    --accent3:   #39ff9e;
+    --accent4:   #ffb830;
+    --text:      #c8dff0;
+    --text2:     #7aa8cc;
+    --text3:     #4a7a9b;
+    --glow:      0 0 20px rgba(0,212,255,0.25);
+    --glow2:     0 0 20px rgba(255,77,109,0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* GRID BG */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    border-bottom: 1px solid var(--border);
+    background: rgba(5,10,15,0.95);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+  }
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-area img {
+    height: 38px;
+    filter: drop-shadow(0 0 8px rgba(0,212,255,0.4));
+  }
+  .logo-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .logo-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+  }
+  .topbar-nav {
+    display: flex;
+    gap: 6px;
+  }
+  .nav-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .nav-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.05);
+  }
+  .nav-btn.primary {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: white;
+  }
+  .nav-btn.primary:hover {
+    background: #ff2050;
+    border-color: #ff2050;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 80px 0 60px;
+    text-align: center;
+    position: relative;
+  }
+  .hero-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    display: inline-block;
+    border: 1px solid rgba(0,212,255,0.3);
+    padding: 4px 14px;
+  }
+  .hero h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: clamp(2.2rem, 5vw, 4.2rem);
+    line-height: 1.05;
+    letter-spacing: 0.05em;
+    color: white;
+    text-shadow: 0 0 40px rgba(0,212,255,0.3);
+    margin-bottom: 8px;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.3rem;
+    color: var(--text2);
+    letter-spacing: 0.15em;
+    margin-bottom: 28px;
+  }
+  .hero-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+  }
+  .hero-meta span { color: var(--accent); margin: 0 6px; }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+    margin: 0;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    padding: 60px 0 40px;
+  }
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border2), transparent);
+  }
+  .section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: white;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .section-desc {
+    color: var(--text2);
+    font-size: 0.93rem;
+    line-height: 1.7;
+    max-width: 680px;
+    margin-bottom: 32px;
+  }
+
+  /* KEY FINDING */
+  .key-finding {
+    background: linear-gradient(135deg, rgba(0,212,255,0.06) 0%, rgba(57,255,158,0.04) 100%);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-left: 3px solid var(--accent);
+    padding: 20px 24px;
+    margin: 32px 0;
+    position: relative;
+  }
+  .key-finding::before {
+    content: 'KEY FINDING';
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .key-finding p {
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+  .key-finding strong { color: var(--accent3); }
+
+  /* ── TIMELINE TABLE ── */
+  .timeline-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+    margin-top: 16px;
+  }
+  .timeline-table th {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border2);
+    background: var(--bg3);
+  }
+  .timeline-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  .timeline-table tr:hover td { background: rgba(0,212,255,0.02); }
+  .risk-low { color: var(--accent3); font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; }
+  .risk-med { color: var(--accent4); font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; }
+  .risk-crit { color: var(--accent2); font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; }
+
+  /* ── INTERACTIVE CONTROLS ── */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .control-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 18px 20px;
+    transition: border-color 0.2s;
+  }
+  .control-card:hover { border-color: var(--border2); }
+  .control-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .control-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 10px;
+    min-height: 2rem;
+  }
+  .control-value .unit {
+    font-size: 0.9rem;
+    color: var(--text3);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border2);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+  .range-limits {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--text3);
+    margin-top: 5px;
+  }
+
+  /* ── RESULTS PANEL ── */
+  .results-banner {
+    background: linear-gradient(135deg, var(--panel) 0%, var(--panel2) 100%);
+    border: 1px solid var(--border2);
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .results-banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 20px;
+  }
+  .result-item { }
+  .result-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .result-val {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: white;
+    line-height: 1;
+  }
+  .result-val.accent { color: var(--accent); }
+  .result-val.accent2 { color: var(--accent2); }
+  .result-val.accent3 { color: var(--accent3); }
+  .result-val.accent4 { color: var(--accent4); }
+  .result-unit {
+    font-size: 0.78rem;
+    color: var(--text3);
+    font-weight: 300;
+    margin-left: 3px;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-row {
+    margin: 10px 0;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text2);
+    margin-bottom: 5px;
+  }
+  .progress-track {
+    height: 6px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+    position: relative;
+  }
+  .progress-fill.c1 { background: linear-gradient(90deg, var(--accent2), var(--accent4)); }
+  .progress-fill.c2 { background: linear-gradient(90deg, var(--accent), var(--accent3)); }
+  .progress-fill.c3 { background: linear-gradient(90deg, var(--accent3), var(--accent)); }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+  }
+  .compare-table th {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    color: white;
+    padding: 12px 18px;
+    text-align: left;
+    background: var(--bg3);
+    border-bottom: 2px solid var(--border2);
+  }
+  .compare-table th:nth-child(2) { color: var(--accent); }
+  .compare-table th:nth-child(3) { color: var(--accent2); }
+  .compare-table td {
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .compare-table td:first-child {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    color: var(--text2);
+    letter-spacing: 0.05em;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: rgba(0,212,255,0.02); }
+
+  /* ── PHASE CARDS ── */
+  .phases-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+  @media (max-width: 700px) { .phases-grid { grid-template-columns: 1fr; } }
+  .phase-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .phase-card:hover { transform: translateY(-3px); border-color: var(--border2); }
+  .phase-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .phase-card.p1::after { background: var(--accent3); }
+  .phase-card.p2::after { background: var(--accent4); }
+  .phase-card.p3::after { background: var(--accent2); }
+  .phase-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    margin-bottom: 10px;
+  }
+  .phase-card.p1 .phase-num { color: var(--accent3); }
+  .phase-card.p2 .phase-num { color: var(--accent4); }
+  .phase-card.p3 .phase-num { color: var(--accent2); }
+  .phase-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: white;
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+  }
+  .phase-period {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .phase-body {
+    color: var(--text2);
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  /* ── EXODUS STATS ── */
+  .exodus-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+  @media (max-width: 600px) { .exodus-grid { grid-template-columns: 1fr; } }
+  .exodus-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    padding: 18px 20px;
+  }
+  .exodus-card.green { border-left-color: var(--accent3); }
+  .exodus-card .elabel {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.66rem;
+    color: var(--text3);
+    letter-spacing: 0.15em;
+    margin-bottom: 6px;
+  }
+  .exodus-card .eval {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: white;
+    margin-bottom: 4px;
+  }
+  .exodus-card .edesc {
+    font-size: 0.82rem;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  /* ── POPULATION SECTION ── */
+  .pop-results {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+    margin: 24px 0;
+  }
+  .pop-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .pop-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .pop-row:last-child { border-bottom: none; }
+  .pop-year { color: var(--text3); font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; }
+  .pop-num { color: white; font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1rem; }
+
+  /* ── ABOUT ── */
+  .about-section {
+    padding: 50px 0;
+    border-top: 1px solid var(--border);
+  }
+  .about-inner {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+  }
+  .about-logo img {
+    height: 64px;
+    filter: drop-shadow(0 0 12px rgba(0,212,255,0.35));
+  }
+  .about-text h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: white;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+  .about-text p {
+    color: var(--text2);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    max-width: 560px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 0;
+    text-align: center;
+  }
+  .footer p {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  /* Blink animation */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor::after { content: '█'; animation: blink 1s step-end infinite; font-size: 0.8em; color: var(--accent); }
+
+  /* Fade in */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .section { animation: fadeUp 0.5s ease both; }
+
+  /* pulse glow ring on logo */
+  @keyframes pulseGlow { 0%,100%{filter:drop-shadow(0 0 8px rgba(0,212,255,0.4))} 50%{filter:drop-shadow(0 0 18px rgba(0,212,255,0.8))} }
+  .logo-area img { animation: pulseGlow 3s ease-in-out infinite; }
+</style>
 </head>
 <body>
+<div class="grid-bg"></div>
 
-    <div class="container">
-        <h2>Galactic Report</h2>
-        <p>Click below to generate the DART Meadow PDF Report.</p>
-        <button id="genBtn" onclick="generatePDF()">Download Galactic Report</button>
-        <div id="status" class="status">Ready</div>
-   <h3>
-    <a href="https://dartmeadow.com/" style="text-decoration: underline; color: inherit; cursor: pointer;">
-       DART Meadow
-    </a>
-   </h3>
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="topbar-inner">
+      <div class="logo-area">
+        <img id="navLogo" src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmblack.png" alt="DART Meadow" onerror="this.style.display='none'">
+        <div>
+          <div class="logo-text">DART Meadow</div>
+          <div class="logo-sub">GALACTIC OPERATIONS DIVISION</div>
+        </div>
+      </div>
+      <div class="topbar-nav">
+        <button class="nav-btn" onclick="scrollTo('#sec1')">Timelines</button>
+        <button class="nav-btn" onclick="scrollTo('#sec2')">Simulation</button>
+        <button class="nav-btn" onclick="scrollTo('#sec3')">Exodus</button>
+        <button class="nav-btn" onclick="scrollTo('#sec4')">Phases</button>
+        <button class="nav-btn primary" id="pdfBtn" onclick="generatePDF()">⬇ Download Report</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-tag">CLASSIFIED RESEARCH DOCUMENT // 3.15.2026</div>
+    <h1><span>GALACTIC</span> COLONIZATION<br>& INTERGALACTIC EXODUS VIABILITY</h1>
+    <div class="hero-sub">PREPARED BY DART MEADOW // STRATEGIC EXPANSION DIVISION</div>
+    <div class="hero-meta">
+      DOCUMENT REF<span>//</span>DART-GCR-2026-001
+      <span>//</span>INTERACTIVE SIMULATION ENABLED
+      <span>//</span>STATUS: <span style="color:var(--accent3)">LIVE</span><span class="cursor"></span>
+    </div>
+  </div>
+</div>
+<div class="divider"></div>
+
+<!-- EXEC SUMMARY -->
+<section class="section" id="sec0">
+  <div class="wrap">
+    <div class="section-label">EXECUTIVE SUMMARY</div>
+    <div class="section-title">Mission Overview</div>
+    <div class="section-desc">
+      This report analyzes the potential expansion of human civilization from Earth to the Milky Way
+      and eventually to a new galaxy. The analysis contrasts the hard deadlines of Earth's habitability
+      against the timeline of the Milky Way–Andromeda merger.
     </div>
 
-    <script>
-        // The exact URL provided for the logo
-        const LOGO_URL = "https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmlogo%20(20250726055056)%20(20250918122139).png";
+    <div class="key-finding">
+      <p>The primary threat to humanity is not the galaxy collision (4.5 billion years away), but the aging
+      of our Sun. As solar luminosity increases ~10% over the next 600M–1B years, Earth's oceans will evaporate.
+      This gives humanity a <strong>"Golden Era" of approximately 1 billion years</strong> to saturate the Milky Way —
+      more than enough time to colonize every viable planet in our galaxy using generation ship technology.</p>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
 
-        // Helper: Fetch the image from URL and convert to Base64 so PDFMake can use it
-        async function getBase64ImageFromURL(url) {
-            return new Promise((resolve, reject) => {
-                var img = new Image();
-                img.setAttribute("crossOrigin", "anonymous");
-                
-                img.onload = () => {
-                    var canvas = document.createElement("canvas");
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    var ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0);
-                    var dataURL = canvas.toDataURL("image/png");
-                    resolve(dataURL);
-                };
-                
-                img.onerror = error => {
-                    console.error("Could not load logo:", error);
-                    resolve(null); // Return null if image fails so PDF still generates without it
-                };
+<!-- SECTION 1: TIMELINES -->
+<section class="section" id="sec1">
+  <div class="wrap">
+    <div class="section-label">SECTION 01</div>
+    <div class="section-title">Critical Timelines</div>
+    <div class="section-desc">
+      To determine how many planets we can colonize, we must first establish the time budget
+      available before we are forced to move.
+    </div>
 
-                img.src = url;
-            });
+    <table class="timeline-table">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Time from Now</th>
+          <th>Risk Level</th>
+          <th>Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Earth Peak Capacity</td>
+          <td>~2080s (60 years)</td>
+          <td><span class="risk-low">LOW</span></td>
+          <td>Population stabilizes at ~10.4B; resource management becomes key.</td>
+        </tr>
+        <tr>
+          <td>Solar Luminosity Increase</td>
+          <td id="tl-solar">600M – 1B Years</td>
+          <td><span class="risk-crit">CRITICAL</span></td>
+          <td>Sun becomes 10% brighter. Oceans evaporate. <strong style="color:var(--accent2)">Hard Deadline.</strong></td>
+        </tr>
+        <tr>
+          <td>Andromeda Collision</td>
+          <td>~4.5 Billion Years</td>
+          <td><span class="risk-med">MODERATE</span></td>
+          <td>Galaxies merge. Orbits disrupted. Radiation risks increase.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- SECTION 2: INTERACTIVE SIMULATION -->
+<section class="section" id="sec2">
+  <div class="wrap">
+    <div class="section-label">SECTION 02 // INTERACTIVE</div>
+    <div class="section-title">Colonization Simulation</div>
+    <div class="section-desc">
+      Adjust the parameters below to model different expansion scenarios using the Colonization Wave model.
+      All calculations update in real time.
+    </div>
+
+    <div class="controls-grid">
+      <div class="control-card">
+        <div class="control-label">Ship Speed (fraction of c)</div>
+        <div class="control-value" id="v-speed">0.10 <span class="unit">c</span></div>
+        <input type="range" id="r-speed" min="0.01" max="0.50" step="0.01" value="0.10" oninput="recalc()">
+        <div class="range-limits"><span>0.01c</span><span>0.50c</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Avg Star Distance (LY)</div>
+        <div class="control-value" id="v-dist">4 <span class="unit">LY</span></div>
+        <input type="range" id="r-dist" min="2" max="20" step="1" value="4" oninput="recalc()">
+        <div class="range-limits"><span>2 LY</span><span>20 LY</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Settlement Build Time</div>
+        <div class="control-value" id="v-build">500 <span class="unit">yrs</span></div>
+        <input type="range" id="r-build" min="50" max="2000" step="50" value="500" oninput="recalc()">
+        <div class="range-limits"><span>50</span><span>2000 yrs</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Golden Era Duration</div>
+        <div class="control-value" id="v-era">1.0 <span class="unit">B yrs</span></div>
+        <input type="range" id="r-era" min="0.3" max="2.0" step="0.1" value="1.0" oninput="recalc()">
+        <div class="range-limits"><span>300M yrs</span><span>2B yrs</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Habitable Planet Density</div>
+        <div class="control-value" id="v-density">10 <span class="unit">%</span></div>
+        <input type="range" id="r-density" min="1" max="40" step="1" value="10" oninput="recalc()">
+        <div class="range-limits"><span>1%</span><span>40%</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Milky Way Star Count</div>
+        <div class="control-value" id="v-stars">200 <span class="unit">B</span></div>
+        <input type="range" id="r-stars" min="100" max="400" step="10" value="200" oninput="recalc()">
+        <div class="range-limits"><span>100B</span><span>400B stars</span></div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results-banner">
+      <div class="results-grid">
+        <div class="result-item">
+          <div class="result-label">Cycle Time</div>
+          <div class="result-val accent" id="r-cycle">—</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Max Hops</div>
+          <div class="result-val accent3" id="r-hops">—</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Expansion Speed</div>
+          <div class="result-val" id="r-expspeed">—</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Radius Reached</div>
+          <div class="result-val accent" id="r-radius">—</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Colonizable Planets</div>
+          <div class="result-val accent3" id="r-planets">—</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">Milky Way Coverage</div>
+          <div class="result-val accent4" id="r-coverage">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISUAL PROGRESS -->
+    <div>
+      <div class="progress-row">
+        <div class="progress-label">
+          <span>GALAXY COVERAGE</span>
+          <span id="prog-cov-label">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill c2" id="prog-cov" style="width:0%"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">
+          <span>TIME BUDGET USED</span>
+          <span id="prog-time-label">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill c1" id="prog-time" style="width:0%"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">
+          <span>PLANETS COLONIZED (vs available)</span>
+          <span id="prog-plan-label">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill c3" id="prog-plan" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px; padding:16px 20px; background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--accent4);">
+      <div class="result-label" style="margin-bottom:6px;">SIMULATION VERDICT</div>
+      <div id="verdict" style="color:var(--text); font-size:0.92rem; line-height:1.6;"></div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- SECTION 2B: POPULATION -->
+<section class="section" id="sec2b">
+  <div class="wrap">
+    <div class="section-label">SECTION 02B // POPULATION PROJECTION</div>
+    <div class="section-title">Population Growth Model</div>
+    <div class="section-desc">
+      Projected population milestones based on current growth trends and colonization capability.
+    </div>
+
+    <div class="controls-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));">
+      <div class="control-card">
+        <div class="control-label">Growth Rate (% per year)</div>
+        <div class="control-value" id="v-popgrowth">0.9 <span class="unit">%</span></div>
+        <input type="range" id="r-popgrowth" min="0.1" max="3.0" step="0.1" value="0.9" oninput="recalc()">
+        <div class="range-limits"><span>0.1%</span><span>3.0%</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Carrying Capacity per Planet</div>
+        <div class="control-value" id="v-cappop">10 <span class="unit">B</span></div>
+        <input type="range" id="r-cappop" min="1" max="100" step="1" value="10" oninput="recalc()">
+        <div class="range-limits"><span>1B</span><span>100B</span></div>
+      </div>
+    </div>
+
+    <div class="pop-results">
+      <div class="pop-title">Population Milestones</div>
+      <div class="pop-row">
+        <span class="pop-year">2080 (Peak Earth)</span>
+        <span class="pop-num" id="pop-2080">—</span>
+      </div>
+      <div class="pop-row">
+        <span class="pop-year">Year 2200 (Early Expansion)</span>
+        <span class="pop-num" id="pop-2200">—</span>
+      </div>
+      <div class="pop-row">
+        <span class="pop-year">Year 2500 (Multi-World)</span>
+        <span class="pop-num" id="pop-2500">—</span>
+      </div>
+      <div class="pop-row">
+        <span class="pop-year">Year 3000 (Type I+ Civilization)</span>
+        <span class="pop-num" id="pop-3000">—</span>
+      </div>
+      <div class="pop-row" style="border-top:1px solid var(--border2); margin-top:4px; padding-top:12px;">
+        <span class="pop-year">Total Carrying Capacity (all colonized worlds)</span>
+        <span class="pop-num accent3" id="pop-total" style="color:var(--accent3)">—</span>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- SECTION 3: EXODUS -->
+<section class="section" id="sec3">
+  <div class="wrap">
+    <div class="section-label">SECTION 03</div>
+    <div class="section-title">Intergalactic Exodus</div>
+    <div class="section-desc">
+      If humanity decides to leave the Milky Way, we face the void between galaxies.
+      Destination: Triangulum Galaxy (M33) — the most viable stable member of the Local Group.
+    </div>
+
+    <!-- EXODUS VARIABLES -->
+    <div class="controls-grid" style="grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); margin-bottom:24px;">
+      <div class="control-card">
+        <div class="control-label">Void Ark Speed (fraction of c)</div>
+        <div class="control-value" id="v-arkspeed">0.10 <span class="unit">c</span></div>
+        <input type="range" id="r-arkspeed" min="0.01" max="0.30" step="0.01" value="0.10" oninput="recalc()">
+        <div class="range-limits"><span>0.01c</span><span>0.30c</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Target Distance (M33)</div>
+        <div class="control-value" id="v-m33dist">2.73 <span class="unit">M LY</span></div>
+        <input type="range" id="r-m33dist" min="2.0" max="4.0" step="0.01" value="2.73" oninput="recalc()">
+        <div class="range-limits"><span>2.0M LY</span><span>4.0M LY</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Generation Length</div>
+        <div class="control-value" id="v-gen">30 <span class="unit">yrs</span></div>
+        <input type="range" id="r-gen" min="20" max="100" step="5" value="30" oninput="recalc()">
+        <div class="range-limits"><span>20</span><span>100 yrs</span></div>
+      </div>
+    </div>
+
+    <div class="exodus-grid">
+      <div class="exodus-card">
+        <div class="elabel">TRAVEL DURATION</div>
+        <div class="eval" id="ex-travel">—</div>
+        <div class="edesc">Total transit time from Milky Way to Triangulum at selected ark speed.</div>
+      </div>
+      <div class="exodus-card green">
+        <div class="elabel">GENERATIONS IN TRANSIT</div>
+        <div class="eval" id="ex-gens">—</div>
+        <div class="edesc">Number of human generations born and died during the crossing.</div>
+      </div>
+      <div class="exodus-card">
+        <div class="elabel">EVOLUTIONARY RISK</div>
+        <div class="eval" id="ex-evo">—</div>
+        <div class="edesc">At >50,000 generations, speciation is considered highly probable.</div>
+      </div>
+      <div class="exodus-card green">
+        <div class="elabel">DEPARTURE WINDOW</div>
+        <div class="eval">Year ~4B</div>
+        <div class="edesc">Andromeda collision begins disrupting Milky Way orbits at ~4.5B years.</div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- SECTION 4: PHASES & COMPARISON -->
+<section class="section" id="sec4">
+  <div class="wrap">
+    <div class="section-label">SECTION 04</div>
+    <div class="section-title">Expansion Phases & Comparison</div>
+
+    <div class="phases-grid">
+      <div class="phase-card p1">
+        <div class="phase-num">PHASE 01 // MILKY WAY</div>
+        <div class="phase-title">Galactic Saturation</div>
+        <div class="phase-period">Years 2200 – 1 Billion</div>
+        <div class="phase-body">Aggressive expansion seeding 10 Billion+ worlds. Humanity achieves Type II Civilization status. Generation ships become the backbone of interstellar infrastructure.</div>
+      </div>
+      <div class="phase-card p2">
+        <div class="phase-num">PHASE 02 // TRANSITION</div>
+        <div class="phase-title">Galactic Winter</div>
+        <div class="phase-period">Years 3B – 4B</div>
+        <div class="phase-body">Gravitational tides from the approaching Andromeda galaxy begin disrupting orbits. Construction of Void Arks begins. Seed fleets prepared for intergalactic deployment.</div>
+      </div>
+      <div class="phase-card p3">
+        <div class="phase-num">PHASE 03 // EXODUS</div>
+        <div class="phase-title">The Great Crossing</div>
+        <div class="phase-period">Year 4B+</div>
+        <div class="phase-body">Departure for Triangulum Galaxy. ~27–30M years in transit. Humanity's successor species arrives at a new galactic home, potentially unrecognizable from its origin.</div>
+      </div>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <div style="margin-top:32px;">
+      <div class="section-label">SUMMARY COMPARISON</div>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>⬡ Milky Way Phase</th>
+            <th>◆ Intergalactic Phase</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Primary Constraint</td>
+            <td>Industry Build Time</td>
+            <td>Fuel / Resource Preservation</td>
+          </tr>
+          <tr>
+            <td>Travel Time per Hop</td>
+            <td id="ct-travel">40–100 Years</td>
+            <td id="ct-exodus">~27 Million Years</td>
+          </tr>
+          <tr>
+            <td>Colonizable Targets</td>
+            <td id="ct-targets">~40 Billion Planets</td>
+            <td>1 New Galaxy (Triangulum)</td>
+          </tr>
+          <tr>
+            <td>Fleet Type</td>
+            <td>Generation Ships</td>
+            <td>Void Arks (Artificial Planets)</td>
+          </tr>
+          <tr>
+            <td>Propulsion</td>
+            <td>Fusion / Ion Drive</td>
+            <td>Fusion / Antimatter</td>
+          </tr>
+          <tr>
+            <td>Evolutionary Drift</td>
+            <td>Minor</td>
+            <td id="ct-evo">Speciation Likely</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- ABOUT -->
+<section class="about-section">
+  <div class="wrap">
+    <div class="about-inner">
+      <div class="about-logo">
+        <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmblack.png" alt="DART Meadow" onerror="this.style.display='none'">
+      </div>
+      <div class="about-text">
+        <h3>ABOUT DART MEADOW</h3>
+        <p>
+          DART Meadow has been a cornerstone in the community, involved in both leadership and development.
+          We are proud to lead the way towards a more efficient future with innovative ideas, game-changing
+          technology and transparency.
+        </p>
+        <p style="margin-top:10px;">
+          We've worked on dozens of projects aimed at providing innovative engineering solutions.
+          <a href="https://dartmeadow.com/" style="color:var(--accent);text-decoration:none;margin-left:6px;">dartmeadow.com ↗</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="wrap">
+    <p>© 2026 DART MEADOW — GALACTIC COLONIZATION REPORT // DART-GCR-2026-001 // 
+      <a href="https://dartmeadow.com/">dartmeadow.com</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+// ─── LOGO URL ───────────────────────────────────────────────────────────────
+const LOGO_URL = "https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dmblack.png";
+
+function scrollTo(id) {
+  document.querySelector(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── FORMAT HELPERS ──────────────────────────────────────────────────────────
+function fmtNum(n) {
+  if (n >= 1e12) return (n/1e12).toFixed(2) + ' Trillion';
+  if (n >= 1e9) return (n/1e9).toFixed(2) + ' Billion';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + ' Million';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toFixed(0);
+}
+function fmtLY(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M LY';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K LY';
+  return n.toFixed(0) + ' LY';
+}
+function setBar(id, pct) {
+  const el = document.getElementById(id);
+  const capped = Math.min(100, pct);
+  el.style.width = capped + '%';
+}
+
+// ─── MAIN RECALC ─────────────────────────────────────────────────────────────
+function recalc() {
+  // Grab values
+  const speed   = parseFloat(document.getElementById('r-speed').value);
+  const dist    = parseFloat(document.getElementById('r-dist').value);
+  const build   = parseFloat(document.getElementById('r-build').value);
+  const era     = parseFloat(document.getElementById('r-era').value);       // billions
+  const density = parseFloat(document.getElementById('r-density').value)/100;
+  const stars   = parseFloat(document.getElementById('r-stars').value)*1e9;
+  const popgrow = parseFloat(document.getElementById('r-popgrowth').value)/100;
+  const cappop  = parseFloat(document.getElementById('r-cappop').value)*1e9;
+  const arkspd  = parseFloat(document.getElementById('r-arkspeed').value);
+  const m33dist = parseFloat(document.getElementById('r-m33dist').value)*1e6; // LY
+  const genLen  = parseFloat(document.getElementById('r-gen').value);
+
+  // Update display values
+  document.getElementById('v-speed').innerHTML   = speed.toFixed(2) + ' <span class="unit">c</span>';
+  document.getElementById('v-dist').innerHTML    = dist + ' <span class="unit">LY</span>';
+  document.getElementById('v-build').innerHTML   = build + ' <span class="unit">yrs</span>';
+  document.getElementById('v-era').innerHTML     = era.toFixed(1) + ' <span class="unit">B yrs</span>';
+  document.getElementById('v-density').innerHTML = (density*100).toFixed(0) + ' <span class="unit">%</span>';
+  document.getElementById('v-stars').innerHTML   = (stars/1e9).toFixed(0) + ' <span class="unit">B</span>';
+  document.getElementById('v-popgrowth').innerHTML = (popgrow*100).toFixed(1) + ' <span class="unit">%</span>';
+  document.getElementById('v-cappop').innerHTML  = (cappop/1e9).toFixed(0) + ' <span class="unit">B</span>';
+  document.getElementById('v-arkspeed').innerHTML = arkspd.toFixed(2) + ' <span class="unit">c</span>';
+  document.getElementById('v-m33dist').innerHTML  = (m33dist/1e6).toFixed(2) + ' <span class="unit">M LY</span>';
+  document.getElementById('v-gen').innerHTML      = genLen + ' <span class="unit">yrs</span>';
+
+  // ── SECTION 2 CALCS ─────────────────────────────────────────────
+  const travelTime   = dist / speed;                         // years per hop
+  const cycleTime    = travelTime + build;                   // years per full cycle
+  const totalYears   = era * 1e9;
+  const maxHops      = totalYears / cycleTime;
+  const radiusLY     = maxHops * dist;                       // LY reached
+  const expSpeed     = dist / cycleTime;                     // LY/year effective
+  const habPlanets   = stars * density;
+  const mwRadius     = 50000;                                // LY half-width
+  
+  // Volume ratio (sphere vs disk approx)
+  const reachRatioLinear = Math.min(1, radiusLY / (mwRadius * 2));
+  const coverage = Math.min(100, reachRatioLinear * 100);
+  
+  // Colonized planets (capped at available)
+  const colonized = Math.min(habPlanets, habPlanets * Math.min(1, Math.pow(reachRatioLinear, 1.5)));
+
+  document.getElementById('r-cycle').innerHTML  = fmtNum(cycleTime) + ' <span class="result-unit">yrs/hop</span>';
+  document.getElementById('r-hops').innerHTML   = fmtNum(maxHops) + ' <span class="result-unit">hops</span>';
+  document.getElementById('r-expspeed').innerHTML = (expSpeed).toFixed(4) + ' <span class="result-unit">LY/yr</span>';
+  document.getElementById('r-radius').innerHTML = fmtLY(radiusLY);
+  document.getElementById('r-planets').innerHTML = fmtNum(colonized);
+  document.getElementById('r-coverage').innerHTML = coverage.toFixed(1) + '<span class="result-unit">%</span>';
+
+  setBar('prog-cov', coverage);
+  document.getElementById('prog-cov-label').textContent = coverage.toFixed(1) + '%';
+  
+  // Time budget used (how long to cover galaxy vs era)
+  const timeToSaturate = (mwRadius*2) / dist * cycleTime / 1e9; // B yrs
+  const timePct = Math.min(100, (timeToSaturate / era) * 100);
+  setBar('prog-time', timePct);
+  document.getElementById('prog-time-label').textContent = timePct.toFixed(1) + '%';
+
+  // Planets colonized vs available
+  const planPct = Math.min(100, (colonized / habPlanets) * 100);
+  setBar('prog-plan', planPct);
+  document.getElementById('prog-plan-label').textContent = planPct.toFixed(1) + '%';
+
+  // Verdict
+  let verdict = '';
+  if (coverage >= 99) {
+    verdict = `✦ At ${(speed*100).toFixed(0)}% light speed with ${build}-year build cycles, humanity <strong style="color:var(--accent3)">fully saturates the Milky Way</strong> in approximately ${fmtNum(timeToSaturate*1e9)} years — with significant time remaining before the solar deadline. We do not need to abandon the galaxy.`;
+  } else if (coverage >= 50) {
+    verdict = `◈ Humanity reaches <strong style="color:var(--accent4)">${coverage.toFixed(0)}% of the Milky Way</strong> before the solar deadline. Colonizing ~${fmtNum(colonized)} habitable worlds — a viable civilization, though not full galactic saturation.`;
+  } else {
+    verdict = `⚠ At these parameters, humanity only reaches <strong style="color:var(--accent2)">${coverage.toFixed(1)}%</strong> of the galaxy. Consider increasing ship speed or reducing build time to maximize colonization potential.`;
+  }
+  document.getElementById('verdict').innerHTML = verdict;
+
+  // Update timeline table solar entry
+  document.getElementById('tl-solar').textContent = (era * 600).toFixed(0) + 'M – ' + (era * 1000).toFixed(0) + 'M Years';
+
+  // Update comparison table
+  document.getElementById('ct-travel').textContent  = travelTime.toFixed(0) + '–' + (travelTime*1.5).toFixed(0) + ' Years';
+  document.getElementById('ct-targets').textContent = '~' + fmtNum(colonized) + ' Planets';
+
+  // ── SECTION 2B: POPULATION ───────────────────────────────────────
+  const basePopNow = 8.1e9;
+  function popAt(year) {
+    const dt = year - 2026;
+    return basePopNow * Math.pow(1 + popgrow, dt);
+  }
+  function fmtPop(p) { return fmtNum(p) + ' people'; }
+  document.getElementById('pop-2080').textContent = fmtPop(popAt(2080));
+  document.getElementById('pop-2200').textContent = fmtPop(popAt(2200));
+  document.getElementById('pop-2500').textContent = fmtPop(popAt(2500));
+  document.getElementById('pop-3000').textContent = fmtPop(popAt(3000));
+  document.getElementById('pop-total').textContent = fmtNum(colonized * cappop) + ' people (max capacity)';
+
+  // ── SECTION 3: EXODUS ───────────────────────────────────────────
+  const travelYrs = m33dist / arkspd;          // years
+  const gens = travelYrs / genLen;
+  const evoRisk = gens > 50000 ? 'SPECIATION' : gens > 10000 ? 'HIGH DRIFT' : gens > 1000 ? 'MODERATE' : 'LOW';
+  const evoColor = gens > 50000 ? 'var(--accent2)' : gens > 10000 ? 'var(--accent4)' : 'var(--accent3)';
+
+  document.getElementById('ex-travel').textContent = fmtNum(travelYrs) + ' yrs';
+  document.getElementById('ex-gens').textContent   = fmtNum(gens) + ' gen.';
+  document.getElementById('ex-evo').innerHTML = `<span style="color:${evoColor}">${evoRisk}</span>`;
+  document.getElementById('ct-exodus').textContent = fmtNum(travelYrs) + ' Years';
+  document.getElementById('ct-evo').textContent = gens > 50000 ? 'Speciation Certain' : gens > 10000 ? 'High Drift Expected' : 'Moderate Drift';
+}
+
+// Run on load
+recalc();
+
+// ─── PDF GENERATOR ──────────────────────────────────────────────────────────
+async function getBase64(url) {
+  return new Promise((res) => {
+    const img = new Image();
+    img.setAttribute('crossOrigin', 'anonymous');
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      c.getContext('2d').drawImage(img, 0, 0);
+      res(c.toDataURL('image/png'));
+    };
+    img.onerror = () => res(null);
+    img.src = url;
+  });
+}
+
+async function generatePDF() {
+  const btn = document.getElementById('pdfBtn');
+  btn.textContent = '⏳ Building...';
+  btn.disabled = true;
+
+  const logo = await getBase64(LOGO_URL);
+
+  // Pull live values
+  const speed   = parseFloat(document.getElementById('r-speed').value);
+  const dist    = parseFloat(document.getElementById('r-dist').value);
+  const build   = parseFloat(document.getElementById('r-build').value);
+  const era     = parseFloat(document.getElementById('r-era').value);
+  const density = parseFloat(document.getElementById('r-density').value);
+  const arkspd  = parseFloat(document.getElementById('r-arkspeed').value);
+  const m33dist = parseFloat(document.getElementById('r-m33dist').value);
+  const genLen  = parseFloat(document.getElementById('r-gen').value);
+
+  const cycleTime  = (dist/speed) + build;
+  const totalYrs   = era * 1e9;
+  const maxHops    = totalYrs / cycleTime;
+  const radiusLY   = maxHops * dist;
+  const habPlanets = parseFloat(document.getElementById('r-stars').value)*1e9 * density/100;
+  const reachRatio = Math.min(1, radiusLY / 100000);
+  const coverage   = Math.min(100, reachRatio * 100);
+  const colonized  = Math.min(habPlanets, habPlanets * Math.min(1, Math.pow(reachRatio, 1.5)));
+  const travelYrs  = m33dist * 1e6 / arkspd;
+  const gens       = travelYrs / genLen;
+
+  // ── PRINT PALETTE (dark text on white paper) ──────────────────────────────
+  const INK       = '#0d1117';   // near-black for all body text
+  const INK2      = '#1e293b';   // dark slate for secondary text
+  const INK3      = '#334155';   // medium for captions/labels
+  const BLUE      = '#0066cc';   // rich blue for section headers & accents
+  const RED       = '#cc1133';   // deep red for critical items
+  const TEAL      = '#007a6e';   // dark teal for positive/green items
+  const AMBER     = '#b45309';   // amber for moderate warnings
+  const HDR_FILL  = '#0d1117';   // black fill for table headers
+  const HDR_TEXT  = '#ffffff';   // white text on black header rows
+  const ROW_ALT   = '#f0f4f8';   // very light blue-gray for alternating rows
+  const BOX_BG    = '#e8f0fe';   // pale blue for key-finding box
+  const BOX_BDR   = '#0066cc';   // blue border on key-finding box
+  const RULE      = '#0066cc';   // colored rules/lines
+
+  const verdictColor = coverage >= 99 ? TEAL : coverage >= 50 ? AMBER : RED;
+  const verdictText  = coverage >= 99
+    ? '✦ VERDICT: Full galactic saturation is achievable within the Golden Era at these parameters.'
+    : coverage >= 50
+    ? '◈ VERDICT: Partial saturation (' + coverage.toFixed(0) + '%) is achievable. Viable, but not complete.'
+    : '⚠ VERDICT: Limited coverage (' + coverage.toFixed(1) + '%). Increase ship speed or reduce build time.';
+
+  const evoColor = gens > 50000 ? RED : gens > 10000 ? AMBER : TEAL;
+  const evoText  = gens > 50000 ? 'Speciation Certain' : gens > 10000 ? 'High Drift Expected' : 'Moderate Drift';
+
+  const docDef = {
+    pageSize: 'A4',
+    pageMargins: [45, 65, 45, 55],
+    info: { title:'Galactic Colonization Report', author:'DART Meadow' },
+
+    // Page numbers in footer
+    footer: (page, pages) => ({
+      columns:[
+        { text: 'DART MEADOW // DART-GCR-2026-001', fontSize:7, color: INK3, margin:[45,0,0,0] },
+        { text: 'Page ' + page + ' of ' + pages, fontSize:7, color: INK3, alignment:'right', margin:[0,0,45,0] }
+      ],
+      margin:[0,10,0,0]
+    }),
+
+    content: [
+      // ════════════════════════════════════════
+      // COVER PAGE
+      // ════════════════════════════════════════
+      {
+        stack: [
+          // Top color band
+          { canvas:[{ type:'rect', x:0, y:0, w:505, h:6, color: BLUE }], margin:[0,0,0,0] },
+          { text:'\n\n\n\n' },
+          logo
+            ? { image: logo, width: 170, alignment: 'center', margin:[0,0,0,8] }
+            : { text: 'DART MEADOW', fontSize:22, bold:true, color:BLUE, alignment:'center' },
+          { text:'\n\n\n' },
+          // Cover title
+          { text: 'GALACTIC COLONIZATION', fontSize:30, bold:true, color:INK, alignment:'center', letterSpacing:2, margin:[0,0,0,6] },
+          { text: '& INTERGALACTIC EXODUS VIABILITY', fontSize:16, bold:true, color:INK2, alignment:'center', letterSpacing:1, margin:[0,0,0,24] },
+          { canvas:[{ type:'line', x1:60, y1:0, x2:445, y2:0, lineWidth:1.5, lineColor:BLUE }] },
+          { text:'\n' },
+          { canvas:[{ type:'line', x1:60, y1:0, x2:445, y2:0, lineWidth:0.5, lineColor:'#cbd5e1' }] },
+          { text:'\n\n' },
+          { text: 'Prepared By', fontSize:10, color:INK3, alignment:'center', margin:[0,0,0,4] },
+          { text: 'DART MEADOW', fontSize:16, bold:true, color:BLUE, alignment:'center', margin:[0,0,0,6] },
+          { text: new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}), fontSize:10, color:INK3, alignment:'center', margin:[0,0,0,16] },
+          { text:'\n\n\n\n\n\n\n\n\n\n' },
+          { canvas:[{ type:'rect', x:0, y:0, w:505, h:3, color:BLUE }] },
+          { text: 'DOCUMENT REF // DART-GCR-2026-001  //  INTERACTIVE SIMULATION REPORT', fontSize:7, color:INK3, alignment:'center', margin:[0,6,0,0], characterSpacing:1 },
+        ],
+        pageBreak: 'after'
+      },
+
+      // ════════════════════════════════════════
+      // PAGE 2: REPORT BODY
+      // ════════════════════════════════════════
+
+      // Main header
+      { text: 'GALACTIC COLONIZATION & INTERGALACTIC EXODUS VIABILITY', style:'mainHeader' },
+      { canvas:[{ type:'line', x1:0, y1:0, x2:505, y2:0, lineWidth:2, lineColor:BLUE }], margin:[0,0,0,14] },
+
+      // ── EXEC SUMMARY ────────────────────────────────────────────
+      { text: 'EXECUTIVE SUMMARY', style:'sectionHeader' },
+      { text: 'This report analyzes the potential expansion of human civilization from Earth to the Milky Way and eventually to a new galaxy. The analysis contrasts the hard deadlines of Earth\'s habitability against the timeline of the Milky Way–Andromeda merger.', style:'body' },
+
+      // Key Finding box — pale blue bg, blue left border, dark text
+      {
+        margin:[0,10,0,14],
+        table:{ widths:['*'], body:[[{
+          stack:[
+            { text:'KEY FINDING', fontSize:7, bold:true, color:BLUE, characterSpacing:1.5, margin:[0,0,0,4] },
+            { text:[
+                {text:'The primary threat to humanity is not the galaxy collision (4.5 billion years away), but the aging of our Sun. Humanity has a '},
+                {text:'"Golden Era" of ~' + era.toFixed(1) + ' billion years', bold:true, color:BLUE},
+                {text:' to colonize the Milky Way — more than sufficient time to saturate every viable planet in our galaxy.'}
+              ],
+              fontSize:10, color:INK, lineHeight:1.5
+            }
+          ],
+          fillColor: BOX_BG,
+          margin:[12,10,12,10]
+        }]]},
+        layout:{ hLineWidth:()=>0, vLineWidth:(i)=>i===0?3:0, vLineColor:()=>BOX_BDR }
+      },
+
+      // ── SECTION 1 ───────────────────────────────────────────────
+      { text: 'SECTION 1 — CRITICAL TIMELINES', style:'sectionHeader' },
+      { text: 'To determine how many planets we can colonize, we must first establish the time budget available before we are forced to move.', style:'body' },
+      {
+        margin:[0,4,0,16],
+        table:{
+          headerRows:1,
+          widths:['*', 90, 52, '*'],
+          body:[
+            [
+              {text:'Event',       style:'th'},
+              {text:'Timeline',    style:'th'},
+              {text:'Risk Level',  style:'th'},
+              {text:'Impact',      style:'th'}
+            ],
+            [
+              {text:'Earth Peak Capacity', style:'tdBold'},
+              {text:'~2080s (60 years)', style:'td'},
+              {text:'LOW', color:TEAL, bold:true, fontSize:8},
+              {text:'Population stabilizes at ~10.4B; resource management becomes key.', style:'td'}
+            ],
+            [
+              {text:'Solar Luminosity Increase', style:'tdBold'},
+              {text:(era*600).toFixed(0)+'M–'+(era*1000).toFixed(0)+'M Years', style:'td'},
+              {text:'CRITICAL', color:RED, bold:true, fontSize:8},
+              {text:'Sun becomes 10% brighter. Oceans evaporate. Hard Deadline.', style:'td'}
+            ],
+            [
+              {text:'Andromeda Collision', style:'tdBold'},
+              {text:'~4.5 Billion Years', style:'td'},
+              {text:'MODERATE', color:AMBER, bold:true, fontSize:8},
+              {text:'Galaxies merge. Orbits disrupted. Radiation risks increase.', style:'td'}
+            ],
+          ]
+        },
+        layout:{
+          hLineWidth:(i,n)=> i===0||i===1||i===n.table.body.length ? 1 : 0.5,
+          hLineColor:()=>'#cbd5e1',
+          vLineWidth:()=>0,
+          fillColor:(row)=> row===0 ? HDR_FILL : row%2===0 ? ROW_ALT : '#ffffff'
         }
+      },
 
-        async function generatePDF() {
-            const btn = document.getElementById('genBtn');
-            const status = document.getElementById('status');
-            
-            btn.disabled = true;
-            btn.innerText = "Processing Logo...";
-            status.innerText = "Fetching image from GitHub...";
+      // ── SECTION 2 ───────────────────────────────────────────────
+      { text: 'SECTION 2 — COLONIZATION SIMULATION', style:'sectionHeader' },
+      { text: 'Using the Colonization Wave model with user-configured parameters to calculate expansion potential within the Golden Era.', style:'body' },
 
-            // 1. Get the logo data
-            const logoData = await getBase64ImageFromURL(LOGO_URL);
+      { text: '2.1  Simulation Parameters (as configured)', style:'subhead' },
+      {
+        columns:[
+          { ul:[
+              'Ship Speed: ' + (speed*100).toFixed(0) + '% of light speed (' + speed.toFixed(2) + 'c)',
+              'Avg Star Distance: ' + dist + ' light-years',
+              'Settlement Build Time: ' + build + ' years per hop',
+            ], color:INK, fontSize:9, lineHeight:1.45, width:'*'
+          },
+          { ul:[
+              'Golden Era Duration: ' + era.toFixed(1) + ' billion years',
+              'Habitable Planet Density: ' + density + '% of stars',
+              'Milky Way Stars: ' + document.getElementById('r-stars').value + ' billion',
+            ], color:INK, fontSize:9, lineHeight:1.45, width:'*'
+          }
+        ], columnGap:24, margin:[0,0,0,10]
+      },
 
-            status.innerText = "Generating PDF...";
-
-            // 2. Define the Document
-            var docDefinition = {
-                pageSize: 'A4',
-                pageMargins: [40, 60, 40, 60],
-
-                info: {
-                    title: 'Galactic Colonization & Exodus Viability',
-                    author: 'DART Meadow',
-                },
-
-                content: [
-                    // =========================
-                    // PAGE 1: COVER PAGE
-                    // =========================
-                    {
-                        stack: [
-                            { text: '\n\n\n' },
-                            // Logo Centered
-                            logoData ? { image: logoData, width: 200, alignment: 'center' } : { text: '[LOGO FAILED TO LOAD]', alignment: 'center' },
-                            { text: '\n\n\n' },
-                            
-                            // Title
-                            { text: 'GALACTIC COLONIZATION', style: 'coverTitle' },
-                            { text: '& INTERGALACTIC EXODUS VIABILITY', style: 'coverSubtitle' },
-                            
-                            { text: '\n\n\n', fontSize: 14 },
-                            { text: 'Prepared By:', style: 'coverText' },
-                            { text: 'DART MEADOW', style: 'coverAuthor' },
-                            { text: new Date().toLocaleDateString(), style: 'coverText' }
-                        ],
-                        alignment: 'center',
-                        pageBreak: 'after'
-                    },
-
-                    // =========================
-                    // REPORT BODY (From previous context)
-                    // =========================
-                    { text: 'REPORT: Galactic Colonization & Intergalactic Exodus Viability', style: 'header' },
-                    
-                    // Executive Summary
-                    { text: 'Executive Summary', style: 'subheader' },
-                    { text: 'This report analyzes the potential expansion of human civilization from Earth to the Milky Way and eventually to a new galaxy. The analysis contrasts the "hard deadlines" of Earth\'s habitability against the timeline of the Milky Way-Andromeda merger.', margin: [0,0,0,10] },
-                    
-                    // Key Finding Box
-                    {
-                        style: 'highlightBox',
-                        table: {
-                            widths: ['*'],
-                            body: [[
-                                {
-                                    text: [
-                                        { text: 'Key Finding: ', bold: true },
-                                        'The primary threat to humanity is not the galaxy collision (4.5 billion years away), but the aging of our Sun. Humanity has a "Golden Era" of ~1 billion years to colonize the Milky Way.'
-                                    ],
-                                    fillColor: '#f0f0f0',
-                                    color: '#333333'
-                                }
-                            ]]
-                        },
-                        layout: 'noBorders'
-                    },
-
-                    // Section 1
-                    { text: 'Section 1: The Critical Timelines', style: 'subheader' },
-                    { text: 'To determine how many planets we can colonize, we must first establish the time budget available before we are forced to move.', margin: [0,0,0,10] },
-                    
-                    {
-                        style: 'tableExample',
-                        table: {
-                            headerRows: 1,
-                            widths: ['auto', 'auto', 'auto', '*'],
-                            body: [
-                                [ { text: 'Event', style: 'tableHeader' }, { text: 'Time from Now', style: 'tableHeader' }, { text: 'Risk Level', style: 'tableHeader' }, { text: 'Impact', style: 'tableHeader' } ],
-                                [ 'Earth Peak Capacity', '~2080s (60 years)', 'Low', 'Population stabilizes at ~10.4B; resource management becomes key.' ],
-                                [ 'Solar Luminosity', '600M - 1B Years', {text: 'Critical', bold:true, color:'red'}, 'Sun becomes 10% brighter. Oceans evaporate. (Hard Deadline)' ],
-                                [ 'Andromeda Merger', '~4.5 Billion Years', 'Moderate', 'Galaxies merge. Orbits disrupted. Radiation risks increase.' ]
-                            ]
-                        },
-                        layout: 'lightHorizontalLines'
-                    },
-
-                    // Section 2
-                    { text: 'Section 2: The Colonization Potential (Milky Way)', style: 'subheader' },
-                    { text: 'Using the "Colonization Wave" model to calculate expansion before the 1-billion-year deadline.', margin: [0,0,0,5] },
-
-                    { text: '2.1 The Assumptions', style: 'sectionTitle' },
-                    { ul: [
-                        'Travel Technology: Generation Ships (0.1c speed).',
-                        'Travel Time per Hop: ~40–100 years (stars 4–10 LY apart).',
-                        'Settlement Duration: 500 years per planet to build new ships.'
-                    ], margin: [0,0,0,5] },
-
-                    { text: '2.2 The Expansion Rate', style: 'sectionTitle' },
-                    { ul: [
-                        'Cycle Time: 100 years (Travel) + 500 years (Build) = 600 years per hop.',
-                        'Total Time Available: 1 Billion years.',
-                        'Max Cycles: 1,000,000,000 / 600 = ~1.6 million hops.'
-                    ], margin: [0,0,0,5] },
-
-                    { text: '2.3 The Numbers', style: 'sectionTitle' },
-                    { text: 'The "human sphere" expands at roughly 1% the speed of light.', margin: [0,0,0,5] },
-                    { ul: [
-                        'Radius Reachable: 10 million light-years (Theoretical).',
-                        'Milky Way Size: ~100,000 light-years.',
-                        { text: 'Conclusion: We would run out of galaxy before we run out of time.', bold: true },
-                        'Potential Planets: 300 Million to 40 Billion.'
-                    ] },
-                    
-                    { text: 'Note: We do not need to "ditch" the galaxy because of a lack of planets. We would likely saturate the Milky Way long before the Andromeda collision.', style: 'quote' },
-
-                    // Section 3
-                    { text: 'Section 3: The Intergalactic Exodus', style: 'subheader' },
-                    { text: 'If humanity decides to leave the Milky Way, we face the void between galaxies.', margin: [0,0,0,5] },
-                    { text: '3.1 The Destination: Triangulum Galaxy (M33)', bold: true, margin: [0,5,0,2] },
-                    { ul: ['Distance: ~2.73 Million Light-Years.', 'Status: Stable member of Local Group.'] },
-                    { text: '3.2 The Journey (Fleet Logistics)', bold: true, margin: [0,5,0,2] },
-                    { ul: ['Fleet Type: Void Arks (Artificial Planets).', 'Propulsion: Fusion/Antimatter at 0.1c.', 'Travel Duration: ~27 Million Years.', 'Generations: ~900,000 generations.'] },
-                    { text: '3.3 Feasibility Check', bold: true, margin: [0,5,0,2] },
-                    { ul: ['Biology: Significant evolutionary drift expected.', 'Hull Integrity: Ships must be "living" (self-healing) materials.'] },
-
-                    // Section 4
-                    { text: 'Section 4: Final Report & Recommendations', style: 'subheader' },
-                    { text: 'Phase 1: The Milky Way Saturation (Years 2200 – Year 1B)', style: 'sectionTitle' },
-                    { text: 'Aggressive expansion to seed ~10 Billion+ worlds. Humanity becomes a Type II Civilization.' },
-                    { text: 'Phase 2: The Galactic Winter (Year 3B – Year 4B)', style: 'sectionTitle' },
-                    { text: 'Gravitational tides disrupt orbits. Begin construction of "Void Arks" and seed fleets.' },
-                    { text: 'Phase 3: The Great Crossing (Year 4B+)', style: 'sectionTitle' },
-                    { text: 'Departure for Triangulum. ~30 Million years in transit.' },
-
-                    { text: 'Summary Comparison', style: 'sectionTitle', margin: [0,15,0,5] },
-                    {
-                        style: 'tableExample',
-                        table: {
-                            headerRows: 1,
-                            widths: ['*', '*', '*'],
-                            body: [
-                                [ { text: 'Metric', style: 'tableHeader', fillColor: '#333', color: 'white' }, { text: 'Milky Way Phase', style: 'tableHeader', fillColor: '#333', color: 'white' }, { text: 'Intergalactic Phase', style: 'tableHeader', fillColor: '#333', color: 'white' } ],
-                                [ {text:'Primary Constraint', bold:true}, 'Industry Build Time', 'Fuel/Resource Preservation' ],
-                                [ {text:'Travel Time', bold:true}, '40-100 Years', '~27 Million Years' ],
-                                [ {text:'Colonizable Targets', bold:true}, '~40 Billion Planets', '1 New Galaxy (Triangulum)' ],
-                                [ {text:'Evolution', bold:true}, 'Minor Drift', 'Speciation Likely' ]
-                            ]
-                        },
-                        layout: { fillColor: function (rowIndex) { return (rowIndex % 2 === 0) ? '#f9f9f9' : null; } }
-                    },
-
-                    // =========================
-                    // FINAL PAGE: ABOUT DART MEADOW
-                    // =========================
-                    { text: '', pageBreak: 'before' }, 
-                    
-                    // About Header
-                    { text: 'ABOUT US', style: 'aboutHeader', alignment: 'center' },
-                    { canvas: [{ type: 'line', x1: 150, y1: 5, x2: 365, y2: 5, lineWidth: 2, lineColor: '#e94560' }] },
-                    { text: '\n\n' },
-
-                    // Content with Logo (Small version)
-                    {
-                        columns: [
-                            // Logo on the left
-                            logoData ? { image: logoData, width: 100, alignment: 'center' } : {},
-                            
-                            // Text on the right
-                            {
-                                width: '*',
-                                text: [
-                                    { text: 'DART Meadow', bold: true, fontSize: 14, color: '#222' },
-                                    { text: ' has been a cornerstone in the community, involved in both leadership and development. We are proud to lead the way towards a more efficient future with innovative ideas, game-changing technology and transparency.\n\n', fontSize: 11 },
-                                    { text: 'We’ve worked on dozens of projects aimed at providing innovative engineering solutions.', fontSize: 11 }
-                                ],
-                                margin: [20, 0, 0, 0],
-                                alignment: 'justify'
-                            }
-                        ]
-                    }
-                ],
-
-                // --- STYLES ---
-                styles: {
-                    coverTitle: { fontSize: 26, bold: true, color: '#222', margin: [0, 10, 0, 5] },
-                    coverSubtitle: { fontSize: 18, color: '#555', bold: true },
-                    coverText: { fontSize: 12, color: '#666', margin: [0, 2] },
-                    coverAuthor: { fontSize: 14, bold: true, color: '#e94560', margin: [0, 0, 0, 10] },
-
-                    header: { fontSize: 22, bold: true, alignment: 'center', margin: [0, 0, 0, 15], color: '#222' },
-                    subheader: { fontSize: 16, bold: true, margin: [0, 20, 0, 5], color: '#0056b3', decoration: 'underline' },
-                    sectionTitle: { fontSize: 12, bold: true, margin: [0, 10, 0, 2], color: '#444' },
-                    
-                    tableHeader: { bold: true, fontSize: 11, color: 'black' },
-                    tableExample: { margin: [0, 5, 0, 15], fontSize: 10 },
-                    highlightBox: { margin: [0, 10, 0, 10] },
-                    quote: { italics: true, margin: [10, 10, 10, 10], color: '#555', background: '#eee' },
-                    
-                    aboutHeader: { fontSize: 20, bold: true, color: '#222', margin: [0, 0, 0, 5] }
-                }
-            };
-
-            pdfMake.createPdf(docDefinition).download('Galactic_Report_DART.pdf');
-            
-            // Reset button
-            btn.disabled = false;
-            btn.innerText = "Download Galactic Report";
-            status.innerText = "Ready";
+      { text: '2.2  Computed Results', style:'subhead' },
+      {
+        margin:[0,4,0,6],
+        table:{
+          headerRows:1, widths:['*','*'],
+          body:[
+            [{text:'Parameter',style:'th'},{text:'Value',style:'th'}],
+            [{text:'Cycle Time (travel + build)',style:'tdBold'}, {text:fmtNum(cycleTime)+' years per hop',style:'td'}],
+            [{text:'Maximum Expansion Hops',style:'tdBold'},      {text:fmtNum(maxHops)+' hops',style:'td'}],
+            [{text:'Effective Expansion Speed',style:'tdBold'},   {text:(dist/cycleTime).toFixed(5)+' LY/year',style:'td'}],
+            [{text:'Theoretical Radius Reached',style:'tdBold'},  {text:fmtLY(radiusLY),style:'td'}],
+            [{text:'Colonizable Planets',style:'tdBold'},         {text:fmtNum(colonized)+' worlds',style:'td'}],
+            [{text:'Galaxy Coverage',style:'tdBold'},             {text:coverage.toFixed(1)+'%',bold:true,fontSize:10,color:BLUE}],
+          ]
+        },
+        layout:{
+          hLineWidth:(i,n)=> i===0||i===1||i===n.table.body.length ? 1 : 0.5,
+          hLineColor:()=>'#cbd5e1',
+          vLineWidth:()=>0,
+          fillColor:(row)=> row===0 ? HDR_FILL : row%2===0 ? ROW_ALT : '#ffffff'
         }
-    </script>
+      },
+      {
+        margin:[0,4,0,14],
+        table:{ widths:['*'], body:[[{
+          text: verdictText,
+          fontSize:9, italics:true, bold:true, color: verdictColor, margin:[10,7,10,7]
+        }]]},
+        layout:{ hLineWidth:()=>1, hLineColor:()=>verdictColor, vLineWidth:(i)=>i===0?3:0, vLineColor:()=>verdictColor },
+        fillColor:'#f8fafc'
+      },
+
+      // ── SECTION 3 ───────────────────────────────────────────────
+      { text: 'SECTION 3 — INTERGALACTIC EXODUS', style:'sectionHeader' },
+      { text: 'If humanity decides to leave the Milky Way, we face the vast void between galaxies. The Triangulum Galaxy (M33) is the most viable destination within the Local Group.', style:'body' },
+
+      { text: '3.1  Destination & Fleet Configuration', style:'subhead' },
+      {
+        columns:[
+          { ul:[
+              'Destination: Triangulum Galaxy (M33)',
+              'Distance: ' + m33dist.toFixed(2) + ' million light-years',
+              'Fleet Type: Void Arks (Artificial Planets)',
+            ], color:INK, fontSize:9, lineHeight:1.45, width:'*'
+          },
+          { ul:[
+              'Propulsion: Fusion/Antimatter at ' + (arkspd*100).toFixed(0) + '% of c',
+              'Travel Duration: ' + fmtNum(travelYrs) + ' years',
+              'Generations in Transit: ' + fmtNum(gens),
+            ], color:INK, fontSize:9, lineHeight:1.45, width:'*'
+          }
+        ], columnGap:24, margin:[0,0,0,10]
+      },
+
+      { text: '3.2  Feasibility Assessment', style:'subhead' },
+      {
+        margin:[0,4,0,16],
+        table:{
+          headerRows:1, widths:['*','*'],
+          body:[
+            [{text:'Factor',style:'th'},{text:'Assessment',style:'th'}],
+            [{text:'Travel Duration',style:'tdBold'},    {text:fmtNum(travelYrs)+' years at '+arkspd.toFixed(2)+'c', style:'td'}],
+            [{text:'Generations in Transit',style:'tdBold'},{text:fmtNum(gens)+' generations ('+genLen+'-yr cycles)',style:'td'}],
+            [{text:'Evolutionary Risk',style:'tdBold'},  {text:evoText, bold:true, color:evoColor, fontSize:9}],
+            [{text:'Hull Integrity',style:'tdBold'},     {text:'Requires self-healing "living" material construction.',style:'td'}],
+            [{text:'Navigation',style:'tdBold'},         {text:'Inertial guidance + pulsar timing triangulation.',style:'td'}],
+          ]
+        },
+        layout:{
+          hLineWidth:(i,n)=> i===0||i===1||i===n.table.body.length ? 1 : 0.5,
+          hLineColor:()=>'#cbd5e1',
+          vLineWidth:()=>0,
+          fillColor:(row)=> row===0 ? HDR_FILL : row%2===0 ? ROW_ALT : '#ffffff'
+        }
+      },
+
+      // ── SECTION 4 ───────────────────────────────────────────────
+      { text: 'SECTION 4 — FINAL REPORT & RECOMMENDATIONS', style:'sectionHeader' },
+
+      { text: 'Phase 1 — Milky Way Saturation  (Years 2200 – ' + era.toFixed(1) + 'B)', style:'subhead' },
+      { text: 'Aggressive expansion to seed ~10 Billion+ worlds. Humanity achieves Type II Civilization status. Generation ships become the backbone of interstellar infrastructure.', style:'body' },
+
+      { text: 'Phase 2 — Galactic Winter  (Years 3B – 4B)', style:'subhead' },
+      { text: 'Gravitational tides from the approaching Andromeda galaxy begin disrupting orbits. Construction of Void Arks commences. Seed fleets prepared for intergalactic deployment.', style:'body' },
+
+      { text: 'Phase 3 — The Great Crossing  (Year 4B+)', style:'subhead' },
+      { text: 'Departure for Triangulum Galaxy. Approximately ' + fmtNum(travelYrs) + ' years in transit at ' + (arkspd*100).toFixed(0) + '% of light speed. Humanity\'s successor species arrives at a new galactic home.', style:'body' },
+
+      { text: 'Summary Comparison', style:'subhead' },
+      {
+        margin:[0,4,0,0],
+        table:{
+          headerRows:1, widths:['*','*','*'],
+          body:[
+            [
+              {text:'Metric',      style:'th'},
+              {text:'Milky Way Phase', style:'th'},
+              {text:'Intergalactic Phase', style:'th'}
+            ],
+            [{text:'Primary Constraint',style:'tdBold'}, {text:'Industry Build Time',style:'td'}, {text:'Fuel/Resource Preservation',style:'td'}],
+            [{text:'Travel Time per Hop',style:'tdBold'},{text:(dist/speed).toFixed(0)+'–'+(dist/speed*1.5).toFixed(0)+' Years',style:'td'},{text:fmtNum(travelYrs)+' Years',style:'td'}],
+            [{text:'Colonizable Targets',style:'tdBold'},{text:'~'+fmtNum(colonized)+' planets',style:'td'},{text:'Triangulum Galaxy (M33)',style:'td'}],
+            [{text:'Fleet Type',style:'tdBold'},         {text:'Generation Ships',style:'td'},     {text:'Void Arks (Artificial Planets)',style:'td'}],
+            [{text:'Propulsion',style:'tdBold'},         {text:'Fusion / Ion Drive',style:'td'},   {text:'Fusion / Antimatter',style:'td'}],
+            [{text:'Evolutionary Drift',style:'tdBold'}, {text:'Minor',style:'td'},                {text:evoText, bold:true, color:evoColor, fontSize:9}],
+          ]
+        },
+        layout:{
+          hLineWidth:(i,n)=> i===0||i===1||i===n.table.body.length ? 1 : 0.5,
+          hLineColor:()=>'#cbd5e1',
+          vLineWidth:()=>0,
+          fillColor:(row)=> row===0 ? HDR_FILL : row%2===0 ? ROW_ALT : '#ffffff'
+        }
+      },
+
+      // ════════════════════════════════════════
+      // ABOUT PAGE
+      // ════════════════════════════════════════
+      { text:'', pageBreak:'before' },
+      { canvas:[{ type:'rect', x:0, y:0, w:505, h:5, color:BLUE }], margin:[0,0,0,30] },
+      { text:'ABOUT US', fontSize:22, bold:true, color:INK, alignment:'center', characterSpacing:2, margin:[0,0,0,6] },
+      { canvas:[{ type:'line', x1:170, y1:0, x2:335, y2:0, lineWidth:2, lineColor:RED }], margin:[0,0,0,30] },
+      {
+        columns:[
+          logo ? { image:logo, width:80, alignment:'center', margin:[0,4,20,0] } : { width:0, text:'' },
+          {
+            width:'*',
+            stack:[
+              { text:'DART Meadow', bold:true, fontSize:13, color:INK, margin:[0,0,0,8] },
+              { text:'has been a cornerstone in the community, involved in both leadership and development. We are proud to lead the way towards a more efficient future with innovative ideas, game-changing technology and transparency.', fontSize:10, color:INK2, lineHeight:1.6, margin:[0,0,0,10] },
+              { text:"We've worked on dozens of projects aimed at providing innovative engineering solutions.", fontSize:10, color:INK2, lineHeight:1.6 },
+              { text:'\ndartmeadow.com', fontSize:10, color:BLUE, bold:true }
+            ]
+          }
+        ]
+      },
+      { canvas:[{ type:'line', x1:0, y1:0, x2:505, y2:0, lineWidth:0.5, lineColor:'#cbd5e1' }], margin:[0,30,0,8] },
+      { text:'© 2026 DART Meadow  //  Galactic Colonization & Intergalactic Exodus Viability Report  //  DART-GCR-2026-001', fontSize:7, color:INK3, alignment:'center', characterSpacing:0.5 },
+    ],
+
+    styles: {
+      // Cover (uses inline styles above, but kept for reference)
+      mainHeader:    { fontSize:16, bold:true, color:INK, alignment:'center', margin:[0,0,0,6], characterSpacing:1 },
+      sectionHeader: { fontSize:12, bold:true, color:BLUE, margin:[0,18,0,6], characterSpacing:0.5 },
+      subhead:       { fontSize:10, bold:true, color:INK, margin:[0,10,0,3] },
+      body:          { fontSize:10, color:INK2, lineHeight:1.55, margin:[0,0,0,8] },
+      // Table cells
+      th:     { bold:true, fontSize:9, color:HDR_TEXT, fillColor:HDR_FILL, margin:[4,5,4,5] },
+      td:     { fontSize:9, color:INK, lineHeight:1.4, margin:[4,4,4,4] },
+      tdBold: { fontSize:9, color:INK, bold:true, margin:[4,4,4,4] },
+    },
+    defaultStyle: { color: INK, font:'Roboto', fontSize:10 }
+  };
+
+  pdfMake.createPdf(docDef).download('DART_Galactic_Report_2026.pdf');
+  btn.textContent = '⬇ Download Report';
+  btn.disabled = false;
+}
+</script>
 </body>
 </html>
