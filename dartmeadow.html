@@ -132,8 +132,8 @@ THREE.OrbitControls=function(camera,domElement){
     if(_state===STATE.ROTATE){
       _rotateEnd.set(e.clientX,e.clientY);_rotateDelta.subVectors(_rotateEnd,_rotateStart);
       var el=scope.domElement===document?scope.domElement.body:scope.domElement;
-      rotateLeft(2*Math.PI*_rotateDelta.x/el.clientWidth);
-      rotateUp(2*Math.PI*_rotateDelta.y/el.clientHeight);
+      rotateLeft(Math.PI*_rotateDelta.x/el.clientWidth);
+      rotateUp(Math.PI*_rotateDelta.y/el.clientHeight);
       _rotateStart.copy(_rotateEnd);
     } else if(_state===STATE.DOLLY){
       _dollyEnd.set(e.clientX,e.clientY);_dollyDelta.subVectors(_dollyEnd,_dollyStart);
@@ -161,8 +161,8 @@ THREE.OrbitControls=function(camera,domElement){
     if(_state===STATE.TOUCH_ROTATE&&e.touches.length===1){
       _rotateEnd.set(e.touches[0].pageX,e.touches[0].pageY);_rotateDelta.subVectors(_rotateEnd,_rotateStart);
       var el=scope.domElement===document?scope.domElement.body:scope.domElement;
-      rotateLeft(2*Math.PI*_rotateDelta.x/el.clientWidth);
-      rotateUp(2*Math.PI*_rotateDelta.y/el.clientHeight);
+      rotateLeft(Math.PI*_rotateDelta.x/el.clientWidth);
+      rotateUp(Math.PI*_rotateDelta.y/el.clientHeight);
       _rotateStart.copy(_rotateEnd);
     } else if(_state===STATE.TOUCH_DOLLY_PAN&&e.touches.length===2){
       var dx=e.touches[0].pageX-e.touches[1].pageX,dy=e.touches[0].pageY-e.touches[1].pageY;
@@ -248,6 +248,12 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
 #builder-content::-webkit-scrollbar{width:3px;}
 #builder-content::-webkit-scrollbar-thumb{background:rgba(0,245,255,0.2);border-radius:3px;}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
+.recipe-food-group{padding:5px 6px;margin:4px 0;background:rgba(0,245,255,0.03);border-left:2px solid rgba(0,245,255,0.3);border-radius:0 4px 4px 0;}
+.recipe-fg-label{font-size:0.55rem;color:var(--cyan);font-weight:600;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;}
+.recipe-check{display:flex;align-items:center;gap:5px;font-size:0.52rem;color:var(--text-dim);cursor:pointer;padding:2px 0;}
+.recipe-check input{accent-color:var(--cyan);transform:scale(1.1);}
+.recipe-check span{transition:color 0.2s;}
+.recipe-check:hover span{color:var(--text);}
 .sec-label{font-family:var(--font-hud);font-size:0.52rem;font-weight:700;color:rgba(0,245,255,0.5);letter-spacing:0.15em;text-transform:uppercase;padding:0.65rem 0 0.3rem;border-bottom:1px solid var(--border2);margin-bottom:0.45rem;display:block;}
 .ctrl-row{display:flex;align-items:center;gap:0.45rem;padding:0.25rem 0;}
 .ctrl-row label{font-size:0.68rem;color:var(--text-dim);flex:1;white-space:nowrap;}
@@ -449,6 +455,7 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
       <button class="btab active" onclick="switchBTab('shape')">SHAPE</button>
       <button class="btab" onclick="switchBTab('gfx')">MARK</button>
       <button class="btab" onclick="switchBTab('staff')">STAFF</button>
+      <button class="btab" onclick="switchBTab('recipe')">RECIPE</button>
       <button class="btab" onclick="switchBTab('stats')">STATS</button>
     </div>
     <div id="builder-content">
@@ -520,6 +527,78 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
         <span class="sec-label" style="margin-top:0.7rem;">Save</span>
         <button class="btn primary" style="width:100%;margin-bottom:4px;" onclick="openSaveModal('save')">💾 Save/Export Profile</button>
         <button class="btn" style="width:100%;margin-bottom:4px;" onclick="openSaveModal('load')">📂 Load Profile</button>
+      </div>
+      <!-- RECIPE — Bio-Metal / Bacterial / Maze / Energy from Skyboard -->
+      <div class="tab-panel" id="btab-recipe">
+        <span class="sec-label">Bio-Metal Recipe</span>
+        <div style="font-size:0.55rem;color:var(--text-dim);line-height:1.4;padding:2px 0 6px;">
+          Select metals from each food group. All 4 groups required for DART synthesis.
+        </div>
+        <div class="recipe-food-group">
+          <div class="recipe-fg-label">Grains & Fibers</div>
+          <label class="recipe-check"><input type="checkbox" data-group="grains" data-metal="iron" onchange="updateRecipeSelection()"><span>Iron (Fe) — Hemoglobin</span></label>
+          <label class="recipe-check"><input type="checkbox" data-group="grains" data-metal="magnesium" onchange="updateRecipeSelection()"><span>Magnesium (Mg) — Energy</span></label>
+          <label class="recipe-check"><input type="checkbox" data-group="grains" data-metal="zinc" onchange="updateRecipeSelection()"><span>Zinc (Zn) — Immune</span></label>
+        </div>
+        <div class="recipe-food-group">
+          <div class="recipe-fg-label">Dairy & Calcium</div>
+          <label class="recipe-check"><input type="checkbox" data-group="dairy" data-metal="calcium" onchange="updateRecipeSelection()"><span>Calcium (Ca) — Structural</span></label>
+          <label class="recipe-check"><input type="checkbox" data-group="dairy" data-metal="potassium_d" onchange="updateRecipeSelection()"><span>Potassium (K) — Cellular</span></label>
+        </div>
+        <div class="recipe-food-group">
+          <div class="recipe-fg-label">Meat & Protein</div>
+          <label class="recipe-check"><input type="checkbox" data-group="meat" data-metal="iron_meat" onchange="updateRecipeSelection()"><span>Iron (Fe) — Heme Complex</span></label>
+          <label class="recipe-check"><input type="checkbox" data-group="meat" data-metal="copper" onchange="updateRecipeSelection()"><span>Copper (Cu) — Enzyme</span></label>
+          <label class="recipe-check"><input type="checkbox" data-group="meat" data-metal="chromium" onchange="updateRecipeSelection()"><span>Chromium (Cr) — Glucose</span></label>
+        </div>
+        <div class="recipe-food-group">
+          <div class="recipe-fg-label">Fruits & Vegetables</div>
+          <label class="recipe-check"><input type="checkbox" data-group="fruits" data-metal="potassium" onchange="updateRecipeSelection()"><span>Potassium (K) — Voltage</span></label>
+          <label class="recipe-check"><input type="checkbox" data-group="fruits" data-metal="manganese" onchange="updateRecipeSelection()"><span>Manganese (Mn) — Antioxidant</span></label>
+          <label class="recipe-check"><input type="checkbox" data-group="fruits" data-metal="copper_fr" onchange="updateRecipeSelection()"><span>Copper (Cu) — Connective</span></label>
+        </div>
+        <div id="recipe-pct-bar" style="height:14px;display:flex;border-radius:6px;overflow:hidden;border:1px solid rgba(0,245,255,0.2);margin:6px 0;background:rgba(0,0,0,0.3);"></div>
+        <div id="recipe-validation" style="font-size:0.5rem;color:var(--orange);padding:2px 0;"></div>
+
+        <span class="sec-label" style="margin-top:0.5rem;">Bacterial Ecosystem</span>
+        <div class="ctrl-row"><label>Growth Rate</label><input type="range" id="r-growth" min="2.0" max="3.0" step="0.1" value="2.5" oninput="updateBacterial()"><span class="val" id="v-growth">2.5</span></div>
+        <div class="ctrl-row"><label>Decay Rate</label><input type="range" id="r-decay" min="2.0" max="3.0" step="0.1" value="2.5" oninput="updateBacterial()"><span class="val" id="v-decay">2.5</span></div>
+        <div id="bacterial-warn" style="display:none;font-size:0.5rem;color:#ff4488;background:rgba(255,0,85,0.1);border:1px solid rgba(255,0,85,0.3);border-radius:4px;padding:4px;margin:4px 0;">
+          ⚠ Approaching critical threshold (3.0). Optimal: 2.4–2.6
+        </div>
+        <div class="ctrl-row"><label>Total Weight</label><input type="range" id="r-weight" min="50" max="500" step="10" value="100" oninput="$('v-weight').textContent=this.value+' lbs'"><span class="val" id="v-weight">100 lbs</span></div>
+
+        <span class="sec-label" style="margin-top:0.5rem;">Energy Configuration</span>
+        <div class="ctrl-row"><label>Front Core</label>
+          <select id="r-front-shape" style="background:rgba(0,0,0,0.6);border:1px solid var(--cyan);color:var(--cyan);padding:3px;border-radius:3px;font-family:var(--font-body);font-size:0.55rem;">
+            <option value="cube">Cube Reactor</option>
+            <option value="sphere">Sphere Generator</option>
+            <option value="cylinder">Cylinder Chamber</option>
+            <option value="pyramid">Pyramid Focuser</option>
+            <option value="torus">Torus Ring</option>
+          </select>
+        </div>
+        <div class="ctrl-row"><label>Rear Core</label>
+          <select id="r-rear-shape" style="background:rgba(0,0,0,0.6);border:1px solid var(--cyan);color:var(--cyan);padding:3px;border-radius:3px;font-family:var(--font-body);font-size:0.55rem;">
+            <option value="cube">Cube Reactor</option>
+            <option value="sphere" selected>Sphere Generator</option>
+            <option value="cylinder">Cylinder Chamber</option>
+            <option value="pyramid">Pyramid Focuser</option>
+            <option value="torus">Torus Ring</option>
+          </select>
+        </div>
+
+        <span class="sec-label" style="margin-top:0.5rem;">Foundation Field (Maze)</span>
+        <button class="btn primary" style="width:100%;margin-bottom:6px;" onclick="generateDARTMaze()">⬡ GENERATE PURE NOTHING FIELD</button>
+        <canvas id="maze-canvas" style="width:100%;height:110px;border:1px solid rgba(0,245,255,0.25);border-radius:4px;background:#000;"></canvas>
+        <div id="maze-status" style="font-size:0.48rem;color:var(--text-dim);text-align:center;padding:3px;">Click to generate foundation field</div>
+
+        <span class="sec-label" style="margin-top:0.5rem;">DART Recipe Output</span>
+        <div id="recipe-output" style="font-family:var(--font-mono);font-size:0.5rem;color:var(--cyan);background:rgba(0,0,0,0.5);border:1px solid rgba(0,245,255,0.2);border-radius:4px;padding:6px;max-height:120px;overflow-y:auto;line-height:1.4;">
+          Select metals from each food group to begin synthesis...
+        </div>
+
+        <button class="btn" style="width:100%;margin-top:8px;" onclick="exportDARTRecipe()">📋 Export Recipe</button>
       </div>
     </div>
   </div>
@@ -988,7 +1067,7 @@ function initBuilderScene(){
   builderRenderer.toneMapping=THREE.ACESFilmicToneMapping;builderRenderer.toneMappingExposure=1.1;
   builderScene=new THREE.Scene();builderScene.background=new THREE.Color(0x000308);
   builderCamera=new THREE.PerspectiveCamera(50,1,0.005,500000);builderCamera.position.set(1.2,1.2,4.5);
-  builderControls=new THREE.OrbitControls(builderCamera,cv);builderControls.enableDamping=true;builderControls.dampingFactor=0.06;builderControls.target.set(0,0,0);
+  builderControls=new THREE.OrbitControls(builderCamera,cv);builderControls.enableDamping=true;builderControls.dampingFactor=0.12;builderControls.rotateSpeed=0.45;builderControls.zoomSpeed=0.6;builderControls.panSpeed=0.5;builderControls.minDistance=1.5;builderControls.maxDistance=25;builderControls.target.set(0,0,0);
   builderScene.add(new THREE.AmbientLight(0x112233,1.4));
   const kl=new THREE.DirectionalLight(0x00f5ff,2.8);kl.position.set(3,5,4);builderScene.add(kl);
   const fl=new THREE.DirectionalLight(0x4433ff,1.4);fl.position.set(-4,2,-3);builderScene.add(fl);
@@ -1190,9 +1269,129 @@ function updateBoardStats(){
 }
 
 function switchBTab(n){
-  const names=['shape','gfx','staff','stats'];
+  const names=['shape','gfx','staff','recipe','stats'];
   document.querySelectorAll('.btab').forEach((t,i)=>t.classList.toggle('active',names[i]===n));
   document.querySelectorAll('#builder-content .tab-panel').forEach((p,i)=>p.classList.toggle('active','btab-'+names[i]==='btab-'+n));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DART SKYBOARD — Bio-Metal Recipe / Maze / Energy Integration
+// ══════════════════════════════════════════════════════════════
+const DART_RECIPE={selectedMetals:new Set(),growthRate:2.5,decayRate:2.5,totalWeight:100,frontShape:'cube',rearShape:'sphere',mazeData:null};
+
+function updateRecipeSelection(){
+  DART_RECIPE.selectedMetals.clear();
+  document.querySelectorAll('#btab-recipe input[type=checkbox]:checked').forEach(cb=>{
+    DART_RECIPE.selectedMetals.add(cb.dataset.metal);
+  });
+  // Validate — need at least 1 from each group
+  const groups=new Set();
+  document.querySelectorAll('#btab-recipe input[type=checkbox]:checked').forEach(cb=>{groups.add(cb.dataset.group);});
+  const v=$('recipe-validation');
+  if(groups.size<4){
+    const missing=[];
+    ['grains','dairy','meat','fruits'].forEach(g=>{if(!groups.has(g))missing.push(g);});
+    v.textContent='⚠ Need: '+missing.join(', ');v.style.color='var(--orange)';
+  } else {
+    v.textContent='✓ All food groups active — DART synthesis ready';v.style.color='var(--green)';
+  }
+  updateRecipePctBar();
+  updateRecipeOutput();
+}
+
+function updateRecipePctBar(){
+  const bar=$('recipe-pct-bar');
+  const metals=Array.from(DART_RECIPE.selectedMetals);
+  if(!metals.length){bar.innerHTML='';return;}
+  const pct=100/metals.length;
+  const cols=['#00d9ff','#ff0055','#00ff88','#ffaa00','#b060ff','#f5c400','#88ddee','#cc4411'];
+  bar.innerHTML=metals.map((m,i)=>`<div style="width:${pct}%;background:${cols[i%cols.length]};display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:bold;color:#fff;text-shadow:1px 1px 2px rgba(0,0,0,0.8);">${m.slice(0,3).toUpperCase()}</div>`).join('');
+}
+
+function updateBacterial(){
+  DART_RECIPE.growthRate=parseFloat($('r-growth').value);
+  DART_RECIPE.decayRate=parseFloat($('r-decay').value);
+  $('v-growth').textContent=DART_RECIPE.growthRate.toFixed(1);
+  $('v-decay').textContent=DART_RECIPE.decayRate.toFixed(1);
+  $('bacterial-warn').style.display=(DART_RECIPE.growthRate>2.8||DART_RECIPE.decayRate>2.8)?'block':'none';
+  updateRecipeOutput();
+}
+
+function updateRecipeOutput(){
+  const metals=Array.from(DART_RECIPE.selectedMetals);
+  const totalW=parseInt($('r-weight').value)||100;
+  if(!metals.length){$('recipe-output').innerHTML='Select metals from each food group to begin synthesis...';return;}
+  const eqW=totalW/metals.length;
+  const stability=Math.abs(DART_RECIPE.growthRate-DART_RECIPE.decayRate);
+  const energyDensity=1000*((DART_RECIPE.growthRate+DART_RECIPE.decayRate)/2)*(metals.length/4)*100;
+  const mcCubed=(stability<0.2?1.0:0.8)*Math.pow(299792458,3)/1e24;
+  let html='<div style="color:var(--cyan);font-weight:bold;margin-bottom:4px;">DART ENERGY RECIPE</div>';
+  html+='<div style="color:#ff0055;margin-bottom:2px;">Bio-Metals:</div>';
+  metals.forEach(m=>{html+=`<div>${m.toUpperCase()}: ${eqW.toFixed(1)}lbs (${(100/metals.length).toFixed(1)}%)</div>`;});
+  html+=`<div style="color:#ff0055;margin-top:5px;">Bacterial Model:</div>`;
+  html+=`<div>Growth: ${DART_RECIPE.growthRate} · Decay: ${DART_RECIPE.decayRate} · Stability: ${stability.toFixed(3)}</div>`;
+  html+=`<div style="color:#ff0055;margin-top:5px;">Output:</div>`;
+  html+=`<div>Energy: ${energyDensity.toFixed(0)} MJ/kg · MC³: ${mcCubed.toFixed(2)} TW</div>`;
+  html+=`<div>Front: ${($('r-front-shape').value||'cube').toUpperCase()} · Rear: ${($('r-rear-shape').value||'sphere').toUpperCase()}</div>`;
+  if(DART_RECIPE.mazeData)html+=`<div style="color:var(--green);margin-top:3px;">✓ Foundation field generated</div>`;
+  $('recipe-output').innerHTML=html;
+}
+
+// ── Maze Generator ──────────────────────────────────────────
+function generateDARTMaze(){
+  const W=15,H=10;
+  const grid=[];
+  for(let y=0;y<H;y++){grid[y]=[];for(let x=0;x<W;x++){grid[y][x]={x,y,top:true,bottom:true,left:true,right:true,visited:false};}}
+  // DFS maze generation
+  const stack=[];let current=grid[0][0];current.visited=true;
+  while(true){
+    const neighbors=[];const{x,y}=current;
+    if(y>0&&!grid[y-1][x].visited)neighbors.push(grid[y-1][x]);
+    if(y<H-1&&!grid[y+1][x].visited)neighbors.push(grid[y+1][x]);
+    if(x>0&&!grid[y][x-1].visited)neighbors.push(grid[y][x-1]);
+    if(x<W-1&&!grid[y][x+1].visited)neighbors.push(grid[y][x+1]);
+    if(neighbors.length>0){
+      const next=neighbors[Math.floor(Math.random()*neighbors.length)];
+      const dx=next.x-current.x,dy=next.y-current.y;
+      if(dx===1){current.right=false;next.left=false;}
+      else if(dx===-1){current.left=false;next.right=false;}
+      else if(dy===1){current.bottom=false;next.top=false;}
+      else if(dy===-1){current.top=false;next.bottom=false;}
+      next.visited=true;stack.push(current);current=next;
+    } else if(stack.length>0){current=stack.pop();}else break;
+  }
+  DART_RECIPE.mazeData={grid,W,H};
+  // Render to canvas
+  const cv=$('maze-canvas');cv.width=cv.offsetWidth*2;cv.height=220;
+  const ctx=cv.getContext('2d');
+  const cellW=cv.width/W,cellH=cv.height/H;
+  ctx.fillStyle='#000011';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='#00d9ff';ctx.lineWidth=2;
+  for(let y=0;y<H;y++){for(let x=0;x<W;x++){
+    const c=grid[y][x],px=x*cellW,py=y*cellH;
+    if(c.top){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+cellW,py);ctx.stroke();}
+    if(c.bottom){ctx.beginPath();ctx.moveTo(px,py+cellH);ctx.lineTo(px+cellW,py+cellH);ctx.stroke();}
+    if(c.left){ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,py+cellH);ctx.stroke();}
+    if(c.right){ctx.beginPath();ctx.moveTo(px+cellW,py);ctx.lineTo(px+cellW,py+cellH);ctx.stroke();}
+  }}
+  ctx.fillStyle='#00ff88';ctx.fillRect(0,0,cellW,cellH);
+  ctx.fillStyle='#ff0055';ctx.fillRect((W-1)*cellW,(H-1)*cellH,cellW,cellH);
+  $('maze-status').textContent='✓ Pure Nothing Field Generated — Foundation Ready';
+  $('maze-status').style.color='var(--green)';
+  updateRecipeOutput();
+}
+
+function exportDARTRecipe(){
+  const metals=Array.from(DART_RECIPE.selectedMetals);
+  if(!metals.length){toast('⚠ Select metals first');return;}
+  const totalW=parseInt($('r-weight').value)||100;
+  const eqW=totalW/metals.length;
+  const stability=Math.abs(DART_RECIPE.growthRate-DART_RECIPE.decayRate);
+  const energyDensity=1000*((DART_RECIPE.growthRate+DART_RECIPE.decayRate)/2)*(metals.length/4)*100;
+  const txt=`DART SKYBOARD ENERGY RECIPE\nGenerated: ${new Date().toISOString()}\n\nBIO-METAL COMPONENTS:\n${metals.map(m=>`${m.toUpperCase()}: ${eqW.toFixed(1)}lbs (${(100/metals.length).toFixed(1)}%)`).join('\n')}\n\nBACTERIAL ECOSYSTEM:\nGrowth: ${DART_RECIPE.growthRate}\nDecay: ${DART_RECIPE.decayRate}\nStability: ${stability.toFixed(3)}\n\nSPECS:\nEnergy Density: ${energyDensity.toFixed(0)} MJ/kg\nFront: ${$('r-front-shape').value}\nRear: ${$('r-rear-shape').value}\nFoundation: ${DART_RECIPE.mazeData?'Generated':'Pending'}\n\n--- DART MEADOW TECHNOLOGIES ---`;
+  const blob=new Blob([txt],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='DART_Recipe.txt';a.click();
+  toast('📋 Recipe exported');
 }
 
 function applyPreset(name){
@@ -1215,17 +1414,18 @@ const JOY={Lx:0,Ly:0,Rx:0,Ry:0};
 
 function buildDestinations(){
   DESTINATIONS.length=0;
+  // AU = 28 scene units. Board starts drifting in LEO near Earth (1 AU from Sun)
+  const AU=28;
   const defs=[
-    {name:'Low Earth Orbit',icon:'🌍',type:'Orbit',dist:'400 km',pos:new THREE.Vector3(28,2,3)},
-    {name:'Moon',icon:'🌕',type:'Moon',dist:'384k km',pos:new THREE.Vector3(38,0,3)},
-    {name:'Mars',icon:'🔴',type:'Planet',dist:'78M km',pos:new THREE.Vector3(200,20,0)},
-    {name:'Asteroid Belt',icon:'🪨',type:'Belt',dist:'325M km',pos:new THREE.Vector3(450,0,80)},
-    {name:'Jupiter',icon:'🟠',type:'Gas Giant',dist:'629M km',pos:new THREE.Vector3(700,30,-50)},
-    {name:'Saturn',icon:'🪐',type:'Gas Giant',dist:'1.2B km',pos:new THREE.Vector3(1100,40,100)},
-    {name:'Uranus',icon:'🔵',type:'Ice Giant',dist:'2.7B km',pos:new THREE.Vector3(1800,50,-120)},
+    {name:'Low Earth Orbit',icon:'🌍',type:'Orbit',dist:'400 km',pos:new THREE.Vector3(AU*1.0+2,2,3)},
+    {name:'Moon',icon:'🌕',type:'Moon',dist:'384k km',pos:new THREE.Vector3(AU*1.0+5,0,3)},
+    {name:'Mars',icon:'🔴',type:'Planet',dist:'78M km',pos:new THREE.Vector3(AU*1.524,2,8)},
+    {name:'Asteroid Belt',icon:'🪨',type:'Belt',dist:'325M km',pos:new THREE.Vector3(AU*2.7,0,AU*0.3)},
+    {name:'Jupiter',icon:'🟠',type:'Gas Giant',dist:'629M km',pos:new THREE.Vector3(AU*5.203,4,-AU*0.5)},
+    {name:'Saturn',icon:'🪐',type:'Gas Giant',dist:'1.2B km',pos:new THREE.Vector3(AU*9.537,5,AU*0.8)},
+    {name:'Uranus',icon:'🔵',type:'Ice Giant',dist:'2.7B km',pos:new THREE.Vector3(AU*19.191,6,-AU*1.2)},
     {name:'Proxima Cen.',icon:'⭐',type:'Star',dist:'4.24 ly',pos:new THREE.Vector3(8000,500,2000)},
     {name:'Andromeda',icon:'🌌',type:'Galaxy',dist:'2.5M ly',pos:new THREE.Vector3(50000,2000,-8000)},
-    {name:'Cosmic Void',icon:'🕳',type:'Void',dist:'200M ly',pos:new THREE.Vector3(-80000,-5000,20000)},
   ];
   defs.forEach(d=>DESTINATIONS.push(d));
 }
@@ -1375,26 +1575,45 @@ function buildFlightNebulae(){
 }
 function buildSolarSystem(){
   celestialBodies=[];
-  // Sun
+
+  // ═══════════════════════════════════════════════════════════════
+  //  REAL-SCALE SOLAR SYSTEM — Astronomical Unit (AU) spacing
+  //  1 AU = 28 scene units (Earth's orbit radius)
+  //  Planet radii are exaggerated ~100-500x for visibility
+  //  Orbital speeds are proportional to real Keplerian ratios
+  // ═══════════════════════════════════════════════════════════════
+  const AU = 28; // 1 AU in scene units
+
+  // Sun — parent group so glow travels with it
+  const sunGroup = new THREE.Group();
   const sm=new THREE.Mesh(new THREE.SphereGeometry(4,32,32),new THREE.MeshStandardMaterial({color:0xffdd44,emissive:0xffaa00,emissiveIntensity:2.2,roughness:.6}));
-  flightScene.add(sm);sunMesh=sm;celestialBodies.push({mesh:sm,name:'Sun',type:'Star',temp:'5778 K',orbitR:0,orbitSpd:0,angle:0});
-  // Atmosphere glow sphere behind sun
+  sunGroup.add(sm);
+  // Atmosphere glow sphere — parented to sun so it always follows
   const sa=new THREE.Mesh(new THREE.SphereGeometry(5.5,16,16),new THREE.MeshBasicMaterial({color:0xffaa00,transparent:true,opacity:.12,side:THREE.BackSide}));
-  flightScene.add(sa);
+  sunGroup.add(sa);
+  // Corona outer glow
+  const sc2=new THREE.Mesh(new THREE.SphereGeometry(7,16,16),new THREE.MeshBasicMaterial({color:0xff8800,transparent:true,opacity:.04,side:THREE.BackSide}));
+  sunGroup.add(sc2);
+  flightScene.add(sunGroup);
+  sunMesh=sm;
+  celestialBodies.push({mesh:sunGroup,name:'Sun',type:'Star',temp:'5778 K',orbitR:0,orbitSpd:0,angle:0,renderMesh:sm});
+
+  // Real AU distances: Mercury 0.387, Venus 0.723, Earth 1.0, Mars 1.524
+  // Jupiter 5.203, Saturn 9.537, Uranus 19.191, Neptune 30.069
   const planets=[
-    {name:'Mercury',r:.32,col:0x888888,oR:9,spd:.041,type:'Rocky',temp:'440 K'},
-    {name:'Venus',r:.88,col:0xddaa44,oR:17,spd:.016,type:'Rocky',temp:'737 K'},
-    {name:'Earth',r:1.0,col:0x2244cc,oR:28,spd:.01,type:'Habitable',temp:'288 K',hasMoon:true,hasAtm:true,useShader:true},
-    {name:'Mars',r:.53,col:0xcc4411,oR:42,spd:.0053,type:'Rocky',temp:'210 K'},
-    {name:'Jupiter',r:3.1,col:0xcc9944,oR:120,spd:.00084,type:'Gas Giant',temp:'165 K'},
-    {name:'Saturn',r:2.6,col:0xddcc88,oR:200,spd:.00034,type:'Gas Giant',temp:'134 K',hasRings:true},
-    {name:'Uranus',r:1.7,col:0x88ddee,oR:310,spd:.00012,type:'Ice Giant',temp:'76 K'},
-    {name:'Neptune',r:1.6,col:0x3355cc,oR:420,spd:.00006,type:'Ice Giant',temp:'72 K'}
+    {name:'Mercury',r:.32,col:0x888888,oR:AU*0.387,  spd:.041,  type:'Rocky',    temp:'440 K'},
+    {name:'Venus',  r:.88,col:0xddaa44,oR:AU*0.723,  spd:.016,  type:'Rocky',    temp:'737 K'},
+    {name:'Earth',  r:1.0,col:0x2244cc,oR:AU*1.0,    spd:.01,   type:'Habitable',temp:'288 K',hasMoon:true,hasAtm:true,useShader:true},
+    {name:'Mars',   r:.53,col:0xcc4411,oR:AU*1.524,  spd:.0053, type:'Rocky',    temp:'210 K'},
+    {name:'Jupiter',r:3.1,col:0xcc9944,oR:AU*5.203,  spd:.00084,type:'Gas Giant',temp:'165 K'},
+    {name:'Saturn', r:2.6,col:0xddcc88,oR:AU*9.537,  spd:.00034,type:'Gas Giant',temp:'134 K',hasRings:true},
+    {name:'Uranus', r:1.7,col:0x88ddee,oR:AU*19.191, spd:.00012,type:'Ice Giant',temp:'76 K'},
+    {name:'Neptune',r:1.6,col:0x3355cc,oR:AU*30.069, spd:.00006,type:'Ice Giant',temp:'72 K'}
   ];
+
   planets.forEach(p=>{
     let mat;
     if(p.useShader){
-      // mr.html proven day/night shader — mobile safe, explicit floats
       const _vs=['varying vec3 vNormal;','void main(){vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}'].join('\n');
       const _fs=['uniform vec3 sunDir;','varying vec3 vNormal;','void main(){float d=dot(vNormal,normalize(sunDir));float t=smoothstep(-0.15,0.18,d);vec3 day=vec3(0.03,0.14,0.42);vec3 night=vec3(0.005,0.015,0.048);vec3 col=mix(night,day,t);float nc=pow(clamp(-d,0.0,1.0),0.9)*0.09;col+=vec3(0.9,0.7,0.3)*nc;float rim=1.0-abs(dot(vNormal,vec3(0.0,0.0,1.0)));col+=vec3(0.0,0.3,0.8)*pow(rim,5.0)*0.3;gl_FragColor=vec4(col,1.0);}'].join('\n');
       mat=new THREE.ShaderMaterial({uniforms:{sunDir:{value:new THREE.Vector3(1,0.2,0)}},vertexShader:_vs,fragmentShader:_fs});
@@ -1402,38 +1621,82 @@ function buildSolarSystem(){
       mat=new THREE.MeshStandardMaterial({color:p.col,roughness:.7,metalness:.1});
     }
     const mesh=new THREE.Mesh(new THREE.SphereGeometry(p.r,24,24),mat);
-    mesh.position.set(p.oR,0,0);flightScene.add(mesh);
+    mesh.position.set(p.oR,0,0);
+    flightScene.add(mesh);
     if(p.name==='Earth')earthMesh=mesh;
-    const orbit=new THREE.Mesh(new THREE.TorusGeometry(p.oR,.04,3,100),new THREE.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.3}));flightScene.add(orbit);
-    if(p.hasRings){const rg=new THREE.Mesh(new THREE.TorusGeometry(p.r*1.65,p.r*.42,4,72),new THREE.MeshStandardMaterial({color:0xddcc88,transparent:true,opacity:.72,side:THREE.DoubleSide}));rg.rotation.x=Math.PI*.42;mesh.add(rg);}
-    if(p.hasMoon){const mm=new THREE.Mesh(new THREE.SphereGeometry(.26,12,12),new THREE.MeshStandardMaterial({color:0xaaaaaa,roughness:.9}));mm.position.set(p.r*2.6,0,0);mesh.add(mm);}
-    if(p.hasAtm){const am=new THREE.Mesh(new THREE.SphereGeometry(p.r*1.09,16,16),new THREE.MeshStandardMaterial({color:0x2244ff,transparent:true,opacity:.13,side:THREE.BackSide}));am.position.copy(mesh.position);flightScene.add(am);}
+
+    // Orbit ring
+    const orbit=new THREE.Mesh(new THREE.TorusGeometry(p.oR,.04,3,Math.max(64,Math.round(p.oR*0.8))),new THREE.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.3}));
+    flightScene.add(orbit);
+
+    // Saturn rings — parented to mesh so they orbit together
+    if(p.hasRings){
+      const rg=new THREE.Mesh(new THREE.TorusGeometry(p.r*1.65,p.r*.42,4,72),new THREE.MeshStandardMaterial({color:0xddcc88,transparent:true,opacity:.72,side:THREE.DoubleSide}));
+      rg.rotation.x=Math.PI*.42;
+      mesh.add(rg); // parented to planet
+    }
+
+    // Moon — parented to planet mesh so it orbits with Earth
+    if(p.hasMoon){
+      const mm=new THREE.Mesh(new THREE.SphereGeometry(.26,12,12),new THREE.MeshStandardMaterial({color:0xaaaaaa,roughness:.9}));
+      mm.position.set(p.r*2.6,0,0); // local coords relative to Earth
+      mesh.add(mm); // parented to planet
+    }
+
+    // Atmosphere — PARENTED to planet mesh (not scene!) so it follows during orbit
+    if(p.hasAtm){
+      const am=new THREE.Mesh(new THREE.SphereGeometry(p.r*1.09,16,16),new THREE.MeshStandardMaterial({color:0x2244ff,transparent:true,opacity:.13,side:THREE.BackSide}));
+      am.position.set(0,0,0); // local origin — centered on parent planet
+      mesh.add(am); // parented to planet
+    }
+
     celestialBodies.push({mesh,name:p.name,type:p.type,temp:p.temp,orbitR:p.oR,orbitSpd:p.spd,angle:Math.random()*Math.PI*2});
   });
-  // Asteroid belt
-  const n=1000;const ap=new Float32Array(n*3);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,r=65+rnd(-7,7);ap[i*3]=Math.cos(a)*r;ap[i*3+1]=rnd(-2.5,2.5);ap[i*3+2]=Math.sin(a)*r;}
-  const ag=new THREE.BufferGeometry();ag.setAttribute('position',new THREE.BufferAttribute(ap,3));flightScene.add(new THREE.Points(ag,new THREE.PointsMaterial({size:.4,color:0x886644,sizeAttenuation:true})));
-  // Comets
-  for(let i=0;i<4;i++){const cg=new THREE.Group();cg.add(new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),new THREE.MeshStandardMaterial({color:0xeeeeff,emissive:0x8888ff,emissiveIntensity:1.5})));const tp=new Float32Array(150*3);for(let j=0;j<150;j++){tp[j*3]=j*-.07+rnd(-.03,.03);tp[j*3+1]=rnd(-.015,.015);tp[j*3+2]=rnd(-.03,.03);}const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.BufferAttribute(tp,3));cg.add(new THREE.Points(tg,new THREE.PointsMaterial({size:.08,color:0x8888ff,transparent:true,opacity:.55})));cg.position.set(rnd(-250,250),rnd(-18,18),rnd(-250,250));flightScene.add(cg);}
+
+  // Asteroid belt — between Mars (1.524 AU) and Jupiter (5.203 AU), centered ~2.7 AU
+  const beltR = AU * 2.7;
+  const n=1200;const ap=new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, r=beltR+rnd(-AU*0.5,AU*0.5);
+    ap[i*3]=Math.cos(a)*r;
+    ap[i*3+1]=rnd(-3,3);
+    ap[i*3+2]=Math.sin(a)*r;
+  }
+  const ag=new THREE.BufferGeometry();ag.setAttribute('position',new THREE.BufferAttribute(ap,3));
+  flightScene.add(new THREE.Points(ag,new THREE.PointsMaterial({size:.5,color:0x886644,sizeAttenuation:true})));
+
+  // Comets — scattered through inner and outer solar system
+  for(let i=0;i<6;i++){
+    const cg=new THREE.Group();
+    cg.add(new THREE.Mesh(new THREE.SphereGeometry(.22,8,8),new THREE.MeshStandardMaterial({color:0xeeeeff,emissive:0x8888ff,emissiveIntensity:1.5})));
+    const tp=new Float32Array(180*3);
+    for(let j=0;j<180;j++){tp[j*3]=j*-.08+rnd(-.04,.04);tp[j*3+1]=rnd(-.02,.02);tp[j*3+2]=rnd(-.04,.04);}
+    const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.BufferAttribute(tp,3));
+    cg.add(new THREE.Points(tg,new THREE.PointsMaterial({size:.1,color:0x8888ff,transparent:true,opacity:.55})));
+    cg.position.set(rnd(-AU*10,AU*10),rnd(-20,20),rnd(-AU*10,AU*10));
+    flightScene.add(cg);
+  }
 }
 function addSunLight(){
-  const sl=new THREE.PointLight(0xffffee,3,80000);sl.position.set(0,0,0);flightScene.add(sl);
+  // Sun point light — range extends past Neptune (~842 scene units at AU=28)
+  const sl=new THREE.PointLight(0xffffee,3,300000);sl.position.set(0,0,0);flightScene.add(sl);
   flightScene.add(new THREE.PointLight(0x4455ff,0.6,500000));
   flightScene.add(new THREE.AmbientLight(0x223355,1.2));
-  // Load Earth coastlines from mr.html's proven source
+  // Load Earth coastlines from proven source
   loadEarthCoastlines();
   // Add procedural surface details to other planets
   addProceduralPlanetDetails();
 }
 
-// ── Coastline loader — exact copy of mr.html proven pattern ──────
+// ── Coastline loader — parented to earthMesh in LOCAL coordinates ──────
 function latLonToFlightVec3(lat,lon,r,cx,cy,cz){
   const la=lat*Math.PI/180,lo=lon*Math.PI/180;
   return new THREE.Vector3(cx+r*Math.cos(la)*Math.cos(lo),cy+r*Math.sin(la),cz-r*Math.cos(la)*Math.sin(lo));
 }
 async function loadEarthCoastlines(){
   if(!earthMesh)return;
-  const ex=earthMesh.position.x,ey=earthMesh.position.y,ez=earthMesh.position.z;
+  // ALL child geometry uses LOCAL coordinates (0,0,0 origin)
+  // because coastlines are parented to earthMesh — they inherit its world transform
   const SOURCES=[
     'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_coastline.geojson',
     'https://api.allorigins.win/raw?url='+encodeURIComponent('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_coastline.geojson')
@@ -1450,11 +1713,12 @@ async function loadEarthCoastlines(){
         const rings=type==='LineString'?[f.geometry.coordinates]:type==='MultiLineString'?f.geometry.coordinates:[];
         rings.forEach(ring=>{
           if(ring.length<2)return;
-          const pts=ring.map(([lo,la])=>latLonToFlightVec3(la,lo,1.005,ex,ey,ez));
+          // LOCAL coordinates — (0,0,0) center, parented to earthMesh
+          const pts=ring.map(([lo,la])=>latLonToFlightVec3(la,lo,1.005,0,0,0));
           earthMesh.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat));
         });
       });
-      // Grid lines on Earth (mr.html buildGridLines)
+      // Grid lines on Earth — also in local coords, parented to earthMesh
       const faint=new THREE.LineBasicMaterial({color:0x00f5ff,transparent:true,opacity:.055});
       const med=new THREE.LineBasicMaterial({color:0x00f5ff,transparent:true,opacity:.2});
       for(let lat=-60;lat<=60;lat+=30){const pts=[];for(let lo=0;lo<=360;lo+=3)pts.push(latLonToFlightVec3(lat,lo,1.002,0,0,0));earthMesh.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lat===0?med:faint));}
@@ -1464,11 +1728,15 @@ async function loadEarthCoastlines(){
   }
 }
 
-// ── Procedural planet surface markings ───────────────────────────
+// ── Procedural planet surface markings — LOCAL coords, parented to mesh ─
 function addProceduralPlanetDetails(){
   celestialBodies.forEach(b=>{
     if(!b.mesh||b.orbitR===0||b.name==='Earth'||b.name==='Sun')return;
-    const r=b.mesh.geometry.parameters.radius;
+    // Get radius from the planet's own geometry (or child sphere)
+    let r;
+    if(b.mesh.geometry && b.mesh.geometry.parameters) r=b.mesh.geometry.parameters.radius;
+    else if(b.renderMesh && b.renderMesh.geometry) r=b.renderMesh.geometry.parameters.radius;
+    else return;
     // Procedural lat/lon contour lines with noise for organic look
     const lineCol=b.name==='Mars'?0xcc6644:b.name==='Jupiter'?0xddaa77:b.name==='Saturn'?0xccbb88:b.name==='Venus'?0xddcc66:0x88aacc;
     const mat=new THREE.LineBasicMaterial({color:lineCol,transparent:true,opacity:.35});
@@ -1479,6 +1747,7 @@ function addProceduralPlanetDetails(){
       for(let lo=0;lo<=360;lo+=4){
         const lat=baseLat+Math.sin(lo*.04+i*1.3)*18;
         const la=lat*Math.PI/180,lov=lo*Math.PI/180;
+        // LOCAL coordinates (0,0,0 center) — parented to b.mesh
         pts.push(new THREE.Vector3(r*Math.cos(la)*Math.cos(lov)*1.005,r*Math.sin(la)*1.005,-r*Math.cos(la)*Math.sin(lov)*1.005));
       }
       b.mesh.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat));
@@ -1527,13 +1796,14 @@ function buildFlightBoard(){
   flightCamera.add(boardFlight);
   _applyCamOffset();
 
-  // Camera starts at world origin, level, looking forward (-Z)
-  flightCamera.position.set(0,0,0);
+  // Camera starts in Low Earth Orbit — 1 AU from Sun, drifting with Earth
+  const AU=28;
+  flightCamera.position.set(AU*1.0+2, 2, 3); // LEO offset from Earth center
   flightCamera.rotation.order='YXZ';
   flightCamera.rotation.set(0,0,0);
   flightCamera.near=0.01; flightCamera.far=300000;
   flightCamera.updateProjectionMatrix();
-  STATE.flight.pos.set(0,0,0);
+  STATE.flight.pos.set(AU*1.0+2, 2, 3);
   STATE.flight.camYaw=0;
   STATE.flight.camPitch=0;
 }
@@ -1762,27 +2032,36 @@ function updateFlight(dt){
 
 function updateBodies(dt){
   celestialBodies.forEach(b=>{
-    if(b.orbitR>0){b.angle+=b.orbitSpd*dt*60;b.mesh.position.x=Math.cos(b.angle)*b.orbitR;b.mesh.position.z=Math.sin(b.angle)*b.orbitR;}
+    if(b.orbitR>0){
+      b.angle+=b.orbitSpd*dt*60;
+      b.mesh.position.x=Math.cos(b.angle)*b.orbitR;
+      b.mesh.position.z=Math.sin(b.angle)*b.orbitR;
+    }
+    // Gentle self-rotation
     b.mesh.rotation.y+=.001;
+
+    // Get the actual renderable mesh for distance/LOD checks
+    const checkMesh = b.renderMesh || b.mesh;
 
     // LOD — increase geometry detail when close, reduce when far
     const dist=b.mesh.position.distanceTo(STATE.flight.pos);
-    const seg=dist<5?48:dist<20?32:dist<80?16:8;
-    if(b.mesh.geometry&&b.mesh.geometry.parameters){
-      const curSeg=b.mesh.geometry.parameters.widthSegments||b.mesh.geometry.parameters.radialSegments||16;
+    if(checkMesh.geometry && checkMesh.geometry.parameters && checkMesh.geometry.parameters.radius){
+      const seg=dist<5?48:dist<20?32:dist<80?16:8;
+      const curSeg=checkMesh.geometry.parameters.widthSegments||checkMesh.geometry.parameters.radialSegments||16;
       if(Math.abs(curSeg-seg)>8){
-        const r=b.mesh.geometry.parameters.radius;
+        const r=checkMesh.geometry.parameters.radius;
         const newGeo=new THREE.SphereGeometry(r,seg,seg);
-        b.mesh.geometry.dispose();b.mesh.geometry=newGeo;
+        checkMesh.geometry.dispose();checkMesh.geometry=newGeo;
+      }
+
+      // Proximity approach — show landing prompt when very close
+      if(dist<checkMesh.geometry.parameters.radius*2.5&&b.name!=='Sun'){
+        const ld=$('land-prompt');
+        if(ld){ld.style.display='block';ld.textContent='⬇ APPROACH '+b.name.toUpperCase()+' — ENTER ATMOSPHERE';}
       }
     }
-
-    // Proximity approach — show landing prompt when very close
-    if(dist<b.mesh.geometry.parameters.radius*2.5&&b.name!=='Sun'){
-      const ld=$('land-prompt');
-      if(ld){ld.style.display='block';ld.textContent='⬇ APPROACH '+b.name.toUpperCase()+' — ENTER ATMOSPHERE';}
-    }
   });
+  // Sun rotation
   if(sunMesh)sunMesh.rotation.y+=.0003;
 }
 
@@ -1804,9 +2083,10 @@ function updateHUD(){
   const staff=STAFFS[STATE.boardConfig.staffIdx];
   $('hud-ability').textContent=staff.icon+' '+staff.name+': '+staff.desc;
   $('hud-grav').textContent=pos.length()<35?'1.0 g':'0.0 g';
-  // Update Earth day/night shader sun direction
-  if(earthMesh&&earthMesh.material.uniforms){
-    const sd=new THREE.Vector3().subVectors(sunMesh?sunMesh.position:new THREE.Vector3(0,0,0),earthMesh.position).normalize();
+  // Update Earth day/night shader sun direction — sun may be group or mesh
+  if(earthMesh&&earthMesh.material&&earthMesh.material.uniforms){
+    const sunPos = sunMesh ? (sunMesh.parent && sunMesh.parent.isGroup ? sunMesh.parent.position : sunMesh.position) : new THREE.Vector3(0,0,0);
+    const sd=new THREE.Vector3().subVectors(sunPos,earthMesh.position).normalize();
     earthMesh.material.uniforms.sunDir.value.copy(sd);
   }
   // Clear approach prompt if far from all bodies
@@ -1910,7 +2190,7 @@ function initGalaxyMapScene(){
   gmRenderer.setClearColor(0x000308,1);
   gmScene=new THREE.Scene();
   gmCamera=new THREE.PerspectiveCamera(55,W/H,.1,200000);gmCamera.position.set(0,500,2000);
-  gmControls=new THREE.OrbitControls(gmCamera,cv);gmControls.enableDamping=true;gmControls.dampingFactor=.07;gmControls.target.set(0,0,0);
+  gmControls=new THREE.OrbitControls(gmCamera,cv);gmControls.enableDamping=true;gmControls.dampingFactor=.10;gmControls.rotateSpeed=0.4;gmControls.zoomSpeed=0.65;gmControls.panSpeed=0.5;gmControls.target.set(0,0,0);
 
   // Stars
   const sn=3000;const sp=new Float32Array(sn*3);for(let i=0;i<sn;i++){const t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1),r=rnd(5000,60000);sp[i*3]=r*Math.sin(p)*Math.cos(t);sp[i*3+1]=r*Math.sin(p)*Math.sin(t)*.3;sp[i*3+2]=r*Math.cos(p);}
@@ -2024,7 +2304,8 @@ function initGalaxyMapScene(){
   gmCamera.position.set(0,600,2200);
 
   gmControls=new THREE.OrbitControls(gmCamera,cv);
-  gmControls.enableDamping=true;gmControls.dampingFactor=.06;
+  gmControls.enableDamping=true;gmControls.dampingFactor=.10;
+  gmControls.rotateSpeed=0.4;gmControls.zoomSpeed=0.65;gmControls.panSpeed=0.5;
   gmControls.minDistance=2;gmControls.maxDistance=200000;
   gmControls.target.set(0,0,0);
 
@@ -2193,38 +2474,44 @@ function buildGMNebulae(){
 }
 
 function buildGMSolarSystem(){
+  const AU=28;
   // Sun
   const sun=new THREE.Mesh(new THREE.SphereGeometry(4,20,20),new THREE.MeshStandardMaterial({color:0xffdd44,emissive:0xffaa00,emissiveIntensity:2.2,roughness:.6}));
-  {const gsl=new THREE.PointLight(0xffffee,2,1000);gsl.position.set(0,0,0);gmScene.add(sun);gmScene.add(gsl);}
+  {const gsl=new THREE.PointLight(0xffffee,2,3000);gsl.position.set(0,0,0);gmScene.add(sun);gmScene.add(gsl);}
 
-  // Earth — day/night shader like mr.html
+  // Earth — day/night shader, positioned at 1 AU
   const _vs=['varying vec3 vNormal;','void main(){vNormal=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}'].join('\n');
   const _fs=['uniform vec3 sunDir;','varying vec3 vNormal;','void main(){float d=dot(vNormal,normalize(sunDir));float t=smoothstep(-0.15,0.18,d);vec3 day=vec3(0.03,0.14,0.42);vec3 night=vec3(0.005,0.015,0.048);vec3 col=mix(night,day,t);float nc=pow(clamp(-d,0.0,1.0),0.9)*0.09;col+=vec3(0.9,0.7,0.3)*nc;float rim=1.0-abs(dot(vNormal,vec3(0.0,0.0,1.0)));col+=vec3(0.0,0.3,0.8)*pow(rim,5.0)*0.3;gl_FragColor=vec4(col,1.0);}'].join('\n');
   const sunDirVec=new THREE.Vector3(1,.2,0);
   const earthM=new THREE.Mesh(new THREE.SphereGeometry(1,48,24),new THREE.ShaderMaterial({uniforms:{sunDir:{value:sunDirVec}},vertexShader:_vs,fragmentShader:_fs}));
-  earthM.position.set(28,0,0);gmScene.add(earthM);
+  earthM.position.set(AU,0,0);gmScene.add(earthM);
 
-  // Earth grid lines like mr.html
+  // Earth grid lines — LOCAL coords, parented to earthM
   const faint=new THREE.LineBasicMaterial({color:0x00f5ff,transparent:true,opacity:.06});
   const med=new THREE.LineBasicMaterial({color:0x00f5ff,transparent:true,opacity:.22});
-  function latLonPt(lat,lon,r){const la=lat*Math.PI/180,lo=lon*Math.PI/180;return new THREE.Vector3(r*Math.cos(la)*Math.cos(lo)+28,r*Math.sin(la),-r*Math.cos(la)*Math.sin(lo));}
-  for(let lat=-60;lat<=60;lat+=30){const pts=[];for(let lo=0;lo<=360;lo+=3)pts.push(latLonPt(lat,lo,1.005));gmScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lat===0?med:faint));}
-  for(let lo=0;lo<360;lo+=30){const pts=[];for(let la=-88;la<=88;la+=3)pts.push(latLonPt(la,lo,1.005));gmScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lo===0?med:faint));}
-  // Atmosphere
-  const atm=new THREE.Mesh(new THREE.SphereGeometry(1.06,16,16),new THREE.MeshPhongMaterial({color:0x0044bb,transparent:true,opacity:.09,side:THREE.BackSide}));atm.position.set(28,0,0);gmScene.add(atm);
+  function latLonPt(lat,lon,r){const la=lat*Math.PI/180,lo=lon*Math.PI/180;return new THREE.Vector3(r*Math.cos(la)*Math.cos(lo),r*Math.sin(la),-r*Math.cos(la)*Math.sin(lo));}
+  for(let lat=-60;lat<=60;lat+=30){const pts=[];for(let lo=0;lo<=360;lo+=3)pts.push(latLonPt(lat,lo,1.005));earthM.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lat===0?med:faint));}
+  for(let lo=0;lo<360;lo+=30){const pts=[];for(let la=-88;la<=88;la+=3)pts.push(latLonPt(la,lo,1.005));earthM.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lo===0?med:faint));}
+  // Atmosphere — parented to earthM
+  const atm=new THREE.Mesh(new THREE.SphereGeometry(1.06,16,16),new THREE.MeshPhongMaterial({color:0x0044bb,transparent:true,opacity:.09,side:THREE.BackSide}));
+  earthM.add(atm); // parented, local origin
   // Orbit ring
-  const orb=new THREE.Mesh(new THREE.TorusGeometry(28,.04,3,100),new THREE.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.35}));gmScene.add(orb);
+  const orb=new THREE.Mesh(new THREE.TorusGeometry(AU,.04,3,100),new THREE.MeshBasicMaterial({color:0x223344,transparent:true,opacity:.35}));gmScene.add(orb);
 
-  // Load coastlines
+  // Load coastlines — parented to earthM in LOCAL coords
   loadGMCoastlines(earthM);
 
-  // Mars
+  // Mars at 1.524 AU
   const mars=new THREE.Mesh(new THREE.SphereGeometry(.52,16,16),new THREE.MeshStandardMaterial({color:0xcc4411,roughness:.8}));
-  mars.position.set(42,0,8);gmScene.add(mars);
+  mars.position.set(AU*1.524,0,8);gmScene.add(mars);
   addPlanetContours(mars,0xcc6644,.3,'barren');
 
-  // Jupiter
-  const jup=new THREE.Mesh(new THREE.SphereGeometry(3,16,16),new THREE.MeshStandardMaterial({color:0xcc9944,roughness:.7}));jup.position.set(120,0,0);gmScene.add(jup);
+  // Jupiter at 5.203 AU
+  const jup=new THREE.Mesh(new THREE.SphereGeometry(3,16,16),new THREE.MeshStandardMaterial({color:0xcc9944,roughness:.7}));jup.position.set(AU*5.203,0,0);gmScene.add(jup);
+
+  // Saturn at 9.537 AU
+  const sat=new THREE.Mesh(new THREE.SphereGeometry(2.6,16,16),new THREE.MeshStandardMaterial({color:0xddcc88,roughness:.7}));sat.position.set(AU*9.537,0,-20);gmScene.add(sat);
+  const satRing=new THREE.Mesh(new THREE.TorusGeometry(2.6*1.65,2.6*.42,4,72),new THREE.MeshStandardMaterial({color:0xddcc88,transparent:true,opacity:.72,side:THREE.DoubleSide}));satRing.rotation.x=Math.PI*.42;sat.add(satRing);
 }
 
 async function loadGMCoastlines(earthM){
@@ -2237,8 +2524,9 @@ async function loadGMCoastlines(earthM){
       (gj.features||[]).forEach(f=>{
         const rings=f.geometry.type==='LineString'?[f.geometry.coordinates]:f.geometry.type==='MultiLineString'?f.geometry.coordinates:[];
         rings.forEach(ring=>{
-          const pts=ring.map(([lo,la])=>{const lav=la*Math.PI/180,lov=lo*Math.PI/180;return new THREE.Vector3(Math.cos(lav)*Math.cos(lov)*1.005+28,Math.sin(lav)*1.005,-Math.cos(lav)*Math.sin(lov)*1.005);});
-          if(pts.length>=2)gmScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat));
+          // LOCAL coordinates (0,0,0 center) — parented to earthM so they move together
+          const pts=ring.map(([lo,la])=>{const lav=la*Math.PI/180,lov=lo*Math.PI/180;return new THREE.Vector3(Math.cos(lav)*Math.cos(lov)*1.005,Math.sin(lav)*1.005,-Math.cos(lav)*Math.sin(lov)*1.005);});
+          if(pts.length>=2)earthM.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat));
         });
       });
       break;
@@ -2247,7 +2535,7 @@ async function loadGMCoastlines(earthM){
 }
 
 function addPlanetContours(meshObj,col,opacity,type){
-  // Procedural contour lines on planets
+  // Procedural contour lines — LOCAL coords, parented to meshObj
   const R=meshObj.geometry.parameters.radius;
   const mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:opacity});
   const N=type==='barren'?6:type==='icy'?8:5;
@@ -2255,9 +2543,10 @@ function addPlanetContours(meshObj,col,opacity,type){
     const lat=(Math.random()-.5)*160;const pts=[];
     for(let lo=0;lo<=360;lo+=5){
       const la=(lat+Math.sin(lo*.04+i)*15)*Math.PI/180;const lov=lo*Math.PI/180;
-      pts.push(new THREE.Vector3(meshObj.position.x+Math.cos(la)*Math.cos(lov)*R*1.005,meshObj.position.y+Math.sin(la)*R*1.005,meshObj.position.z-Math.cos(la)*Math.sin(lov)*R*1.005));
+      // LOCAL coordinates — (0,0,0) center, parented to meshObj
+      pts.push(new THREE.Vector3(Math.cos(la)*Math.cos(lov)*R*1.005,Math.sin(la)*R*1.005,-Math.cos(la)*Math.sin(lov)*R*1.005));
     }
-    gmScene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat));
+    meshObj.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat));
   }
 }
 
