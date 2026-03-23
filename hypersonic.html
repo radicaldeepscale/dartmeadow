@@ -1289,9 +1289,8 @@
                 var dy = p.y - arPrevOneY;
 
                 // Convert screen-space drag to world-space XZ movement
-                // Scale factor based on viewport size for natural feel
-                var screenW = window.innerWidth || 360;
-                var moveSpeed = (arScale * modelMaxDim * 2.0) / screenW;
+                // Very gentle: ~0.15m travel across full screen width
+                var moveSpeed = 0.0004 * arScale;
 
                 arOffsetX += dx * moveSpeed;
                 arOffsetZ += dy * moveSpeed;
