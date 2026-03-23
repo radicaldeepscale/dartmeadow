@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DART Hypersonic Edge — DART Meadow</title>
+    <meta name="description" content="DART Hypersonic Edge — Advanced hypersonic thermal management and aerospike technology by DART Meadow LLC and Radical Deepscale LLC.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --cyan: #00d4ff;
+            --cyan-mid: #00a8cc;
+            --cyan-dim: #0090b0;
+            --cyan-glow: rgba(0, 212, 255, 0.25);
+            --orange: #ff6b35;
+            --bg-deep: #060810;
+            --bg-panel: rgba(10, 16, 28, 0.82);
+            --bg-glass: rgba(0, 212, 255, 0.06);
+            --border-glass: rgba(0, 212, 255, 0.15);
+            --text-primary: #eef1f7;
+            --text-secondary: #b0bdd0;
+            --text-tertiary: #7a8da6;
+            --font-display: 'Orbitron', sans-serif;
+            --font-body: 'Exo 2', sans-serif;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---- ANIMATED BACKGROUND ---- */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.025) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridDrift 30s linear infinite;
+        }
+        @keyframes gridDrift {
+            0% { background-position: 0 0; }
+            100% { background-position: 60px 60px; }
+        }
+        .bg-vignette {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background: radial-gradient(ellipse at 50% 40%, transparent 30%, var(--bg-deep) 90%);
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 clamp(16px, 4vw, 48px);
+            height: 80px;
+            background: rgba(6, 8, 16, 0.88);
+            backdrop-filter: blur(24px) saturate(1.4);
+            -webkit-backdrop-filter: blur(24px) saturate(1.4);
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .logo-link {
+            display: flex; align-items: center; gap: 14px;
+            text-decoration: none; color: inherit;
+            transition: opacity 0.2s; min-height: 48px;
+        }
+        .logo-link:hover { opacity: 0.85; }
+
+        .logo-img {
+            height: 48px; width: auto;
+            filter: drop-shadow(0 0 10px var(--cyan-glow));
+        }
+
+        .logo-text {
+            font-family: var(--font-display);
+            font-weight: 700; font-size: 16px;
+            letter-spacing: 2.5px; text-transform: uppercase;
+            color: var(--cyan); line-height: 1.25;
+        }
+        .logo-text span {
+            display: block; font-weight: 400; font-size: 11px;
+            letter-spacing: 3px; color: var(--text-secondary); margin-top: 3px;
+        }
+
+        .nav-links {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .nav-links a {
+            font-family: var(--font-display);
+            font-size: 12px; font-weight: 500;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--text-secondary); text-decoration: none;
+            padding: 12px 18px; border: 1px solid transparent;
+            border-radius: 6px; transition: all 0.25s;
+            min-height: 44px; display: flex; align-items: center;
+        }
+        .nav-links a:hover, .nav-links a:active {
+            color: var(--cyan); border-color: var(--border-glass); background: var(--bg-glass);
+        }
+
+        /* ============================================================
+           HERO / 3D VIEWER
+           ============================================================ */
+        .hero {
+            position: relative; width: 100%; height: 100vh;
+            min-height: 550px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 1;
+        }
+
+        #three-container {
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 50px; right: 50px;
+            z-index: 1;
+            border-left: 1px solid var(--border-glass);
+            border-right: 1px solid var(--border-glass);
+        }
+        #three-container canvas {
+            display: block; width: 100% !important; height: 100% !important;
+            touch-action: none;
+        }
+
+        .hero-overlay {
+            position: absolute; top: 80px; left: 0; right: 0;
+            z-index: 5; text-align: center; pointer-events: none;
+            padding: 32px 20px 0; transition: opacity 0.5s ease;
+        }
+        .hero-title {
+            font-family: var(--font-display); font-weight: 800;
+            font-size: clamp(24px, 5vw, 56px); letter-spacing: 4px;
+            text-transform: uppercase; color: var(--text-primary);
+            text-shadow: 0 0 60px rgba(0,212,255,0.3), 0 4px 24px rgba(0,0,0,0.9);
+            line-height: 1.15; opacity: 0;
+            animation: fadeSlideUp 1s ease 0.3s forwards;
+        }
+        .hero-title .accent { color: var(--cyan); }
+        .hero-subtitle {
+            font-family: var(--font-body); font-weight: 400;
+            font-size: clamp(12px, 1.5vw, 17px); letter-spacing: 3px;
+            text-transform: uppercase; color: var(--text-secondary);
+            margin-top: 10px; opacity: 0;
+            animation: fadeSlideUp 1s ease 0.6s forwards;
+        }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-hint {
+            position: absolute; bottom: 28px; left: 50%;
+            transform: translateX(-50%); z-index: 5;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 6px; opacity: 0; pointer-events: none;
+            animation: fadeSlideUp 1s ease 1.2s forwards;
+        }
+        .scroll-hint span {
+            font-family: var(--font-display); font-size: 9px;
+            letter-spacing: 3px; text-transform: uppercase; color: var(--text-tertiary);
+        }
+        .scroll-line {
+            width: 1px; height: 36px;
+            background: linear-gradient(to bottom, var(--cyan), transparent);
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.3; } 50% { opacity: 1; }
+        }
+
+        /* ============================================================
+           CONTROLS PANEL
+           ============================================================ */
+        .controls-panel {
+            position: fixed; bottom: 20px; left: 50%;
+            transform: translateX(-50%); z-index: 50;
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            padding: 14px 24px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px) saturate(1.3);
+            -webkit-backdrop-filter: blur(20px) saturate(1.3);
+            border: 1px solid var(--border-glass); border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+            opacity: 0; animation: fadeSlideUp 0.8s ease 1s forwards;
+            transition: opacity 0.3s, visibility 0.3s;
+            max-width: 520px; width: auto;
+        }
+        .controls-panel.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .ctrl-row {
+            display: flex; align-items: center; justify-content: center;
+            gap: 16px; width: 100%;
+        }
+        .ctrl-row-sliders { gap: 18px; }
+        .ctrl-row-buttons { gap: 10px; }
+
+        .ctrl-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .ctrl-label {
+            font-family: var(--font-display); font-size: 9px;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-tertiary); font-weight: 500;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 90px; height: 3px;
+            background: rgba(0,212,255,0.15); border-radius: 2px;
+            outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px;
+            border-radius: 50%; background: var(--cyan);
+            box-shadow: 0 0 12px var(--cyan-glow); cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow);
+            border: none; cursor: pointer;
+        }
+
+        .ctrl-btn {
+            font-family: var(--font-display); font-size: 10px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--cyan); background: transparent;
+            border: 1px solid var(--cyan-dim); border-radius: 6px;
+            padding: 10px 18px; cursor: pointer;
+            transition: all 0.25s; white-space: nowrap; min-height: 40px;
+        }
+        .ctrl-btn:hover {
+            background: var(--bg-glass); border-color: var(--cyan);
+            box-shadow: 0 0 16px var(--cyan-glow);
+        }
+        .ctrl-btn.ar-btn {
+            color: #fff; border-color: var(--orange);
+            background: rgba(255,107,53,0.15);
+            animation: arBtnPulse 3s ease-in-out infinite;
+        }
+        .ctrl-btn.ar-btn:hover {
+            background: rgba(255,107,53,0.25); border-color: var(--orange);
+            box-shadow: 0 0 20px rgba(255,107,53,0.4);
+            animation: none;
+        }
+        .ctrl-btn.ar-btn.ar-ready {
+            box-shadow: 0 0 12px rgba(255,107,53,0.3);
+        }
+        @keyframes arBtnPulse {
+            0%, 100% { box-shadow: 0 0 6px rgba(255,107,53,0.15); }
+            50% { box-shadow: 0 0 18px rgba(255,107,53,0.35); }
+        }
+
+        /* ============================================================
+           INFO BOXES
+           ============================================================ */
+        .info-box {
+            position: absolute;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass); border-radius: 10px;
+            padding: 16px 20px; display: none; pointer-events: all;
+            min-width: 200px; max-width: 280px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 60;
+            animation: infoPopIn 0.25s ease;
+        }
+        @keyframes infoPopIn {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .info-box h3 {
+            font-family: var(--font-display); font-size: 11px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--cyan); margin-bottom: 6px;
+        }
+        .info-box p {
+            font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px;
+        }
+        .info-box button {
+            font-family: var(--font-display); font-size: 9px;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-secondary); background: transparent;
+            border: 1px solid var(--border-glass); border-radius: 4px;
+            padding: 7px 16px; cursor: pointer; transition: all 0.2s; min-height: 34px;
+        }
+        .info-box button:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+
+        /* ============================================================
+           SECTIONS
+           ============================================================ */
+        .section {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto;
+            padding: 100px clamp(20px, 5vw, 60px);
+        }
+        .section-divider {
+            width: 100%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-glass), transparent);
+        }
+        .section-label {
+            font-family: var(--font-display); font-size: 10px; font-weight: 500;
+            letter-spacing: 5px; text-transform: uppercase;
+            color: var(--cyan-mid); margin-bottom: 12px;
+        }
+        .section-title {
+            font-family: var(--font-display); font-weight: 700;
+            font-size: clamp(22px, 3vw, 40px); letter-spacing: 2px;
+            text-transform: uppercase; color: var(--text-primary); margin-bottom: 16px;
+        }
+        .section-desc {
+            font-size: 15px; font-weight: 400; color: var(--text-secondary);
+            line-height: 1.75; max-width: 700px; margin-bottom: 48px;
+        }
+        .flow-diagram-container {
+            position: relative; width: 100%;
+            background: rgba(8,12,24,0.6); border: 1px solid var(--border-glass);
+            border-radius: 16px; overflow: hidden;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+        }
+        .flow-diagram-container img { width: 100%; height: auto; display: block; }
+        .flow-diagram-container::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 50px; background: linear-gradient(to bottom, rgba(6,8,16,0.7), transparent);
+            pointer-events: none; z-index: 2;
+        }
+        .flow-diagram-container::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+            height: 50px; background: linear-gradient(to top, rgba(6,8,16,0.7), transparent);
+            pointer-events: none; z-index: 2;
+        }
+        .specs-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px; margin-top: 48px;
+        }
+        .spec-card {
+            background: var(--bg-panel); border: 1px solid var(--border-glass);
+            border-radius: 12px; padding: 28px 24px; transition: all 0.3s;
+        }
+        .spec-card:hover {
+            border-color: var(--cyan-dim); box-shadow: 0 0 24px var(--cyan-glow);
+            transform: translateY(-2px);
+        }
+        .spec-icon {
+            display: inline-block; width: 8px; height: 8px;
+            background: var(--cyan); border-radius: 2px;
+            transform: rotate(45deg); margin-bottom: 16px;
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+        .spec-card h4 {
+            font-family: var(--font-display); font-size: 12px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--cyan); margin-bottom: 10px;
+        }
+        .spec-card p {
+            font-size: 14px; font-weight: 400; color: var(--text-secondary); line-height: 1.65;
+        }
+
+        footer {
+            position: relative; z-index: 1; text-align: center;
+            padding: 48px 24px; border-top: 1px solid var(--border-glass);
+        }
+        footer p {
+            font-family: var(--font-display); font-size: 10px;
+            letter-spacing: 3px; text-transform: uppercase; color: var(--text-tertiary);
+        }
+        footer a { color: var(--cyan-mid); text-decoration: none; transition: color 0.2s; }
+        footer a:hover { color: var(--cyan); }
+
+        /* ============================================================
+           AR HUD OVERLAY — DOM overlay for WebXR
+           ============================================================ */
+        #ar-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 500;
+            pointer-events: none;
+            font-family: var(--font-body);
+        }
+        #ar-overlay.active { display: block; }
+
+        /* AR status banner */
+        .ar-status {
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 14px 20px; text-align: center;
+            background: rgba(6, 8, 16, 0.75);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-glass);
+            pointer-events: auto; z-index: 510;
+        }
+        .ar-status-text {
+            font-family: var(--font-display); font-size: 11px; font-weight: 500;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--cyan); display: flex; align-items: center;
+            justify-content: center; gap: 10px;
+        }
+        .ar-status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--orange); animation: arPulse 1.5s ease-in-out infinite;
+        }
+        .ar-status-dot.placed { background: #00ff88; animation: none; }
+        @keyframes arPulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* AR HUD panel — collapsible */
+        .ar-hud {
+            position: fixed; bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px); max-width: 420px;
+            background: rgba(6, 8, 16, 0.85);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass); border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+            pointer-events: auto; z-index: 510;
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+        .ar-hud.collapsed { max-height: 56px; }
+        .ar-hud.expanded { max-height: 400px; }
+
+        .ar-hud-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 20px; cursor: pointer;
+            border-bottom: 1px solid rgba(0,212,255,0.08);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ar-hud-title {
+            font-family: var(--font-display); font-size: 11px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase; color: var(--cyan);
+        }
+        .ar-hud-chevron {
+            width: 20px; height: 20px; display: flex; align-items: center;
+            justify-content: center; transition: transform 0.3s;
+        }
+        .ar-hud.collapsed .ar-hud-chevron { transform: rotate(180deg); }
+        .ar-hud-chevron svg { stroke: var(--text-tertiary); }
+
+        .ar-hud-body {
+            padding: 16px 20px;
+            display: flex; flex-direction: column; gap: 14px;
+        }
+        .ar-hud.collapsed .ar-hud-body { display: none; }
+
+        .ar-hud-row {
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        }
+        .ar-hud-label {
+            font-family: var(--font-display); font-size: 9px; font-weight: 500;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-tertiary); min-width: 52px;
+        }
+        .ar-hud-info {
+            font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+        }
+
+        .ar-btn-row {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+            padding-top: 4px;
+        }
+        .ar-action-btn {
+            font-family: var(--font-display); font-size: 10px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 10px 20px; border-radius: 8px;
+            cursor: pointer; min-height: 42px; border: 1px solid;
+            transition: all 0.25s; flex: 1; min-width: 100px; text-align: center;
+        }
+        .ar-action-btn.reset {
+            color: var(--cyan); border-color: var(--cyan-dim); background: transparent;
+        }
+        .ar-action-btn.reset:hover {
+            background: var(--bg-glass); box-shadow: 0 0 12px var(--cyan-glow);
+        }
+        .ar-action-btn.exit-ar {
+            color: #ff4466; border-color: #ff4466; background: transparent;
+        }
+        .ar-action-btn.exit-ar:hover {
+            background: rgba(255,68,102,0.08); box-shadow: 0 0 12px rgba(255,68,102,0.3);
+        }
+
+        /* AR crosshair/reticle prompt */
+        .ar-crosshair {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px; height: 60px;
+            pointer-events: none; z-index: 505;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .ar-crosshair.visible { opacity: 1; }
+        .ar-crosshair svg { width: 100%; height: 100%; }
+
+        .ar-tap-prompt {
+            position: fixed; top: calc(50% + 50px); left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-display); font-size: 10px; font-weight: 500;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-secondary); pointer-events: none;
+            z-index: 505; opacity: 0; transition: opacity 0.3s;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+        .ar-tap-prompt.visible { opacity: 1; }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            header { height: 68px; padding: 0 16px; }
+            .logo-img { height: 40px; }
+            .logo-text { font-size: 13px; letter-spacing: 2px; }
+            .logo-text span { font-size: 9px; letter-spacing: 2px; }
+            .nav-links a { font-size: 10px; padding: 10px 12px; letter-spacing: 1px; }
+            #three-container { left: 36px; right: 36px; }
+            .controls-panel {
+                padding: 12px 16px; bottom: 12px;
+                width: calc(100% - 32px); max-width: none;
+                border-radius: 12px;
+            }
+            .ctrl-row-sliders { gap: 12px; }
+            .ctrl-row-buttons { gap: 8px; flex-wrap: wrap; }
+            .ctrl-btn { padding: 9px 14px; font-size: 9px; }
+            input[type="range"] { width: 70px; }
+            .section { padding: 60px 20px; }
+        }
+        @media (max-width: 480px) {
+            .nav-links { gap: 2px; }
+            .nav-links a { font-size: 9px; padding: 8px 8px; }
+            .hero-title { letter-spacing: 2px; }
+            .hero-overlay { padding-top: 20px; }
+            #three-container { left: 28px; right: 28px; }
+            input[type="range"] { width: 56px; }
+            .ctrl-row-sliders { gap: 8px; }
+            .ctrl-btn { flex: 1; min-width: 80px; text-align: center; padding: 9px 10px; }
+        }
+
+        /* ---- LOADER ---- */
+        .loader-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--bg-deep); transition: opacity 0.8s ease, visibility 0.8s;
+        }
+        .loader-overlay.loaded { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-ring {
+            width: 56px; height: 56px;
+            border: 2px solid rgba(0,212,255,0.12); border-top-color: var(--cyan);
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text {
+            font-family: var(--font-display); font-size: 10px;
+            letter-spacing: 4px; text-transform: uppercase;
+            color: var(--text-tertiary); margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loader-overlay" id="loader">
+        <div class="loader-ring"></div>
+        <div class="loader-text">Initializing DHE</div>
+    </div>
+
+    <div class="bg-grid"></div>
+    <div class="bg-vignette"></div>
+
+    <!-- ============ HEADER ============ -->
+    <header id="mainHeader">
+        <a href="https://www.dartmeadow.com" class="logo-link" title="DART Meadow Home">
+            <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/DHElogo.png"
+                 alt="DART Hypersonic Edge" class="logo-img" onerror="this.style.display='none'">
+            <div class="logo-text">
+                DART Hypersonic Edge
+                <span>DART Meadow &bull; Radical Deepscale</span>
+            </div>
+        </a>
+        <nav class="nav-links">
+            <a href="https://www.dartmeadow.com">Home</a>
+            <a href="#flow-diagram">Flow Diagram</a>
+            <a href="#specs">Specs</a>
+        </nav>
+    </header>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="hero">
+        <div id="three-container"></div>
+        <div class="hero-overlay" id="heroOverlay">
+            <h1 class="hero-title"><span class="accent">DART</span> Hypersonic Edge</h1>
+            <p class="hero-subtitle">TII-ZC Alloy &bull; Fore &amp; Aft Aerospike Configuration</p>
+        </div>
+        <div class="scroll-hint">
+            <span>Explore</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- ============ CONTROLS PANEL ============ -->
+    <div class="controls-panel" id="controlsPanel">
+        <div class="ctrl-row ctrl-row-sliders">
+            <div class="ctrl-group">
+                <span class="ctrl-label">Key</span>
+                <input type="range" id="keyLight" min="0" max="2" step="0.1" value="1">
+            </div>
+            <div class="ctrl-group">
+                <span class="ctrl-label">Fill</span>
+                <input type="range" id="fillLight" min="0" max="2" step="0.1" value="0.5">
+            </div>
+            <div class="ctrl-group">
+                <span class="ctrl-label">Back</span>
+                <input type="range" id="backLight" min="0" max="2" step="0.1" value="0.2">
+            </div>
+        </div>
+        <div class="ctrl-row ctrl-row-buttons">
+            <button class="ctrl-btn" id="exportButton">Export PNG</button>
+            <button class="ctrl-btn" id="dismissAllButton">Clear All</button>
+            <button class="ctrl-btn ar-btn" id="arButton">&#9670; AR View</button>
+        </div>
+    </div>
+
+    <!-- ============ AR OVERLAY (DOM Overlay for WebXR) ============ -->
+    <div id="ar-overlay">
+        <!-- Status bar -->
+        <div class="ar-status" id="arStatus">
+            <div class="ar-status-text">
+                <div class="ar-status-dot" id="arStatusDot"></div>
+                <span id="arStatusLabel">Scanning for surfaces…</span>
+            </div>
+        </div>
+
+        <!-- Crosshair reticle indicator -->
+        <div class="ar-crosshair" id="arCrosshair">
+            <svg viewBox="0 0 60 60" fill="none">
+                <circle cx="30" cy="30" r="24" stroke="#00d4ff" stroke-width="2" stroke-dasharray="6 4" opacity="0.7"/>
+                <circle cx="30" cy="30" r="4" fill="#00d4ff" opacity="0.9"/>
+                <line x1="30" y1="2" x2="30" y2="14" stroke="#00d4ff" stroke-width="1.5" opacity="0.5"/>
+                <line x1="30" y1="46" x2="30" y2="58" stroke="#00d4ff" stroke-width="1.5" opacity="0.5"/>
+                <line x1="2" y1="30" x2="14" y2="30" stroke="#00d4ff" stroke-width="1.5" opacity="0.5"/>
+                <line x1="46" y1="30" x2="58" y2="30" stroke="#00d4ff" stroke-width="1.5" opacity="0.5"/>
+            </svg>
+        </div>
+        <div class="ar-tap-prompt" id="arTapPrompt">Tap to place engine</div>
+
+        <!-- Collapsible HUD -->
+        <div class="ar-hud expanded" id="arHud">
+            <div class="ar-hud-header" id="arHudToggle">
+                <span class="ar-hud-title">AR Controls</span>
+                <div class="ar-hud-chevron">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M3 9L7 5L11 9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="ar-hud-body">
+                <div class="ar-hud-row">
+                    <span class="ar-hud-label">Pinch</span>
+                    <span class="ar-hud-info">Scale model up or down</span>
+                </div>
+                <div class="ar-hud-row">
+                    <span class="ar-hud-label">1 Finger</span>
+                    <span class="ar-hud-info">Rotate model around anchor</span>
+                </div>
+                <div class="ar-hud-row">
+                    <span class="ar-hud-label">2 Finger</span>
+                    <span class="ar-hud-info">Drag to reposition model</span>
+                </div>
+                <div class="ar-hud-row">
+                    <span class="ar-hud-label">Scale</span>
+                    <span class="ar-hud-info" id="arScaleReadout">1.00x</span>
+                </div>
+                <div class="ar-btn-row">
+                    <button class="ar-action-btn reset" id="arResetBtn">Reset Position</button>
+                    <button class="ar-action-btn exit-ar" id="arExitBtn">Exit AR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ FLOW DIAGRAM ============ -->
+    <div class="section-divider"></div>
+    <section class="section" id="flow-diagram">
+        <div class="section-label">System Architecture</div>
+        <h2 class="section-title">Minimal DHE Flow Diagram</h2>
+        <p class="section-desc">
+            The DART Hypersonic Edge thermal management architecture integrates
+            DATA Cooling, API Design drivers, and electron current flow pathways
+            from hypersonic edge cooling through computer hardware to cold and
+            vacuum design electron current flow.
+        </p>
+        <div class="flow-diagram-container">
+            <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/Flowchart.png"
+                 alt="Minimal DHE Flow Diagram" loading="lazy"
+                 onerror="this.parentElement.innerHTML='<p style=\'padding:60px;text-align:center;color:#7a8da6;font-size:14px;\'>Flow diagram not found.</p>'">
+        </div>
+    </section>
+
+    <!-- ============ SPECS ============ -->
+    <div class="section-divider"></div>
+    <section class="section" id="specs">
+        <div class="section-label">Technical Overview</div>
+        <h2 class="section-title">System Components</h2>
+        <div class="specs-grid">
+            <div class="spec-card"><div class="spec-icon"></div><h4>Fore Aerospike</h4><p>Forward aerospike geometry manages shockwave formation at hypersonic velocities, channeling thermal energy into the edge cooling system.</p></div>
+            <div class="spec-card"><div class="spec-icon"></div><h4>Aft Aerospike</h4><p>Rear aerospike completes the dual-spike configuration for optimized pressure distribution across the flight envelope.</p></div>
+            <div class="spec-card"><div class="spec-icon"></div><h4>TII-ZC Alloy</h4><p>DART Hypersonic Edge Alloy engineered for extreme thermal resilience at sustained hypersonic edge temperatures.</p></div>
+            <div class="spec-card"><div class="spec-icon"></div><h4>DATA Cooling</h4><p>Primary thermal management pathway driving heat dissipation through the API Design and Utility calculation categories.</p></div>
+            <div class="spec-card"><div class="spec-icon"></div><h4>Electron Current Flow</h4><p>Heat and cold electron current flow pathways integrated with computer hardware for active thermal state management.</p></div>
+            <div class="spec-card"><div class="spec-icon"></div><h4>Vacuum Design</h4><p>Cold and vacuum design electron current flow as the terminal stage of the minimal DHE flow architecture.</p></div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 <a href="https://www.dartmeadow.com">DART Meadow LLC</a> &bull; <a href="https://www.radicaldeepscale.com">Radical Deepscale LLC</a></p>
+    </footer>
+
+    <!-- ============ THREE.JS ============ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        // ==================================================================
+        //  SHARED STATE
+        // ==================================================================
+        var scene, camera, renderer, controls, raycaster, mouse;
+        var infoBoxes = {};
+        var keyLightObj, fillLightObj, backLightObj;
+        var loadedModel = null;       // reference to the loaded gltf.scene
+        var modelBBox = null;         // bounding box of loaded model
+        var modelMaxDim = 1;
+
+        var container = document.getElementById('three-container');
+        var loaderEl = document.getElementById('loader');
+        var heroOverlay = document.getElementById('heroOverlay');
+        var controlsPanel = document.getElementById('controlsPanel');
+
+        var MODEL_URL = 'https://github.com/radicaldeepscale/dartmeadow/raw/refs/heads/main/static/DART%20Hypersonic%20Edge%20Alloy.glb';
+        var FALLBACK_URL = 'https://static.wixstatic.com/3d/2451db_337e0b22a761460a878707831dafc940.glb';
+
+        // ==================================================================
+        //  STANDARD 3D VIEWER INIT
+        // ==================================================================
+        function init() {
+            scene = new THREE.Scene();
+            scene.add(new THREE.AmbientLight(0x1e2d45, 0.5));
+
+            var aspect = container.clientWidth / container.clientHeight;
+            camera = new THREE.PerspectiveCamera(40, aspect, 0.001, 10000);
+            camera.position.set(1.5, 0.8, 2.5);
+
+            renderer = new THREE.WebGLRenderer({
+                alpha: true, antialias: true, preserveDrawingBuffer: true
+            });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.15;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            // Enable XR on the renderer
+            renderer.xr.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.07;
+            controls.enablePan = true;
+            controls.minDistance = 0.3;
+            controls.maxDistance = 10;
+            controls.target.set(0, 0, 0);
+
+            keyLightObj = new THREE.DirectionalLight(0xffffff, 1);
+            keyLightObj.position.set(10, 10, 10);
+            scene.add(keyLightObj);
+
+            fillLightObj = new THREE.DirectionalLight(0x88bbff, 0.5);
+            fillLightObj.position.set(-10, 8, 8);
+            scene.add(fillLightObj);
+
+            backLightObj = new THREE.DirectionalLight(0x00d4ff, 0.2);
+            backLightObj.position.set(0, -5, -10);
+            scene.add(backLightObj);
+
+            scene.add(new THREE.HemisphereLight(0x1a2a40, 0x000000, 0.35));
+
+            // Load model
+            var gltfLoader = new THREE.GLTFLoader();
+
+            function loadModelFn(url, isFallback) {
+                gltfLoader.load(url,
+                    function(gltf) {
+                        loadedModel = gltf.scene;
+                        scene.add(loadedModel);
+
+                        loadedModel.traverse(function(child) {
+                            if (child.isMesh) {
+                                child.userData = { name: child.name };
+                                if (child.material) child.material.envMapIntensity = 1.2;
+                            }
+                        });
+
+                        // Auto-fit camera
+                        var box = new THREE.Box3().setFromObject(loadedModel);
+                        modelBBox = box;
+                        var center = box.getCenter(new THREE.Vector3());
+                        var size = box.getSize(new THREE.Vector3());
+                        modelMaxDim = Math.max(size.x, size.y, size.z);
+                        var fovRad = camera.fov * (Math.PI / 180);
+                        var dist = (modelMaxDim / (2 * Math.tan(fovRad / 2))) * 2.4;
+
+                        camera.position.set(center.x + dist * 0.35, center.y + dist * 0.2, center.z + dist);
+                        controls.target.copy(center);
+                        controls.update();
+                        camera.near = modelMaxDim / 200;
+                        camera.far = modelMaxDim * 200;
+                        camera.updateProjectionMatrix();
+                        controls.minDistance = modelMaxDim * 0.8;
+                        controls.maxDistance = modelMaxDim * 10;
+
+                        loaderEl.classList.add('loaded');
+                        startStandardLoop();
+
+                        // Check WebXR AR support and show button
+                        checkARSupport();
+                    },
+                    function(progress) {
+                        if (progress.total > 0) {
+                            var pct = Math.round((progress.loaded / progress.total) * 100);
+                            document.querySelector('.loader-text').textContent = 'Loading ' + pct + '%';
+                        }
+                    },
+                    function(error) {
+                        if (!isFallback) {
+                            console.warn('GitHub GLB failed, trying Wix CDN…');
+                            loadModelFn(FALLBACK_URL, true);
+                        } else {
+                            console.error('All model sources failed:', error);
+                            document.querySelector('.loader-text').textContent = 'Model unavailable';
+                            loaderEl.classList.add('loaded');
+                            startStandardLoop();
+                        }
+                    }
+                );
+            }
+
+            loadModelFn(MODEL_URL, false);
+
+            // Raycaster
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            renderer.domElement.addEventListener('click', onCanvasClick, false);
+            renderer.domElement.addEventListener('touchend', onCanvasTouch, false);
+            window.addEventListener('resize', onResize);
+
+            document.getElementById('keyLight').addEventListener('input', function(e) { keyLightObj.intensity = parseFloat(e.target.value); });
+            document.getElementById('fillLight').addEventListener('input', function(e) { fillLightObj.intensity = parseFloat(e.target.value); });
+            document.getElementById('backLight').addEventListener('input', function(e) { backLightObj.intensity = parseFloat(e.target.value); });
+
+            document.getElementById('exportButton').addEventListener('click', function() {
+                renderer.render(scene, camera);
+                var a = document.createElement('a');
+                a.href = renderer.domElement.toDataURL('image/png');
+                a.download = 'DART_Hypersonic_Edge.png';
+                a.click();
+            });
+
+            document.getElementById('dismissAllButton').addEventListener('click', dismissAllInfoBoxes);
+
+            // AR button
+            document.getElementById('arButton').addEventListener('click', startAR);
+
+            var interacting = false;
+            controls.addEventListener('start', function() { interacting = true; heroOverlay.style.opacity = '0'; });
+            controls.addEventListener('end', function() { interacting = false; setTimeout(function() { if (!interacting) heroOverlay.style.opacity = '1'; }, 600); });
+
+            window.addEventListener('scroll', function() {
+                var heroBottom = document.getElementById('hero').getBoundingClientRect().bottom;
+                controlsPanel.classList.toggle('hidden', heroBottom < 100);
+            });
+        }
+
+        // Standard animation loop (non-XR)
+        var standardLoopRunning = false;
+        function startStandardLoop() {
+            if (standardLoopRunning) return;
+            standardLoopRunning = true;
+            renderer.setAnimationLoop(null); // clear XR loop if any
+            requestAnimationFrame(standardAnimate);
+        }
+        function standardAnimate() {
+            if (!standardLoopRunning) return;
+            requestAnimationFrame(standardAnimate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        function stopStandardLoop() {
+            standardLoopRunning = false;
+        }
+
+        // ==================================================================
+        //  CLICK / TOUCH INTERACTION (standard mode)
+        // ==================================================================
+        var orbitMoved = false, orbitStartX = 0, orbitStartY = 0;
+        document.addEventListener('pointerdown', function(e) { orbitStartX = e.clientX; orbitStartY = e.clientY; orbitMoved = false; });
+        document.addEventListener('pointermove', function(e) { if (Math.abs(e.clientX - orbitStartX) > 8 || Math.abs(e.clientY - orbitStartY) > 8) orbitMoved = true; });
+
+        function getIntersection(clientX, clientY) {
+            var rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            return raycaster.intersectObjects(scene.children, true);
+        }
+        function onCanvasClick(event) {
+            if (orbitMoved) return;
+            var hits = getIntersection(event.clientX, event.clientY);
+            if (hits.length > 0 && hits[0].object.userData.name) {
+                showInfo(hits[0].object.userData.name, 'Component: ' + hits[0].object.userData.name, hits[0].point);
+            } else { dismissAllInfoBoxes(); }
+        }
+        function onCanvasTouch(event) {
+            if (orbitMoved) return;
+            if (event.changedTouches && event.changedTouches.length === 1) {
+                var t = event.changedTouches[0];
+                var hits = getIntersection(t.clientX, t.clientY);
+                if (hits.length > 0 && hits[0].object.userData.name) {
+                    showInfo(hits[0].object.userData.name, 'Component: ' + hits[0].object.userData.name, hits[0].point);
+                } else { dismissAllInfoBoxes(); }
+            }
+        }
+        function showInfo(name, content, position) {
+            var box = infoBoxes[name];
+            if (!box) {
+                box = document.createElement('div');
+                box.className = 'info-box';
+                var safe = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                box.innerHTML = '<h3>' + name + '</h3><p>' + content + '</p><button onclick="window._dismissInfo(\'' + safe + '\')">Dismiss</button>';
+                container.appendChild(box);
+                infoBoxes[name] = box;
+            }
+            var v = new THREE.Vector3(position.x, position.y, position.z).project(camera);
+            var x = (v.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+            var y = (v.y * -0.5 + 0.5) * renderer.domElement.clientHeight;
+            box.style.left = Math.min(Math.max(12, x), renderer.domElement.clientWidth - 260) + 'px';
+            box.style.top = Math.min(Math.max(12, y), renderer.domElement.clientHeight - 130) + 'px';
+            box.style.display = 'block';
+        }
+        function dismissInfo(name) { if (infoBoxes[name]) infoBoxes[name].style.display = 'none'; }
+        function dismissAllInfoBoxes() { for (var k in infoBoxes) if (infoBoxes.hasOwnProperty(k)) infoBoxes[k].style.display = 'none'; }
+        window._dismissInfo = dismissInfo;
+
+        function onResize() {
+            var w = container.clientWidth, h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+
+        // ==================================================================
+        //  WEBXR AUGMENTED REALITY
+        // ==================================================================
+        var arSession = null;
+        var arScene, arCamera, arReticle, arModel;
+        var hitTestSource = null;
+        var hitTestSourceRequested = false;
+        var arModelPlaced = false;
+        var arAnchorMatrix = new THREE.Matrix4();
+
+        // AR gesture state
+        var arScale = 1.0;
+        var arRotationY = 0;
+        var arOffsetX = 0, arOffsetZ = 0;
+        var arInitialPlacePos = new THREE.Vector3();
+
+        // Touch tracking for AR gestures
+        var arTouches = {};
+        var arPrevPinchDist = 0;
+        var arPrevTwoCenter = null;
+        var arPrevOneAngle = null;
+        var arPrevOnePos = null;
+
+        // DOM elements
+        var arOverlay = document.getElementById('ar-overlay');
+        var arStatusDot = document.getElementById('arStatusDot');
+        var arStatusLabel = document.getElementById('arStatusLabel');
+        var arCrosshair = document.getElementById('arCrosshair');
+        var arTapPrompt = document.getElementById('arTapPrompt');
+        var arHud = document.getElementById('arHud');
+        var arScaleReadout = document.getElementById('arScaleReadout');
+
+        var arSupported = false;
+
+        function checkARSupport() {
+            var btn = document.getElementById('arButton');
+            if (navigator.xr) {
+                navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
+                    arSupported = supported;
+                    if (supported) {
+                        btn.classList.add('ar-ready');
+                    }
+                }).catch(function() {});
+            }
+        }
+
+        function startAR() {
+            if (!loadedModel) {
+                alert('Model is still loading. Please wait.');
+                return;
+            }
+            if (!navigator.xr) {
+                alert('WebXR is not available on this browser. Try opening this page in Chrome on an ARCore-supported Android device.');
+                return;
+            }
+            // Check support on-the-fly if not already confirmed
+            navigator.xr.isSessionSupported('immersive-ar').then(function(supported) {
+                if (!supported) {
+                    alert('Augmented Reality is not supported on this device. Requires an ARCore-compatible Android device with Chrome.');
+                    return;
+                }
+                var sessionOptions = {
+                    requiredFeatures: ['hit-test', 'local-floor'],
+                    optionalFeatures: ['dom-overlay'],
+                    domOverlay: { root: arOverlay }
+                };
+                navigator.xr.requestSession('immersive-ar', sessionOptions).then(onARSessionStarted).catch(function(err) {
+                    console.error('AR session failed:', err);
+                    alert('Could not start AR session. Ensure camera permissions are granted and you are using HTTPS.');
+                });
+            }).catch(function(err) {
+                alert('AR check failed: ' + err.message);
+            });
+        }
+
+        function onARSessionStarted(session) {
+            arSession = session;
+
+            // Stop standard rendering
+            stopStandardLoop();
+
+            // Show AR overlay
+            arOverlay.classList.add('active');
+
+            // Reset state
+            arModelPlaced = false;
+            arScale = 1.0;
+            arRotationY = 0;
+            arOffsetX = 0;
+            arOffsetZ = 0;
+            hitTestSource = null;
+            hitTestSourceRequested = false;
+            arScaleReadout.textContent = '1.00x';
+            arStatusDot.classList.remove('placed');
+            arStatusLabel.textContent = 'Scanning for surfaces…';
+            arCrosshair.classList.add('visible');
+            arTapPrompt.classList.add('visible');
+            arHud.classList.remove('collapsed');
+            arHud.classList.add('expanded');
+
+            // Create AR scene
+            arScene = new THREE.Scene();
+            arScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            var arDirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            arDirLight.position.set(5, 10, 5);
+            arScene.add(arDirLight);
+            var arHemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5);
+            arScene.add(arHemi);
+
+            // AR camera
+            arCamera = new THREE.PerspectiveCamera();
+
+            // Reticle (ring on detected surface)
+            var reticleGeo = new THREE.RingGeometry(0.04, 0.055, 32).rotateX(-Math.PI / 2);
+            var reticleMat = new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+            arReticle = new THREE.Mesh(reticleGeo, reticleMat);
+            arReticle.visible = false;
+            arReticle.matrixAutoUpdate = false;
+            arScene.add(arReticle);
+
+            // Clone model for AR
+            arModel = loadedModel.clone();
+            // Normalize scale: fit model into ~0.3m for AR
+            var arTargetSize = 0.3;
+            var arModelScale = arTargetSize / modelMaxDim;
+            arModel.scale.set(arModelScale, arModelScale, arModelScale);
+            // Center the model at its bounding box center
+            var center = modelBBox.getCenter(new THREE.Vector3());
+            arModel.position.set(-center.x * arModelScale, -center.y * arModelScale, -center.z * arModelScale);
+            // Wrap in a group for easy transform
+            var arModelGroup = new THREE.Group();
+            arModelGroup.add(arModel);
+            arModelGroup.visible = false;
+            arScene.add(arModelGroup);
+            arModel._group = arModelGroup;
+            arModel._baseScale = arModelScale;
+
+            // Configure renderer for XR
+            renderer.xr.setReferenceSpaceType('local-floor');
+            renderer.xr.setSession(session);
+
+            // XR animation loop
+            renderer.setAnimationLoop(arRenderLoop);
+
+            // Session events
+            session.addEventListener('end', onARSessionEnded);
+
+            // Touch events on AR overlay for gestures
+            arOverlay.addEventListener('touchstart', arTouchStart, { passive: false });
+            arOverlay.addEventListener('touchmove', arTouchMove, { passive: false });
+            arOverlay.addEventListener('touchend', arTouchEnd, { passive: false });
+
+            // Select event for placing model
+            session.addEventListener('select', onARSelect);
+
+            // HUD toggle
+            document.getElementById('arHudToggle').addEventListener('click', toggleHud);
+            document.getElementById('arResetBtn').addEventListener('click', arResetPosition);
+            document.getElementById('arExitBtn').addEventListener('click', exitAR);
+        }
+
+        function arRenderLoop(timestamp, frame) {
+            if (!arSession || !frame) return;
+
+            var refSpace = renderer.xr.getReferenceSpace();
+
+            // Request hit test source once
+            if (!hitTestSourceRequested) {
+                hitTestSourceRequested = true;
+                arSession.requestReferenceSpace('viewer').then(function(viewerSpace) {
+                    arSession.requestHitTestSource({ space: viewerSpace }).then(function(source) {
+                        hitTestSource = source;
+                    }).catch(function(e) {
+                        console.warn('Hit test source failed:', e);
+                    });
+                });
+            }
+
+            // Hit test
+            if (hitTestSource && !arModelPlaced) {
+                var hitResults = frame.getHitTestResults(hitTestSource);
+                if (hitResults.length > 0) {
+                    var hit = hitResults[0];
+                    var pose = hit.getPose(refSpace);
+                    if (pose) {
+                        arReticle.visible = true;
+                        arReticle.matrix.fromArray(pose.transform.matrix);
+                        arCrosshair.classList.remove('visible');
+                        arTapPrompt.textContent = 'Tap to place engine';
+                        arTapPrompt.classList.add('visible');
+                        arStatusLabel.textContent = 'Surface detected — tap to place';
+                    }
+                } else {
+                    arReticle.visible = false;
+                    arCrosshair.classList.add('visible');
+                    arTapPrompt.textContent = 'Point at a flat surface';
+                    arTapPrompt.classList.add('visible');
+                    arStatusLabel.textContent = 'Scanning for surfaces…';
+                }
+            }
+
+            // Update placed model transform
+            if (arModelPlaced && arModel._group) {
+                var g = arModel._group;
+                var s = arModel._baseScale * arScale;
+                g.scale.set(s, s, s);
+                g.rotation.set(0, arRotationY, 0);
+                g.position.set(
+                    arInitialPlacePos.x + arOffsetX,
+                    arInitialPlacePos.y,
+                    arInitialPlacePos.z + arOffsetZ
+                );
+            }
+
+            renderer.render(arScene, arCamera);
+        }
+
+        function onARSelect() {
+            if (arModelPlaced) return;
+            if (arReticle.visible) {
+                arModelPlaced = true;
+
+                // Place model at reticle
+                var pos = new THREE.Vector3();
+                pos.setFromMatrixPosition(arReticle.matrix);
+                arInitialPlacePos.copy(pos);
+
+                arModel._group.position.copy(pos);
+                arModel._group.visible = true;
+
+                arReticle.visible = false;
+                arCrosshair.classList.remove('visible');
+                arTapPrompt.classList.remove('visible');
+                arStatusDot.classList.add('placed');
+                arStatusLabel.textContent = 'Engine placed — use gestures to manipulate';
+            }
+        }
+
+        // ==================================================================
+        //  AR TOUCH GESTURES
+        // ==================================================================
+        function arTouchStart(e) {
+            // Don't intercept touches on HUD buttons
+            if (e.target.closest('.ar-hud') || e.target.closest('.ar-status')) return;
+            if (!arModelPlaced) return;
+
+            for (var i = 0; i < e.changedTouches.length; i++) {
+                var t = e.changedTouches[i];
+                arTouches[t.identifier] = { x: t.clientX, y: t.clientY };
+            }
+
+            var keys = Object.keys(arTouches);
+            if (keys.length === 2) {
+                var t1 = arTouches[keys[0]], t2 = arTouches[keys[1]];
+                arPrevPinchDist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
+                arPrevTwoCenter = { x: (t1.x + t2.x) / 2, y: (t1.y + t2.y) / 2 };
+            } else if (keys.length === 1) {
+                arPrevOnePos = { x: arTouches[keys[0]].x, y: arTouches[keys[0]].y };
+            }
+        }
+
+        function arTouchMove(e) {
+            if (e.target.closest('.ar-hud') || e.target.closest('.ar-status')) return;
+            if (!arModelPlaced) return;
+            e.preventDefault();
+
+            for (var i = 0; i < e.changedTouches.length; i++) {
+                var t = e.changedTouches[i];
+                arTouches[t.identifier] = { x: t.clientX, y: t.clientY };
+            }
+
+            var keys = Object.keys(arTouches);
+
+            if (keys.length === 2) {
+                // Two-finger: pinch to scale + drag to translate
+                var t1 = arTouches[keys[0]], t2 = arTouches[keys[1]];
+                var dist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
+                var center = { x: (t1.x + t2.x) / 2, y: (t1.y + t2.y) / 2 };
+
+                if (arPrevPinchDist > 0) {
+                    var scaleFactor = dist / arPrevPinchDist;
+                    arScale = Math.max(0.1, Math.min(5.0, arScale * scaleFactor));
+                    arScaleReadout.textContent = arScale.toFixed(2) + 'x';
+                }
+
+                if (arPrevTwoCenter) {
+                    var dx = (center.x - arPrevTwoCenter.x) * 0.001;
+                    var dy = (center.y - arPrevTwoCenter.y) * 0.001;
+                    arOffsetX += dx;
+                    arOffsetZ += dy;
+                }
+
+                arPrevPinchDist = dist;
+                arPrevTwoCenter = center;
+
+            } else if (keys.length === 1) {
+                // One-finger: rotate
+                var pos = arTouches[keys[0]];
+                if (arPrevOnePos) {
+                    var dx = pos.x - arPrevOnePos.x;
+                    arRotationY += dx * 0.008;
+                }
+                arPrevOnePos = { x: pos.x, y: pos.y };
+            }
+        }
+
+        function arTouchEnd(e) {
+            for (var i = 0; i < e.changedTouches.length; i++) {
+                delete arTouches[e.changedTouches[i].identifier];
+            }
+            var keys = Object.keys(arTouches);
+            if (keys.length < 2) {
+                arPrevPinchDist = 0;
+                arPrevTwoCenter = null;
+            }
+            if (keys.length < 1) {
+                arPrevOnePos = null;
+            }
+            // Re-init for remaining touches
+            if (keys.length === 1) {
+                arPrevOnePos = { x: arTouches[keys[0]].x, y: arTouches[keys[0]].y };
+            }
+        }
+
+        // ==================================================================
+        //  AR HUD CONTROLS
+        // ==================================================================
+        function toggleHud() {
+            if (arHud.classList.contains('expanded')) {
+                arHud.classList.remove('expanded');
+                arHud.classList.add('collapsed');
+            } else {
+                arHud.classList.remove('collapsed');
+                arHud.classList.add('expanded');
+            }
+        }
+
+        function arResetPosition() {
+            arScale = 1.0;
+            arRotationY = 0;
+            arOffsetX = 0;
+            arOffsetZ = 0;
+            arScaleReadout.textContent = '1.00x';
+            // If model was placed, reset to original anchor
+            if (arModel && arModel._group) {
+                arModel._group.position.copy(arInitialPlacePos);
+                var s = arModel._baseScale;
+                arModel._group.scale.set(s, s, s);
+                arModel._group.rotation.set(0, 0, 0);
+            }
+        }
+
+        function exitAR() {
+            if (arSession) {
+                arSession.end();
+            }
+        }
+
+        function onARSessionEnded() {
+            arSession = null;
+            hitTestSource = null;
+            hitTestSourceRequested = false;
+            arModelPlaced = false;
+
+            // Teardown
+            arOverlay.classList.remove('active');
+            arCrosshair.classList.remove('visible');
+            arTapPrompt.classList.remove('visible');
+
+            // Remove AR event listeners
+            arOverlay.removeEventListener('touchstart', arTouchStart);
+            arOverlay.removeEventListener('touchmove', arTouchMove);
+            arOverlay.removeEventListener('touchend', arTouchEnd);
+
+            // Clean AR scene
+            if (arScene) {
+                arScene.traverse(function(obj) {
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) {
+                        if (Array.isArray(obj.material)) obj.material.forEach(function(m) { m.dispose(); });
+                        else obj.material.dispose();
+                    }
+                });
+            }
+            arScene = null;
+            arModel = null;
+
+            // Clear XR loop and restart standard rendering
+            renderer.setAnimationLoop(null);
+            renderer.xr.setSession(null);
+
+            // Reset renderer size
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+
+            startStandardLoop();
+        }
+
+        // ==================================================================
+        //  BOOTSTRAP
+        // ==================================================================
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>
