@@ -383,10 +383,15 @@
         #ar-overlay {
             display: none;
             position: fixed; inset: 0; z-index: 500;
-            pointer-events: none;
             font-family: var(--font-body);
         }
         #ar-overlay.active { display: block; }
+
+        /* Full-screen gesture capture area — sits behind HUD elements */
+        #ar-gesture-area {
+            position: fixed; inset: 0; z-index: 501;
+            touch-action: none;
+        }
 
         /* AR status banner */
         .ar-status {
@@ -395,7 +400,7 @@
             background: rgba(6, 8, 16, 0.75);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border-glass);
-            pointer-events: auto; z-index: 510;
+            z-index: 520;
         }
         .ar-status-text {
             font-family: var(--font-display); font-size: 11px; font-weight: 500;
@@ -422,7 +427,7 @@
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-glass); border-radius: 16px;
             box-shadow: 0 8px 40px rgba(0,0,0,0.7);
-            pointer-events: auto; z-index: 510;
+            pointer-events: auto; z-index: 520;
             overflow: hidden;
             transition: max-height 0.35s ease;
         }
@@ -493,7 +498,7 @@
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             width: 60px; height: 60px;
-            pointer-events: none; z-index: 505;
+            pointer-events: none; z-index: 515;
             opacity: 0; transition: opacity 0.3s;
         }
         .ar-crosshair.visible { opacity: 1; }
@@ -627,6 +632,9 @@
 
     <!-- ============ AR OVERLAY (DOM Overlay for WebXR) ============ -->
     <div id="ar-overlay">
+        <!-- Full-screen gesture capture area -->
+        <div id="ar-gesture-area"></div>
+
         <!-- Status bar -->
         <div class="ar-status" id="arStatus">
             <div class="ar-status-text">
@@ -660,16 +668,16 @@
             </div>
             <div class="ar-hud-body">
                 <div class="ar-hud-row">
-                    <span class="ar-hud-label">Pinch</span>
-                    <span class="ar-hud-info">Scale model up or down</span>
+                    <span class="ar-hud-label">1 Finger</span>
+                    <span class="ar-hud-info">Drag to move &amp; reposition</span>
                 </div>
                 <div class="ar-hud-row">
-                    <span class="ar-hud-label">1 Finger</span>
-                    <span class="ar-hud-info">Rotate model around anchor</span>
+                    <span class="ar-hud-label">Pinch</span>
+                    <span class="ar-hud-info">Zoom — scale model up or down</span>
                 </div>
                 <div class="ar-hud-row">
                     <span class="ar-hud-label">2 Finger</span>
-                    <span class="ar-hud-info">Drag to reposition model</span>
+                    <span class="ar-hud-info">Twist to rotate model</span>
                 </div>
                 <div class="ar-hud-row">
                     <span class="ar-hud-label">Scale</span>
@@ -981,13 +989,6 @@
         var arOffsetX = 0, arOffsetZ = 0;
         var arInitialPlacePos = new THREE.Vector3();
 
-        // Touch tracking for AR gestures
-        var arTouches = {};
-        var arPrevPinchDist = 0;
-        var arPrevTwoCenter = null;
-        var arPrevOneAngle = null;
-        var arPrevOnePos = null;
-
         // DOM elements
         var arOverlay = document.getElementById('ar-overlay');
         var arStatusDot = document.getElementById('arStatusDot');
@@ -1112,10 +1113,12 @@
             // Session events
             session.addEventListener('end', onARSessionEnded);
 
-            // Touch events on AR overlay for gestures
-            arOverlay.addEventListener('touchstart', arTouchStart, { passive: false });
-            arOverlay.addEventListener('touchmove', arTouchMove, { passive: false });
-            arOverlay.addEventListener('touchend', arTouchEnd, { passive: false });
+            // Touch events on dedicated gesture area
+            var gestureArea = document.getElementById('ar-gesture-area');
+            gestureArea.addEventListener('touchstart', arTouchStart, { passive: false });
+            gestureArea.addEventListener('touchmove', arTouchMove, { passive: false });
+            gestureArea.addEventListener('touchend', arTouchEnd, { passive: false });
+            gestureArea.addEventListener('touchcancel', arTouchEnd, { passive: false });
 
             // Select event for placing model
             session.addEventListener('select', onARSelect);
@@ -1205,87 +1208,121 @@
 
         // ==================================================================
         //  AR TOUCH GESTURES
+        //  1 finger drag  → reposition (move model)
+        //  Pinch in/out    → scale
+        //  2-finger twist  → rotate
         // ==================================================================
+        var arActiveTouches = {};
+        var arPrevPinchDist = 0;
+        var arPrevTwoAngle = 0;
+        var arPrevOneX = 0;
+        var arPrevOneY = 0;
+        var arGestureStarted = false;
+
         function arTouchStart(e) {
-            // Don't intercept touches on HUD buttons
-            if (e.target.closest('.ar-hud') || e.target.closest('.ar-status')) return;
             if (!arModelPlaced) return;
+            e.preventDefault();
+            e.stopPropagation();
 
             for (var i = 0; i < e.changedTouches.length; i++) {
                 var t = e.changedTouches[i];
-                arTouches[t.identifier] = { x: t.clientX, y: t.clientY };
+                arActiveTouches[t.identifier] = { x: t.clientX, y: t.clientY };
             }
 
-            var keys = Object.keys(arTouches);
-            if (keys.length === 2) {
-                var t1 = arTouches[keys[0]], t2 = arTouches[keys[1]];
-                arPrevPinchDist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
-                arPrevTwoCenter = { x: (t1.x + t2.x) / 2, y: (t1.y + t2.y) / 2 };
-            } else if (keys.length === 1) {
-                arPrevOnePos = { x: arTouches[keys[0]].x, y: arTouches[keys[0]].y };
+            var ids = Object.keys(arActiveTouches);
+            if (ids.length === 2) {
+                var a = arActiveTouches[ids[0]], b = arActiveTouches[ids[1]];
+                arPrevPinchDist = Math.hypot(b.x - a.x, b.y - a.y);
+                arPrevTwoAngle = Math.atan2(b.y - a.y, b.x - a.x);
+            } else if (ids.length === 1) {
+                var p = arActiveTouches[ids[0]];
+                arPrevOneX = p.x;
+                arPrevOneY = p.y;
             }
+            arGestureStarted = true;
         }
 
         function arTouchMove(e) {
-            if (e.target.closest('.ar-hud') || e.target.closest('.ar-status')) return;
-            if (!arModelPlaced) return;
+            if (!arModelPlaced || !arGestureStarted) return;
             e.preventDefault();
+            e.stopPropagation();
 
+            // Update stored positions
             for (var i = 0; i < e.changedTouches.length; i++) {
                 var t = e.changedTouches[i];
-                arTouches[t.identifier] = { x: t.clientX, y: t.clientY };
+                if (arActiveTouches[t.identifier] !== undefined) {
+                    arActiveTouches[t.identifier] = { x: t.clientX, y: t.clientY };
+                }
             }
 
-            var keys = Object.keys(arTouches);
+            var ids = Object.keys(arActiveTouches);
 
-            if (keys.length === 2) {
-                // Two-finger: pinch to scale + drag to translate
-                var t1 = arTouches[keys[0]], t2 = arTouches[keys[1]];
-                var dist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
-                var center = { x: (t1.x + t2.x) / 2, y: (t1.y + t2.y) / 2 };
+            if (ids.length >= 2) {
+                // === TWO FINGER: pinch to scale + twist to rotate ===
+                var a = arActiveTouches[ids[0]], b = arActiveTouches[ids[1]];
+                var dist = Math.hypot(b.x - a.x, b.y - a.y);
+                var angle = Math.atan2(b.y - a.y, b.x - a.x);
 
-                if (arPrevPinchDist > 0) {
+                // Pinch → scale
+                if (arPrevPinchDist > 0 && dist > 0) {
                     var scaleFactor = dist / arPrevPinchDist;
-                    arScale = Math.max(0.1, Math.min(5.0, arScale * scaleFactor));
+                    arScale = Math.max(0.05, Math.min(10.0, arScale * scaleFactor));
                     arScaleReadout.textContent = arScale.toFixed(2) + 'x';
                 }
 
-                if (arPrevTwoCenter) {
-                    var dx = (center.x - arPrevTwoCenter.x) * 0.001;
-                    var dy = (center.y - arPrevTwoCenter.y) * 0.001;
-                    arOffsetX += dx;
-                    arOffsetZ += dy;
+                // Twist → rotate
+                if (arPrevTwoAngle !== null) {
+                    var angleDelta = angle - arPrevTwoAngle;
+                    // Normalize to avoid jumps at ±PI
+                    if (angleDelta > Math.PI) angleDelta -= 2 * Math.PI;
+                    if (angleDelta < -Math.PI) angleDelta += 2 * Math.PI;
+                    arRotationY += angleDelta;
                 }
 
                 arPrevPinchDist = dist;
-                arPrevTwoCenter = center;
+                arPrevTwoAngle = angle;
 
-            } else if (keys.length === 1) {
-                // One-finger: rotate
-                var pos = arTouches[keys[0]];
-                if (arPrevOnePos) {
-                    var dx = pos.x - arPrevOnePos.x;
-                    arRotationY += dx * 0.008;
-                }
-                arPrevOnePos = { x: pos.x, y: pos.y };
+            } else if (ids.length === 1) {
+                // === ONE FINGER: drag to reposition ===
+                var p = arActiveTouches[ids[0]];
+                var dx = p.x - arPrevOneX;
+                var dy = p.y - arPrevOneY;
+
+                // Convert screen-space drag to world-space XZ movement
+                // Scale factor based on viewport size for natural feel
+                var screenW = window.innerWidth || 360;
+                var moveSpeed = (arScale * modelMaxDim * 2.0) / screenW;
+
+                arOffsetX += dx * moveSpeed;
+                arOffsetZ += dy * moveSpeed;
+
+                arPrevOneX = p.x;
+                arPrevOneY = p.y;
             }
         }
 
         function arTouchEnd(e) {
             for (var i = 0; i < e.changedTouches.length; i++) {
-                delete arTouches[e.changedTouches[i].identifier];
+                delete arActiveTouches[e.changedTouches[i].identifier];
             }
-            var keys = Object.keys(arTouches);
-            if (keys.length < 2) {
+
+            var ids = Object.keys(arActiveTouches);
+
+            // Reset two-finger state when going below 2 touches
+            if (ids.length < 2) {
                 arPrevPinchDist = 0;
-                arPrevTwoCenter = null;
+                arPrevTwoAngle = 0;
             }
-            if (keys.length < 1) {
-                arPrevOnePos = null;
+
+            // If one finger remains, re-init its prev position
+            if (ids.length === 1) {
+                var remaining = arActiveTouches[ids[0]];
+                arPrevOneX = remaining.x;
+                arPrevOneY = remaining.y;
             }
-            // Re-init for remaining touches
-            if (keys.length === 1) {
-                arPrevOnePos = { x: arTouches[keys[0]].x, y: arTouches[keys[0]].y };
+
+            if (ids.length === 0) {
+                arGestureStarted = false;
             }
         }
 
@@ -1335,9 +1372,13 @@
             arTapPrompt.classList.remove('visible');
 
             // Remove AR event listeners
-            arOverlay.removeEventListener('touchstart', arTouchStart);
-            arOverlay.removeEventListener('touchmove', arTouchMove);
-            arOverlay.removeEventListener('touchend', arTouchEnd);
+            var gestureArea = document.getElementById('ar-gesture-area');
+            if (gestureArea) {
+                gestureArea.removeEventListener('touchstart', arTouchStart);
+                gestureArea.removeEventListener('touchmove', arTouchMove);
+                gestureArea.removeEventListener('touchend', arTouchEnd);
+                gestureArea.removeEventListener('touchcancel', arTouchEnd);
+            }
 
             // Clean AR scene
             if (arScene) {
