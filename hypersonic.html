@@ -366,6 +366,97 @@
             font-size: 14px; font-weight: 400; color: var(--text-secondary); line-height: 1.65;
         }
 
+        /* ============================================================
+           TII-ZC ALLOY RESEARCH SECTION
+           ============================================================ */
+        .media-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .media-card {
+            background: rgba(8, 12, 24, 0.6);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .media-card:hover {
+            border-color: var(--cyan-dim);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+        .media-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .media-card-caption {
+            padding: 16px 18px;
+        }
+        .media-card-caption h4 {
+            font-family: var(--font-display);
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--cyan); margin-bottom: 6px;
+        }
+        .media-card-caption p {
+            font-size: 13px; font-weight: 400;
+            color: var(--text-secondary); line-height: 1.6;
+        }
+        .media-card.full-width {
+            grid-column: 1 / -1;
+        }
+        .media-card.full-width img {
+            max-height: 400px;
+            object-fit: contain;
+            background: #0a0e18;
+        }
+
+        .doc-link-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 36px;
+        }
+        .doc-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--cyan);
+            background: rgba(0,212,255,0.06);
+            border: 1px solid var(--cyan-dim);
+            border-radius: 8px;
+            padding: 14px 24px;
+            text-decoration: none;
+            transition: all 0.25s;
+            min-height: 48px;
+        }
+        .doc-link-btn:hover {
+            background: rgba(0,212,255,0.12);
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px var(--cyan-glow);
+            color: #fff;
+        }
+        .doc-link-btn svg {
+            width: 18px; height: 18px;
+            stroke: currentColor; fill: none;
+            stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .doc-link-note {
+            font-size: 13px; color: var(--text-tertiary);
+        }
+
+        @media (max-width: 640px) {
+            .media-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         footer {
             position: relative; z-index: 1; text-align: center;
             padding: 48px 24px; border-top: 1px solid var(--border-glass);
@@ -591,6 +682,7 @@
             <a href="https://www.dartmeadow.com">Home</a>
             <a href="#flow-diagram">Flow Diagram</a>
             <a href="#specs">Specs</a>
+            <a href="#tii-zc">TII-ZC</a>
         </nav>
     </header>
 
@@ -721,6 +813,73 @@
             <div class="spec-card"><div class="spec-icon"></div><h4>DATA Cooling</h4><p>Primary thermal management pathway driving heat dissipation through the API Design and Utility calculation categories.</p></div>
             <div class="spec-card"><div class="spec-icon"></div><h4>Electron Current Flow</h4><p>Heat and cold electron current flow pathways integrated with computer hardware for active thermal state management.</p></div>
             <div class="spec-card"><div class="spec-icon"></div><h4>Vacuum Design</h4><p>Cold and vacuum design electron current flow as the terminal stage of the minimal DHE flow architecture.</p></div>
+        </div>
+    </section>
+
+    <!-- ============ TII-ZC ALLOY RESEARCH ============ -->
+    <div class="section-divider"></div>
+    <section class="section" id="tii-zc">
+        <div class="section-label">Materials Research</div>
+        <h2 class="section-title">TII-ZC Alloy Composition</h2>
+        <p class="section-desc">
+            The DART Hypersonic Edge Alloy TII-ZC is a multi-element compound
+            engineered for extreme thermal resilience at sustained hypersonic edge
+            temperatures. Modeled and validated in the Arc Lake Chemistry Research
+            Lab, the alloy's atomic structure combines Calcium, Sulfur, Nickel,
+            Silicon, Zirconium, Tungsten, and Boron in a bonded lattice optimized
+            for thermal conductivity and structural integrity under aerodynamic
+            heating.
+        </p>
+
+        <div class="media-grid">
+            <!-- ArcLake 3D Atom Visualization -->
+            <div class="media-card">
+                <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dheal.png"
+                     alt="Arc Lake — TII-ZC Alloy 3D Atom Visualization"
+                     loading="lazy">
+                <div class="media-card-caption">
+                    <h4>3D Atom Visualization</h4>
+                    <p>Arc Lake Chemistry Research Lab rendering of the TII-ZC alloy compound
+                       with Fibonacci sphere nucleus packing and per-shell electron coloring.
+                       Elements: AL, SI, PH, SU, CH, AR, PO, CA.</p>
+                </div>
+            </div>
+
+            <!-- ArcLake Molecule Canvas -->
+            <div class="media-card">
+                <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/dhemol.png"
+                     alt="Arc Lake — TII-ZC Molecular Bond Structure"
+                     loading="lazy">
+                <div class="media-card-caption">
+                    <h4>Molecular Bond Structure</h4>
+                    <p>2D molecule canvas showing the TII-ZC inter-element bond network.
+                       7 atoms, 11 bonds — Calcium, Sulfur, Nickel, Silicon, Zirconium,
+                       Tungsten, and Boron in the optimized lattice configuration.</p>
+                </div>
+            </div>
+
+            <!-- TII-ZC Animated Particle Visualization -->
+            <div class="media-card full-width">
+                <img src="https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/refs/heads/main/static/T11-ZC.gif"
+                     alt="TII-ZC Alloy — Animated Particle Field Visualization"
+                     loading="lazy">
+                <div class="media-card-caption">
+                    <h4>TII-ZC Particle Field</h4>
+                    <p>Animated visualization of the TII-ZC alloy particle distribution
+                       showing proton, neutron, and electron shell arrangements across the
+                       compound's atomic groups.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Link -->
+        <div class="doc-link-row">
+            <a href="https://github.com/radicaldeepscale/dartmeadow/blob/main/DART%20Hypersonic%20Edge%20Alloy%20T11-ZC.pdf"
+               target="_blank" rel="noopener" class="doc-link-btn">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                TII-ZC Technical Documentation (PDF)
+            </a>
+            <span class="doc-link-note">Full alloy specification &amp; material analysis</span>
         </div>
     </section>
 
