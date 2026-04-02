@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hercules Alloy — DART Meadow</title>
+<meta name="description" content="Hercules Alloy — A high-performance 6-element aerospace alloy by DART Meadow LLC and Radical Deepscale LLC.">
+<meta property="og:title" content="Hercules Alloy — DART Meadow">
+<meta property="og:description" content="High-performance 6-element aerospace alloy for the Hercules hammer head. Titanium-Aluminum base with Tungsten, Zinc, Cobalt, and Copper.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --cyan:#00e5ff;--cyan-dim:#00b8d4;--cyan-glow:rgba(0,229,255,.25);
+  --dark:#0a0e14;--dark2:#101820;--dark3:#141e2a;
+  --glass:rgba(10,18,28,.72);--glass-border:rgba(0,229,255,.18);
+  --text:#e0f7fa;--text-dim:#80cbc4;
+  --gold:#ffd54f;--orange:#ff9100;--red:#ff5252;
+  --font-head:'Orbitron',sans-serif;--font-body:'Exo 2',sans-serif;
+  --app-h:100vh;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);color:var(--text);
+  background:var(--dark);overflow-x:hidden;
+  min-height:var(--app-h);
+}
+::selection{background:var(--cyan);color:var(--dark)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--dark2)}
+::-webkit-scrollbar-thumb{background:var(--cyan-dim);border-radius:3px}
+
+/* ── Hero ── */
+.hero{
+  position:relative;width:100%;height:100vh;height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  overflow:hidden;
+}
+#viewer-canvas{
+  position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  cursor:grab;
+}
+#viewer-canvas:active{cursor:grabbing}
+.hero-overlay{
+  position:relative;z-index:2;width:100%;
+  padding:24px 20px 32px;
+  background:linear-gradient(to top,rgba(10,14,20,.95) 0%,rgba(10,14,20,.7) 60%,transparent 100%);
+  text-align:center;pointer-events:none;
+}
+.hero-overlay *{pointer-events:auto}
+.hero-tag{
+  font-family:var(--font-head);font-size:.65rem;letter-spacing:6px;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:6px;opacity:.8;
+}
+.hero-title{
+  font-family:var(--font-head);font-size:clamp(2rem,6vw,3.6rem);font-weight:900;
+  letter-spacing:4px;text-transform:uppercase;
+  background:linear-gradient(135deg,var(--cyan) 0%,#fff 40%,var(--cyan) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  text-shadow:none;filter:drop-shadow(0 0 30px var(--cyan-glow));
+  line-height:1.1;
+}
+.hero-sub{
+  font-family:var(--font-body);font-size:.95rem;color:var(--text-dim);
+  margin-top:8px;font-weight:300;letter-spacing:1px;
+}
+.scroll-hint{
+  margin-top:18px;display:inline-flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--cyan-dim);font-size:.7rem;letter-spacing:3px;text-transform:uppercase;
+  animation:pulse 2s ease-in-out infinite;
+}
+.scroll-hint svg{width:18px;height:18px;stroke:var(--cyan);fill:none;stroke-width:2}
+@keyframes pulse{0%,100%{opacity:.4;transform:translateY(0)}50%{opacity:1;transform:translateY(4px)}}
+
+/* ── Loading overlay ── */
+#loader{
+  position:fixed;inset:0;z-index:999;background:var(--dark);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .6s;
+}
+#loader.hidden{opacity:0;pointer-events:none}
+.loader-ring{
+  width:56px;height:56px;border:3px solid var(--glass-border);
+  border-top-color:var(--cyan);border-radius:50%;
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader-text{font-family:var(--font-head);font-size:.75rem;color:var(--cyan);letter-spacing:4px;text-transform:uppercase}
+
+/* ── Sections ── */
+.section{
+  position:relative;padding:64px 20px;max-width:1100px;margin:0 auto;
+}
+.section-label{
+  font-family:var(--font-head);font-size:.6rem;letter-spacing:5px;text-transform:uppercase;
+  color:var(--cyan-dim);margin-bottom:8px;
+}
+.section-title{
+  font-family:var(--font-head);font-size:clamp(1.3rem,3.5vw,2rem);font-weight:700;
+  color:#fff;letter-spacing:2px;margin-bottom:24px;
+}
+.divider{
+  width:60px;height:2px;background:linear-gradient(90deg,var(--cyan),transparent);
+  margin-bottom:32px;
+}
+
+/* ── Glass cards ── */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--glass-border);
+  border-radius:14px;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  padding:24px;
+  transition:border-color .3s,box-shadow .3s;
+}
+.glass:hover{
+  border-color:rgba(0,229,255,.35);
+  box-shadow:0 0 30px rgba(0,229,255,.08);
+}
+
+/* ── Composition Grid ── */
+.comp-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;
+  margin-bottom:32px;
+}
+.comp-card{
+  text-align:center;padding:20px 12px;
+  position:relative;overflow:hidden;
+}
+.comp-card::before{
+  content:'';position:absolute;bottom:0;left:0;right:0;
+  height:3px;background:var(--cyan);
+  transform:scaleX(var(--pct,0));transform-origin:left;
+  transition:transform 1.2s cubic-bezier(.23,1,.32,1);
+}
+.comp-card.visible::before{transform:scaleX(var(--pct,0))}
+.comp-symbol{
+  font-family:var(--font-head);font-size:1.8rem;font-weight:800;
+  color:var(--cyan);line-height:1;
+}
+.comp-name{font-size:.85rem;color:var(--text-dim);margin:6px 0 2px}
+.comp-pct{
+  font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:#fff;
+}
+
+/* ── Properties ── */
+.prop-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;
+}
+.prop-card{padding:18px}
+.prop-label{font-size:.7rem;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.prop-value{font-family:var(--font-head);font-size:1rem;color:#fff;font-weight:600}
+
+/* ── Casting Process ── */
+.cast-timeline{position:relative;padding-left:32px;margin-top:12px}
+.cast-timeline::before{
+  content:'';position:absolute;left:11px;top:0;bottom:0;width:2px;
+  background:linear-gradient(to bottom,var(--cyan),var(--cyan-dim),var(--gold),var(--orange),var(--red));
+}
+.cast-step{position:relative;margin-bottom:28px}
+.cast-step:last-child{margin-bottom:0}
+.cast-dot{
+  position:absolute;left:-32px;top:2px;
+  width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--cyan);background:var(--dark);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-head);font-size:.55rem;color:var(--cyan);font-weight:700;
+}
+.cast-step:nth-child(3) .cast-dot{border-color:var(--gold);color:var(--gold)}
+.cast-step:nth-child(4) .cast-dot{border-color:var(--orange);color:var(--orange)}
+.cast-step:nth-child(5) .cast-dot{border-color:var(--red);color:var(--red)}
+.cast-head{
+  font-family:var(--font-head);font-size:.85rem;color:#fff;font-weight:600;
+  margin-bottom:4px;letter-spacing:1px;
+}
+.cast-temp{
+  display:inline-block;font-family:var(--font-head);font-size:.65rem;
+  padding:2px 8px;border-radius:20px;margin-bottom:6px;
+  background:rgba(0,229,255,.12);color:var(--cyan);border:1px solid rgba(0,229,255,.2);
+}
+.cast-step:nth-child(3) .cast-temp{background:rgba(255,213,79,.12);color:var(--gold);border-color:rgba(255,213,79,.2)}
+.cast-step:nth-child(4) .cast-temp{background:rgba(255,145,0,.12);color:var(--orange);border-color:rgba(255,145,0,.2)}
+.cast-step:nth-child(5) .cast-temp{background:rgba(255,82,82,.12);color:var(--red);border-color:rgba(255,82,82,.2)}
+.cast-desc{font-size:.85rem;color:var(--text-dim);line-height:1.6}
+.cast-ingredients{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;
+}
+.cast-ing{
+  font-family:var(--font-head);font-size:.6rem;
+  padding:3px 10px;border-radius:20px;
+  background:rgba(0,229,255,.08);color:var(--cyan);
+  border:1px solid rgba(0,229,255,.15);letter-spacing:1px;
+}
+
+/* ── Seasoning ── */
+.season-note{
+  margin-top:24px;padding:20px;
+  border-left:3px solid var(--gold);
+  background:rgba(255,213,79,.04);
+  border-radius:0 14px 14px 0;
+}
+.season-note .sn-title{
+  font-family:var(--font-head);font-size:.75rem;color:var(--gold);
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;
+}
+.season-note p{font-size:.85rem;color:var(--text-dim);line-height:1.7}
+
+/* ── Documentation CTA ── */
+.doc-cta{
+  display:flex;align-items:center;gap:16px;
+  margin-top:32px;padding:20px;
+  cursor:pointer;text-decoration:none;
+}
+.doc-cta:hover{border-color:var(--cyan);box-shadow:0 0 40px rgba(0,229,255,.12)}
+.doc-icon{
+  flex-shrink:0;width:48px;height:48px;border-radius:12px;
+  background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);
+  display:flex;align-items:center;justify-content:center;
+}
+.doc-icon svg{width:24px;height:24px;stroke:var(--cyan);fill:none;stroke-width:1.5}
+.doc-info{flex:1}
+.doc-info .di-title{font-family:var(--font-head);font-size:.8rem;color:#fff;letter-spacing:1px}
+.doc-info .di-sub{font-size:.75rem;color:var(--text-dim);margin-top:2px}
+.doc-arrow{color:var(--cyan);font-size:1.2rem;transition:transform .3s}
+.doc-cta:hover .doc-arrow{transform:translateX(4px)}
+
+/* ── Footer ── */
+.site-footer{
+  text-align:center;padding:40px 20px 28px;
+  border-top:1px solid rgba(0,229,255,.08);
+  margin-top:48px;
+}
+.footer-brand{font-family:var(--font-head);font-size:.7rem;color:var(--cyan-dim);letter-spacing:4px;text-transform:uppercase}
+.footer-copy{font-size:.7rem;color:var(--text-dim);margin-top:6px;opacity:.6}
+.footer-links{margin-top:10px;display:flex;justify-content:center;gap:20px}
+.footer-links a{
+  font-size:.7rem;color:var(--text-dim);text-decoration:none;
+  letter-spacing:1px;transition:color .3s;
+}
+.footer-links a:hover{color:var(--cyan)}
+
+/* ── Particle BG ── */
+#particles{position:fixed;inset:0;z-index:-1;pointer-events:none}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .prop-row{grid-template-columns:1fr}
+  .comp-grid{grid-template-columns:repeat(3,1fr);gap:10px}
+  .section{padding:48px 16px}
+  .doc-cta{flex-direction:column;text-align:center}
+}
+
+/* ── Fade-in animations ── */
+.fade-up{opacity:0;transform:translateY(30px);transition:opacity .8s,transform .8s}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div id="loader-text">Loading Hercules</div>
+</div>
+
+<!-- Subtle background particles -->
+<canvas id="particles"></canvas>
+
+<!-- Hero: 3D Viewer -->
+<section class="hero">
+  <canvas id="viewer-canvas"></canvas>
+  <div class="hero-overlay">
+    <div class="hero-tag">DART Meadow &mdash; Advanced Materials</div>
+    <h1 class="hero-title">Hercules</h1>
+    <p class="hero-sub">High-Performance 6-Element Aerospace Alloy</p>
+    <div class="scroll-hint">
+      <span>Explore</span>
+      <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- Alloy Composition -->
+<section class="section fade-up" id="composition">
+  <div class="section-label">Material Specification</div>
+  <h2 class="section-title">Alloy Composition</h2>
+  <div class="divider"></div>
+  <div class="comp-grid">
+    <div class="comp-card glass" style="--pct:.60"><div class="comp-symbol">Al</div><div class="comp-name">Aluminum</div><div class="comp-pct">60%</div></div>
+    <div class="comp-card glass" style="--pct:.30"><div class="comp-symbol">Ti</div><div class="comp-name">Titanium</div><div class="comp-pct">30%</div></div>
+    <div class="comp-card glass" style="--pct:.05"><div class="comp-symbol">Cu</div><div class="comp-name">Copper</div><div class="comp-pct">5%</div></div>
+    <div class="comp-card glass" style="--pct:.04"><div class="comp-symbol">W</div><div class="comp-name">Tungsten</div><div class="comp-pct">4%</div></div>
+    <div class="comp-card glass" style="--pct:.0085"><div class="comp-symbol">Zn</div><div class="comp-name">Zinc</div><div class="comp-pct">0.85%</div></div>
+    <div class="comp-card glass" style="--pct:.0015"><div class="comp-symbol">Co</div><div class="comp-name">Cobalt</div><div class="comp-pct">0.15%</div></div>
+  </div>
+
+  <div class="prop-row">
+    <div class="glass prop-card"><div class="prop-label">Classification</div><div class="prop-value">Custom Aerospace Alloy</div></div>
+    <div class="glass prop-card"><div class="prop-label">Application</div><div class="prop-value">Hercules Hammer Head</div></div>
+  </div>
+  <div class="prop-row">
+    <div class="glass prop-card"><div class="prop-label">Base Element</div><div class="prop-value">Titanium (Root)</div></div>
+    <div class="glass prop-card"><div class="prop-label">Primary Matrix</div><div class="prop-value">Al-Ti Dual Phase</div></div>
+  </div>
+</section>
+
+<!-- Casting Process -->
+<section class="section fade-up" id="process">
+  <div class="section-label">Fabrication</div>
+  <h2 class="section-title">Multi-Stage Casting Process</h2>
+  <div class="divider"></div>
+  <p style="font-size:.9rem;color:var(--text-dim);line-height:1.7;margin-bottom:24px;">
+    The Hercules alloy is produced through a sequential multi-cast crucible furnace process. Each casting stage introduces new elements into the melt, working from the outermost trace constituents inward toward the titanium root. Between each cast, the intermediate billet undergoes heat treatment and seasoning before being remelted for the next stage. Temperatures escalate dramatically as the process approaches the refractory tungsten and titanium additions.
+  </p>
+
+  <div class="cast-timeline">
+    <!-- Cast 1 -->
+    <div class="cast-step">
+      <div class="cast-dot">1</div>
+      <div class="cast-head">Cast 1 &mdash; Trace Foundation</div>
+      <div class="cast-temp">~420–1 495 °C</div>
+      <p class="cast-desc">
+        The outermost trace elements are combined in the first crucible melt. Copper is brought to liquidus first, then Cobalt and Zinc are introduced into the copper melt. The resulting tri-element ingot is poured into Cast 1 mold and allowed to solidify.
+      </p>
+      <div class="cast-ingredients">
+        <span class="cast-ing">Cu 5%</span>
+        <span class="cast-ing">Co 0.15%</span>
+        <span class="cast-ing">Zn 0.85%</span>
+      </div>
+    </div>
+
+    <!-- Cast 2 -->
+    <div class="cast-step">
+      <div class="cast-dot">2</div>
+      <div class="cast-head">Cast 2 &mdash; Aluminum Matrix</div>
+      <div class="cast-temp">~660–750 °C</div>
+      <p class="cast-desc">
+        The Cast 1 billet is remelted and the 60% aluminum charge is introduced. This forms the primary matrix of the alloy. The combined melt is poured into the Cast 2 mold. Seasoning heat treatment is applied to homogenize the aluminum-trace element distribution.
+      </p>
+      <div class="cast-ingredients">
+        <span class="cast-ing">Cast 1 Billet</span>
+        <span class="cast-ing">Al 60%</span>
+      </div>
+    </div>
+
+    <!-- Cast 3 -->
+    <div class="cast-step">
+      <div class="cast-dot">3</div>
+      <div class="cast-head">Cast 3 &mdash; Tungsten Integration</div>
+      <div class="cast-temp">~3 400+ °C</div>
+      <p class="cast-desc">
+        The temperature ramps sharply to accommodate the 4% tungsten addition. The Cast 2 billet is remelted at extreme temperature and tungsten feedstock is dissolved into the melt under controlled atmosphere. This is the most thermally demanding stage. The resulting ingot is cast and seasoned.
+      </p>
+      <div class="cast-ingredients">
+        <span class="cast-ing">Cast 2 Billet</span>
+        <span class="cast-ing">W 4%</span>
+      </div>
+    </div>
+
+    <!-- Cast 4 -->
+    <div class="cast-step">
+      <div class="cast-dot">4</div>
+      <div class="cast-head">Cast 4 &mdash; Titanium Root</div>
+      <div class="cast-temp">~1 668+ °C</div>
+      <p class="cast-desc">
+        The 30% titanium base — the root ingredient — is the final elemental addition. The Cast 3 billet is remelted and titanium is integrated, forming the Ti-Al dual-phase backbone. Once combined the melt is poured into the Cast 4 mold and undergoes final seasoning treatment.
+      </p>
+      <div class="cast-ingredients">
+        <span class="cast-ing">Cast 3 Billet</span>
+        <span class="cast-ing">Ti 30%</span>
+      </div>
+    </div>
+
+    <!-- Master Cast -->
+    <div class="cast-step">
+      <div class="cast-dot" style="border-color:#fff;color:#fff;background:var(--cyan);font-size:.45rem">M</div>
+      <div class="cast-head" style="color:var(--cyan)">Master Cast &mdash; Final Form</div>
+      <p class="cast-desc">
+        All six elements are now unified. The final billet is remelted one last time and cast into the Hercules hammer head geometry. Post-cast finishing includes precision machining and surface treatment to achieve the final tool-grade form.
+      </p>
+    </div>
+  </div>
+
+  <!-- Seasoning Note -->
+  <div class="season-note">
+    <div class="sn-title">Seasoning Framework</div>
+    <p>
+      Each intermediate casting stage incorporates a proprietary seasoning protocol — a controlled heat treatment cycle applied between successive melts. The seasoning process uses specialized companion alloy formulations unique to each stage to condition the billet microstructure before the next element is introduced. This iterative temper-remelt-add cycle ensures optimal grain boundary integration and phase coherence across all six constituent elements. The elementary seasoning framework is shared across DART Meadow's advanced alloy programs.
+    </p>
+  </div>
+</section>
+
+<!-- Documentation -->
+<section class="section fade-up" id="docs">
+  <div class="section-label">Reference</div>
+  <h2 class="section-title">Documentation</h2>
+  <div class="divider"></div>
+
+  <a class="doc-cta glass" href="https://github.com/radicaldeepscale/dartmeadow/blob/main/static/Hercules%20Alloy.pdf" target="_blank" rel="noopener">
+    <div class="doc-icon">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    </div>
+    <div class="doc-info">
+      <div class="di-title">Hercules Alloy — Limited Laboratory Procedures</div>
+      <div class="di-sub">Full composition chart, casting flow diagram, and process specification (PDF)</div>
+    </div>
+    <span class="doc-arrow">&#8594;</span>
+  </a>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="footer-brand">DART Meadow</div>
+  <div class="footer-copy">&copy; 2025 DART Meadow LLC &amp; Radical Deepscale LLC. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="https://radicaldeepscale.com" target="_blank">radicaldeepscale.com</a>
+    <a href="https://dartmeadow.com" target="_blank">dartmeadow.com</a>
+  </div>
+</footer>
+
+<!-- Three.js + GLTFLoader + OrbitControls from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function(){
+  /* ─── Background Particles ─── */
+  const pc=document.getElementById('particles'),px=pc.getContext('2d');
+  let pw,ph,dots=[];
+  function resizeP(){pw=pc.width=window.innerWidth;ph=pc.height=window.innerHeight}
+  resizeP();window.addEventListener('resize',resizeP);
+  for(let i=0;i<60;i++)dots.push({x:Math.random()*2000,y:Math.random()*2000,r:Math.random()*1.2+.3,s:Math.random()*.15+.05,o:Math.random()*.35+.05});
+  function drawP(){
+    px.clearRect(0,0,pw,ph);
+    dots.forEach(d=>{
+      d.y-=d.s;if(d.y<-4){d.y=ph+4;d.x=Math.random()*pw}
+      px.beginPath();px.arc(d.x,d.y,d.r,0,Math.PI*2);
+      px.fillStyle=`rgba(0,229,255,${d.o})`;px.fill();
+    });
+    requestAnimationFrame(drawP);
+  }
+  drawP();
+
+  /* ─── Three.js 3D Viewer ─── */
+  const canvas=document.getElementById('viewer-canvas');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.2;
+
+  const scene=new THREE.Scene();
+
+  const camera=new THREE.PerspectiveCamera(40,window.innerWidth/window.innerHeight,0.01,100);
+  camera.position.set(0,0.15,0.6);
+
+  const controls=new THREE.OrbitControls(camera,canvas);
+  controls.enableDamping=true;controls.dampingFactor=0.06;
+  controls.enablePan=false;
+  controls.minDistance=0.2;controls.maxDistance=2;
+  controls.autoRotate=true;controls.autoRotateSpeed=1.2;
+  controls.target.set(0,0.05,0);
+
+  // Lighting
+  const amb=new THREE.AmbientLight(0x4488aa,0.5);scene.add(amb);
+  const dir=new THREE.DirectionalLight(0xffffff,1.2);dir.position.set(3,5,4);scene.add(dir);
+  const dir2=new THREE.DirectionalLight(0x00e5ff,0.4);dir2.position.set(-3,2,-2);scene.add(dir2);
+  const rim=new THREE.PointLight(0x00e5ff,0.6,10);rim.position.set(0,1,-2);scene.add(rim);
+
+  // Environment: simple gradient sphere for reflections
+  const envGeo=new THREE.SphereGeometry(20,32,32);
+  const envMat=new THREE.MeshBasicMaterial({
+    color:0x0a1020,side:THREE.BackSide
+  });
+  scene.add(new THREE.Mesh(envGeo,envMat));
+
+  // Load GLB
+  const loader=new THREE.GLTFLoader();
+  const glbURL='https://raw.githubusercontent.com/radicaldeepscale/dartmeadow/main/static/Hercules.glb';
+
+  loader.load(glbURL,function(gltf){
+    const model=gltf.scene;
+
+    // Auto-center and scale
+    const box=new THREE.Box3().setFromObject(model);
+    const center=box.getCenter(new THREE.Vector3());
+    const size=box.getSize(new THREE.Vector3());
+    const maxDim=Math.max(size.x,size.y,size.z);
+    const scale=0.35/maxDim;
+    model.scale.setScalar(scale);
+    model.position.sub(center.multiplyScalar(scale));
+
+    // Enhance materials
+    model.traverse(function(child){
+      if(child.isMesh){
+        if(child.material){
+          child.material.metalness=0.85;
+          child.material.roughness=0.25;
+          child.material.envMapIntensity=1.5;
+        }
+      }
+    });
+
+    scene.add(model);
+    controls.target.copy(new THREE.Vector3(0,0,0));
+
+    // Hide loader
+    setTimeout(()=>document.getElementById('loader').classList.add('hidden'),400);
+
+  },function(xhr){
+    if(xhr.total){
+      const p=Math.round(xhr.loaded/xhr.total*100);
+      document.getElementById('loader-text').textContent='Loading '+p+'%';
+    }
+  },function(err){
+    console.error('GLB load error:',err);
+    document.getElementById('loader-text').textContent='Tap to explore below';
+    setTimeout(()=>document.getElementById('loader').classList.add('hidden'),1500);
+  });
+
+  // Render loop
+  function animate(){
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene,camera);
+  }
+  animate();
+
+  // Resize
+  window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  });
+
+  /* ─── Intersection Observer for fade-in ─── */
+  const obs=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}});
+  },{threshold:0.15});
+  document.querySelectorAll('.fade-up, .comp-card').forEach(el=>obs.observe(el));
+
+})();
+</script>
+</body>
+</html>
