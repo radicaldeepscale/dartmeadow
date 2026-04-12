@@ -531,6 +531,56 @@ function onGeoError(){
 }
 
 // ══════════════════════════════════════════════════════════
+//  AIRCRAFT TYPE ICON RESOLVER
+// ══════════════════════════════════════════════════════════
+function getAircraftIcon(a){
+  const cs=(a.callsign||'').toUpperCase().trim();
+  const cat=a.category||0;
+
+  // Ground vehicles
+  if(a.on_ground){
+    if(/^(LIFE|MED|HEMS|AIR1|RESCUE|STARS)/.test(cs)) return '🚑';
+    return '🚗';
+  }
+
+  // Military / government callsign prefixes
+  if(/^(AF\d|RCH|REACH|EVAC|PAT\d|GHOST|BONE|COBRA|HAWK|EAGLE|BUCK|KNIFE|VIPER|JOLLY|PEDRO|RANGER|VIKING|SWORD|LANCE|ARROW|TALON|FURY|BRONCO|RAVEN|STORM|GRIM|REAPER|DEATH|SKULL|DARK|SPECTRE|SPOOKY|SHADOW|NIGHT|WRATH|OMEN|ABYSS)/.test(cs)) return '🪖';
+  if(/^(N\d.*P$|USAF|NASA\d)/.test(cs)) return '🛩';
+
+  // Emergency
+  if(/^(LIFE|MED|HEMS|AIR1|RESCUE|STARS|FLIGHT FOR LIFE)/.test(cs)) return '🚑';
+
+  // Category-based (OpenSky extended category field)
+  switch(cat){
+    case 1:  return '✈';  // No category info
+    case 2:  return '🛩'; // Light (<15500 lbs)
+    case 3:  return '✈';  // Small (15500–75000 lbs)
+    case 4:  return '✈';  // Large (75000–300000 lbs)
+    case 5:  return '✈';  // High vortex large
+    case 6:  return '✈';  // Heavy (>300000 lbs)
+    case 7:  return '✈';  // High performance (>5g accel & >400kts)
+    case 8:  return '🚁'; // Rotorcraft / Helicopter
+    case 9:  return '🛩'; // Glider / Sailplane
+    case 10: return '🎈'; // Lighter than air / Balloon
+    case 11: return '🪂'; // Parachutist / Skydiver
+    case 12: return '🛩'; // Ultralight
+    case 13: return '🛸'; // UAV / Drone
+    case 14: return '🚀'; // Space / Transatmospheric
+    case 15: return '🚑'; // Surface vehicle — emergency
+    case 16: return '🚗'; // Surface vehicle — service
+  }
+
+  // Callsign-based heuristics (when no category data)
+  if(/^[0-9A-F]{6}$/.test(cs)) return '✈'; // Raw ICAO hex — commercial
+  if(/DRONE|UAV|UAS/.test(cs)) return '🛸';
+  if(/HELI|CHOP|ROTOR/.test(cs)) return '🚁';
+  if(/BALLOON|BLIMP|AIRSHIP/.test(cs)) return '🎈';
+  if(/CARGO|ATLAS|FDX|UPS|DHL|ABX|GTI|SKW/.test(cs)) return '📦';
+
+  return '✈'; // Default commercial
+}
+
+// ══════════════════════════════════════════════════════════
 //  OPENSKY API
 // ══════════════════════════════════════════════════════════
 async function fetchAircraft(){
@@ -543,20 +593,71 @@ async function fetchAircraft(){
   const deg=scanRadius/111.32;
   const lamin=myLat-deg,lamax=myLat+deg;
   const lomin=myLon-deg/Math.cos(myLat*Math.PI/180),lomax=myLon+deg/Math.cos(myLat*Math.PI/180);
+  let loaded=false;
+
+  // ── Primary: OpenSky Network ──
   try{
-    const res=await fetch(`https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`);
-    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const res=await fetch(`https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`,
+      {signal:AbortSignal.timeout(12000)});
+    if(!res.ok)throw new Error(`OpenSky HTTP ${res.status}`);
     const data=await res.json();
-    aircraftData=(data.states||[]).map(s=>({icao24:s[0],callsign:(s[1]||'').trim()||s[0].toUpperCase(),origin_country:s[2],longitude:s[5],latitude:s[6],altitude:s[7],on_ground:s[8],velocity:s[9],true_track:s[10],vertical_rate:s[11]})).filter(a=>a.latitude&&a.longitude);
+    const states=data.states||[];
+    if(states.length===0)throw new Error('No states returned');
+    aircraftData=states.map(s=>({
+      icao24:s[0],callsign:(s[1]||'').trim()||s[0].toUpperCase(),
+      origin_country:s[2],longitude:s[5],latitude:s[6],
+      altitude:s[7],on_ground:s[8],velocity:s[9],
+      true_track:s[10],vertical_rate:s[11],category:s[17]||0
+    })).filter(a=>a.latitude&&a.longitude);
+    loaded=true;
+  }catch(e){ console.warn('[ADS-B] OpenSky failed:',e.message); }
+
+  // ── Fallback 1: ADS-B Exchange LOL (no auth, free) ──
+  if(!loaded){
+    try{
+      const r=await fetch(`https://api.adsb.lol/v2/lat/${myLat.toFixed(4)}/lon/${myLon.toFixed(4)}/dist/${Math.ceil(scanRadius)}`,
+        {signal:AbortSignal.timeout(10000)});
+      if(!r.ok)throw new Error(`adsb.lol HTTP ${r.status}`);
+      const d=await r.json();
+      aircraftData=(d.ac||[]).filter(a=>a.lat&&a.lon).map(a=>({
+        icao24:a.hex||'',callsign:(a.flight||a.r||'').trim(),
+        origin_country:'',longitude:a.lon,latitude:a.lat,
+        altitude:a.alt_baro||a.alt_geom||null,on_ground:a.alt_baro==='ground',
+        velocity:a.gs||null,true_track:a.track||null,
+        vertical_rate:a.baro_rate||null,category:a.category?parseInt(a.category,16):0
+      }));
+      loaded=true;
+      document.getElementById('adsb-status').textContent='ADS-B LIVE (ADSB.LOL)';
+    }catch(e){ console.warn('[ADS-B] adsb.lol failed:',e.message); }
+  }
+
+  // ── Fallback 2: OpenSky via CORS proxy ──
+  if(!loaded){
+    try{
+      const proxyUrl='https://corsproxy.io/?url='+encodeURIComponent(`https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`);
+      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(15000)});
+      if(!r.ok)throw new Error(`proxy HTTP ${r.status}`);
+      const data=await r.json();
+      aircraftData=(data.states||[]).map(s=>({
+        icao24:s[0],callsign:(s[1]||'').trim()||s[0].toUpperCase(),
+        origin_country:s[2],longitude:s[5],latitude:s[6],
+        altitude:s[7],on_ground:s[8],velocity:s[9],
+        true_track:s[10],vertical_rate:s[11],category:s[17]||0
+      })).filter(a=>a.latitude&&a.longitude);
+      loaded=true;
+    }catch(e){ console.warn('[ADS-B] proxy failed:',e.message); }
+  }
+
+  if(loaded){
     aircraftData.forEach(a=>{a.distance=haversine(myLat,myLon,a.latitude,a.longitude);});
     aircraftData.sort((a,b)=>a.distance-b.distance);
     updateUI();updateLeafletMarkers();updateRadarBlips();
     document.getElementById('adsb-status').textContent='ADS-B LIVE';
     document.getElementById('adsb-dot').className='pulse-dot';
-  }catch(e){
-    document.getElementById('adsb-status').textContent='ADS-B ERROR';
+  }else{
+    document.getElementById('adsb-status').textContent='ADS-B OFFLINE';
     document.getElementById('adsb-dot').className='pulse-dot red';
-    document.getElementById('drone-list').innerHTML=`<div class="empty-state">⚠ OpenSky error<br>${e.message}<br><br>Rate limited? Wait 10s.</div>`;
+    document.getElementById('drone-list').innerHTML='<div class="empty-state">⚠ All ADS-B sources unavailable.<br>Check connection or try again in 30s.</div>';
   }
   aerialLoading=false;btn.disabled=false;btn.textContent='⟳ REFRESH SCAN';refreshCountdown=30;
 }
@@ -571,7 +672,7 @@ function updateUI(){
   aircraftData.forEach(a=>{
     const d=document.createElement('div');
     d.className='drone-item'+(a.icao24===selectedIcao?' selected':'');d.onclick=()=>selectAircraft(a.icao24);
-    d.innerHTML=`<div class="drone-icon">${a.on_ground?'🚁':'✈'}</div><div class="drone-info"><div class="drone-id">${a.callsign}</div><div class="drone-meta">${a.origin_country||'Unknown'}<br>Alt:${a.altitude?Math.round(a.altitude)+'m':'GND'} · ${a.velocity?Math.round(a.velocity)+'m/s':'--'}</div></div><div class="drone-dist">${a.distance.toFixed(1)}<br>km</div>`;
+    d.innerHTML=`<div class="drone-icon">${getAircraftIcon(a)}</div><div class="drone-info"><div class="drone-id">${a.callsign}</div><div class="drone-meta">${a.origin_country||'Unknown'}<br>Alt:${a.altitude?Math.round(a.altitude)+'m':'GND'} · ${a.velocity?Math.round(a.velocity)+'m/s':'--'}</div></div><div class="drone-dist">${a.distance.toFixed(1)}<br>km</div>`;
     list.appendChild(d);
   });
 }
@@ -606,7 +707,7 @@ function updateLeafletMarkers(){
   if(!leafMap)return;
   Object.values(aircraftMarkers).forEach(m=>leafMap.removeLayer(m));aircraftMarkers={};
   aircraftData.forEach(a=>{
-    const icon=L.divIcon({className:'',html:`<div class="drone-marker-icon">${a.on_ground?'🚁':'✈'}</div>`,iconSize:[20,20],iconAnchor:[10,10]});
+    const icon=L.divIcon({className:'',html:`<div class="drone-marker-icon" title="${a.callsign}">${getAircraftIcon(a)}</div>`,iconSize:[24,24],iconAnchor:[12,12]});
     const m=L.marker([a.latitude,a.longitude],{icon}).bindTooltip(`<b>${a.callsign}</b><br>${a.distance.toFixed(1)}km · ${a.altitude?Math.round(a.altitude)+'m':'GND'}`).on('click',()=>selectAircraft(a.icao24)).addTo(leafMap);
     aircraftMarkers[a.icao24]=m;
   });
@@ -870,17 +971,18 @@ function fetchWithTimeout(url,ms){
 }
 
 async function fetchTLE(url){
-  // Try direct first (CelesTrak sends CORS headers on live domains)
-  try{
-    const r=await fetchWithTimeout(url,8000);
-    if(r.ok){const t=await r.text();if(t&&t.includes('1 ')&&t.includes('2 '))return t;}
-  }catch(e){}
-  // CORS proxy fallback
-  try{
-    const proxyUrl='https://api.allorigins.win/raw?url='+encodeURIComponent(url);
-    const r=await fetchWithTimeout(proxyUrl,12000);
-    if(r.ok){const t=await r.text();if(t&&t.includes('1 '))return t;}
-  }catch(e){}
+  const PROXIES=[
+    u=>u,                                                                      // direct
+    u=>'https://corsproxy.io/?url='+encodeURIComponent(u),
+    u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
+    u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+  ];
+  for(const proxy of PROXIES){
+    try{
+      const r=await fetch(proxy(url),{signal:AbortSignal.timeout(10000)});
+      if(r.ok){const t=await r.text();if(t&&(t.includes('1 ')&&t.includes('2 ')))return t;}
+    }catch(e){}
+  }
   return '';
 }
 
@@ -890,11 +992,14 @@ async function fetchSatelliteData(forceReload){
   document.getElementById('sig-orbital-status').textContent='LOADING';
   const sb=document.getElementById('sat-status-bar');if(sb)sb.textContent='FETCHING TLE DATA...';
 
-  // Fetch multiple catalogs for good coverage
+  // CelesTrak catalogs — new GATT API format preferred, old /pub/TLE/ as fallback
   const catalogs=[
-    {url:'https://celestrak.org/pub/TLE/visual.txt',   label:'visual'},
-    {url:'https://celestrak.org/pub/TLE/stations.txt', label:'stations'},
-    {url:'https://celestrak.org/pub/TLE/active.txt',   label:'active'},
+    {url:'https://celestrak.org/GATT/format=tle/query=stations', label:'stations'},
+    {url:'https://celestrak.org/GATT/format=tle/query=visual',   label:'visual'},
+    {url:'https://celestrak.org/GATT/format=tle/query=active&count=100', label:'active'},
+    // old-format fallbacks
+    {url:'https://celestrak.org/pub/TLE/stations.txt', label:'stations-legacy'},
+    {url:'https://celestrak.org/pub/TLE/visual.txt',   label:'visual-legacy'},
   ];
 
   let combined='';
@@ -915,7 +1020,7 @@ async function fetchSatelliteData(forceReload){
 
   if(!combined.trim()){
     // Absolute fallback — embed ISS + Tiangong + Hubble TLEs
-    combined=`ISS (ZARYA)\n1 25544U 98067A   25072.50000000  .00020000  00000-0  23000-3 0  9997\n2 25544  51.6404 100.0000 0002345 100.0000 260.0000 15.49500000454321\nTIANGONG\n1 48274U 21035A   25072.50000000  .00010000  00000-0  12000-3 0  9993\n2 48274  41.4756 200.0000 0005678 200.0000 160.0000 15.60100000234567\nHST\n1 20580U 90037B   25072.50000000  .00001000  00000-0  50000-4 0  9998\n2 20580  28.4697 150.0000 0002567 150.0000 210.0000 15.09300000234567`;
+    combined=`ISS (ZARYA)\n1 25544U 98067A   26102.50000000  .00020000  00000-0  23000-3 0  9991\n2 25544  51.6404 100.0000 0002345 100.0000 260.0000 15.49500000494321\nTIANGONG\n1 48274U 21035A   26102.50000000  .00010000  00000-0  12000-3 0  9990\n2 48274  41.4756 200.0000 0005678 200.0000 160.0000 15.60100000274567\nHST\n1 20580U 90037B   26102.50000000  .00001000  00000-0  50000-4 0  9993\n2 20580  28.4697 150.0000 0002567 150.0000 210.0000 15.09300000274567`;
   }
 
   satData=parseTLEs(combined);
