@@ -425,6 +425,28 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
   <button id="ls-enter" onclick="enterApp()">LAUNCH SEQUENCE ⟶</button>
 </div>
 
+<!-- GRAPHICS PRESET SELECTION (first launch / on request) -->
+<div id="gfx-screen" style="display:none;position:fixed;inset:0;z-index:9000;background:radial-gradient(ellipse at 50% 40%,#061018 0%,#000308 70%);overflow-y:auto;padding:5vh 4vw;">
+  <div style="max-width:760px;margin:0 auto;">
+    <div style="font-family:var(--font-hud);font-size:1.1rem;letter-spacing:0.2em;color:var(--cyan);text-align:center;text-shadow:0 0 18px rgba(0,245,255,0.5);">GRAPHICS SETUP</div>
+    <div id="gfx-scan-line" style="text-align:center;font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim);margin:0.6rem 0 0.2rem;">Scanning hardware…</div>
+    <div id="gfx-reco-line" style="text-align:center;font-family:var(--font-mono);font-size:0.6rem;color:var(--gold);margin-bottom:1.4rem;"></div>
+
+    <div id="gfx-presets" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.7rem;margin-bottom:1.2rem;"></div>
+
+    <div style="text-align:center;margin-bottom:1rem;">
+      <button id="gfx-custom-toggle" onclick="toggleCustomPanel()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-hud);font-size:0.55rem;letter-spacing:0.12em;padding:6px 16px;cursor:pointer;border-radius:2px;">⚙ CUSTOMIZE (ADVANCED)</button>
+    </div>
+
+    <div id="gfx-custom-panel" style="display:none;background:rgba(4,10,22,0.7);border:1px solid var(--border);border-radius:4px;padding:1rem 1.2rem;margin-bottom:1.2rem;"></div>
+
+    <div style="display:flex;gap:0.8rem;justify-content:center;">
+      <button id="gfx-apply" onclick="applyGfxScreen()" style="flex:0 0 auto;padding:0.8rem 2.6rem;background:var(--dim-cyan);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:0.7rem;font-weight:700;letter-spacing:0.18em;cursor:pointer;border-radius:2px;">APPLY &amp; CONTINUE ⟶</button>
+    </div>
+    <div style="text-align:center;font-family:var(--font-mono);font-size:0.54rem;color:var(--text-dim);margin-top:0.9rem;opacity:0.7;">Your choice is remembered. Change anytime in Settings ⚙</div>
+  </div>
+</div>
+
 <input type="file" id="file-upload" accept=".dartprofile,.json">
 
 <div id="app">
@@ -438,6 +460,7 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
     <button class="menu-btn" onclick="openSaveModal('load')">▶ LOAD PROFILE / GAME</button>
     <hr class="menu-sep">
     <button class="menu-btn" onclick="openSettings()">⚙ SETTINGS &amp; GRAPHICS</button>
+    <button class="menu-btn" onclick="showGfxScreen(true)" style="font-size:0.62rem;">🖥 GRAPHICS SETUP / BENCHMARK</button>
     <button class="menu-btn" onclick="openGalaxyMap()">🌌 GALAXY MAP</button>
     <button class="menu-btn" onclick="openSaveModal('save')" style="font-size:0.6rem;opacity:0.7;margin-top:0.3rem;">💾 SAVE / EXPORT PROFILE</button>
     <div class="menu-version">DART MEADOW v3 · DART ENERGY RING SYSTEMS</div>
@@ -876,7 +899,7 @@ function loadSaveData(data){
   }
   if(data.settings){Object.assign(STATE.settings,data.settings);
     // restore graphics knobs into the live GFX object
-    if(data.settings.gfxQuality!==undefined)GFX.tier=data.settings.gfxQuality;
+    if(data.settings.gfxQuality!==undefined)GFX.preset=data.settings.gfxQuality;
     if(data.settings.resScale!==undefined)GFX.resScale=data.settings.resScale;
     if(data.settings.shadows!==undefined)GFX.shadows=data.settings.shadows;
     if(data.settings.reflections!==undefined)GFX.envReflections=data.settings.reflections;
@@ -1000,8 +1023,19 @@ function launchFlight(){
   setTimeout(adv,350);
 })();
 function enterApp(){
+  // First launch → show graphics setup; returning users skip straight in.
+  let shown=false;
+  try{ shown=showGfxScreen(false); }catch(e){console.warn('gfx screen:',e);}
   $('loading-screen').classList.add('out');
-  setTimeout(()=>{$('loading-screen').style.display='none';$('app').classList.add('vis');goScreen('menu');},850);
+  setTimeout(()=>{
+    $('loading-screen').style.display='none';
+    if(!shown){ $('app').classList.add('vis');goScreen('menu'); }
+    // if shown, the gfx screen sits on top; applyGfxScreen() reveals the menu
+  },850);
+}
+// Called after the gfx preset screen is dismissed on first launch
+function _revealMenuAfterGfx(){
+  $('app').classList.add('vis');goScreen('menu');
 }
 
 // ── Menu BG ───────────────────────────────────────────────────
@@ -1456,28 +1490,47 @@ function applyPreset(name){
 //  Works across Safari (iOS/macOS), Chrome, Edge, Firefox on all OSes.
 // ══════════════════════════════════════════════════════════════
 const GFX = {
-  // detected capabilities (filled by detectCapabilities)
-  webgl2:false, floatTex:false, halfFloatTex:false, maxTexSize:2048,
-  isMobile:false, isIOS:false, isSafari:false, dpr:1,
-  // active quality knobs (set by applyQualityTier)
-  tier:'auto',           // 'low' | 'balanced' | 'ultra' | 'auto'
-  resScale:1.0,          // render resolution multiplier (manual control)
+  // ── detected capabilities (filled by detectCapabilities) ──
+  webgl2:false, webgpu:false, floatTex:false, halfFloatTex:false,
+  maxTexSize:2048, maxAniso:1, vendor:'', renderer:'', gpuClass:'unknown',
+  cores:2, deviceMem:0, isMobile:false, isIOS:false, isSafari:false, dpr:1,
+  score:0,               // 0..100 hardware capability score
+  scanned:false,
+  // ── active quality knobs (set by applyPreset) ──
+  preset:'auto',         // 'low'|'medium'|'high'|'ultra'|'custom'|'auto'
+  resScale:1.0,
   shadows:false, shadowSize:1024,
-  envReflections:true,   // cubemap reflections (fake RT reflections)
-  caustics:true,         // animated caustic projection on water
-  fakeGI:true,           // hemisphere + AO approximation of global illum
-  refraction:true,       // refraction shader on glass/water
-  ssao:false,            // screen-space ambient occlusion (desktop only)
+  envReflections:true,
+  caustics:true,
+  fakeGI:true,
+  refraction:true,
+  ssao:false,
+  volumetricDust:true,   // animated drifting space dust / nebula volume
+  dustDensity:1.0,       // multiplier for volumetric + point-cloud density
+  aniso:1,               // texture anisotropic filtering level
+  antialias:true,
+  pathTraceAccents:false,// experimental WebGPU only
   maxPixelRatio:2,
 };
 
+// Capability ceilings — what a tier is ALLOWED to use is clamped by hardware.
+const PRESETS = {
+  low:    {resScale:0.7, shadows:false, shadowSize:512,  envReflections:true,  caustics:false, fakeGI:true, refraction:false, ssao:false, volumetricDust:true,  dustDensity:0.45, aniso:1,  antialias:false},
+  medium: {resScale:0.85,shadows:true,  shadowSize:1024, envReflections:true,  caustics:true,  fakeGI:true, refraction:true,  ssao:false, volumetricDust:true,  dustDensity:0.8,  aniso:2,  antialias:true },
+  high:   {resScale:1.0, shadows:true,  shadowSize:2048, envReflections:true,  caustics:true,  fakeGI:true, refraction:true,  ssao:true,  volumetricDust:true,  dustDensity:1.3,  aniso:8,  antialias:true },
+  ultra:  {resScale:1.0, shadows:true,  shadowSize:4096, envReflections:true,  caustics:true,  fakeGI:true, refraction:true,  ssao:true,  volumetricDust:true,  dustDensity:2.2,  aniso:16, antialias:true },
+};
+
 function detectCapabilities(){
+  if(GFX.scanned)return;
   const ua=navigator.userAgent;
   GFX.isIOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   GFX.isSafari=/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
-  GFX.isMobile=/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)||navigator.maxTouchPoints>1&&window.innerWidth<1100;
+  GFX.isMobile=/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)||(navigator.maxTouchPoints>1&&window.innerWidth<1100);
   GFX.dpr=window.devicePixelRatio||1;
-  // probe a throwaway WebGL context
+  GFX.cores=navigator.hardwareConcurrency||2;
+  GFX.deviceMem=navigator.deviceMemory||0; // GB hint (Chrome only)
+  GFX.webgpu=!!(navigator.gpu); // presence only; not a guarantee of perf
   try{
     const c=document.createElement('canvas');
     let gl=c.getContext('webgl2');
@@ -1485,43 +1538,257 @@ function detectCapabilities(){
     if(!gl)gl=c.getContext('webgl')||c.getContext('experimental-webgl');
     if(gl){
       GFX.maxTexSize=gl.getParameter(gl.MAX_TEXTURE_SIZE)||2048;
-      // float render-target support (needed for HDR bloom). iOS Safari is picky.
       GFX.floatTex=!!(gl.getExtension('OES_texture_float')||GFX.webgl2);
       GFX.halfFloatTex=!!(gl.getExtension('OES_texture_half_float')||GFX.webgl2);
+      const af=gl.getExtension('EXT_texture_filter_anisotropic');
+      GFX.maxAniso=af?gl.getParameter(af.MAX_TEXTURE_MAX_ANISOTROPY_EXT):1;
+      // GPU vendor/renderer string — best signal for hardware class
+      const dbg=gl.getExtension('WEBGL_debug_renderer_info');
+      if(dbg){
+        GFX.vendor=String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)||'');
+        GFX.renderer=String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)||'');
+      }
     }
   }catch(e){console.warn('cap probe:',e);}
-  console.log('[GFX]',{webgl2:GFX.webgl2,iOS:GFX.isIOS,safari:GFX.isSafari,mobile:GFX.isMobile,dpr:GFX.dpr,maxTex:GFX.maxTexSize});
+  GFX.gpuClass=classifyGPU(GFX.renderer);
+  GFX.score=computeDeviceScore();
+  GFX.scanned=true;
+  console.log('[GFX scan]',{score:GFX.score,gpu:GFX.gpuClass,renderer:GFX.renderer,webgl2:GFX.webgl2,webgpu:GFX.webgpu,cores:GFX.cores,mem:GFX.deviceMem,maxTex:GFX.maxTexSize,aniso:GFX.maxAniso,mobile:GFX.isMobile});
 }
 
-// Choose effect set per tier. 'auto' picks based on detected device.
-function resolveTier(){
-  if(GFX.tier!=='auto')return GFX.tier;
-  // Auto: desktop → ultra, capable mobile → balanced, old/iOS-limited → low
-  if(!GFX.isMobile)return 'ultra';
-  // mobile path — keep 30fps target at full res, so trim the heavy stuff
-  if(GFX.webgl2&&GFX.maxTexSize>=4096)return 'balanced';
+// Rough GPU tier from the renderer string (heuristic, fails safe to 'mid')
+function classifyGPU(r){
+  if(!r)return 'unknown';
+  const s=r.toLowerCase();
+  // discrete high-end desktop
+  if(/rtx\s*(40|50|30)|rtx\s*(2080|2070)|radeon\s*rx\s*(6|7|9)[0-9]|rx\s*7900|arc\s*a7|m[123]\s*(max|ultra|pro)|apple\s*m[234]/.test(s))return 'high';
+  // mid desktop / good laptop / newer Apple
+  if(/gtx\s*16|rtx\s*20|rtx\s*3050|radeon\s*rx\s*5|apple\s*m1|apple\s*m2|adreno\s*7|mali-g7|quadro|geforce/.test(s))return 'mid';
+  // integrated / older mobile
+  if(/intel|uhd|iris|adreno\s*[56]|mali-g[56]|powervr|swiftshader|llvmpipe|apple\s*a/.test(s))return 'low';
+  return 'mid';
+}
+
+// Composite 0..100 score blending GPU class, API support, cores, memory.
+function computeDeviceScore(){
+  let s=0;
+  s += ({high:45,mid:28,low:12,unknown:18})[GFX.gpuClass];
+  if(GFX.webgl2)s+=12;
+  if(GFX.webgpu)s+=6;
+  if(GFX.maxTexSize>=16384)s+=10; else if(GFX.maxTexSize>=8192)s+=6; else if(GFX.maxTexSize>=4096)s+=3;
+  if(GFX.maxAniso>=16)s+=4; else if(GFX.maxAniso>=8)s+=2;
+  s += Math.min(12, GFX.cores);            // up to +12 for many cores
+  if(GFX.deviceMem>=8)s+=6; else if(GFX.deviceMem>=4)s+=3;
+  if(GFX.isMobile)s-=14;                    // mobile thermal/throttle penalty
+  if(GFX.isIOS&&GFX.isSafari)s-=4;          // Safari raster cost
+  return Math.max(0,Math.min(100,Math.round(s)));
+}
+
+// Auto pick: best preset that should still clear 30fps on this hardware.
+function autoPreset(){
+  const sc=GFX.score;
+  if(GFX.isMobile){
+    if(sc>=55)return 'high';      // flagship phone/tablet
+    if(sc>=38)return 'medium';
+    return 'low';
+  }
+  if(sc>=80)return 'ultra';
+  if(sc>=58)return 'high';
+  if(sc>=40)return 'medium';
   return 'low';
 }
 
-function applyQualityTier(){
-  const t=resolveTier();
-  if(t==='ultra'){
-    GFX.shadows=true; GFX.shadowSize=2048; GFX.envReflections=true; GFX.caustics=true;
-    GFX.fakeGI=true; GFX.refraction=true; GFX.ssao=true; GFX.maxPixelRatio=2;
-  } else if(t==='balanced'){
-    GFX.shadows=true; GFX.shadowSize=1024; GFX.envReflections=true; GFX.caustics=true;
-    GFX.fakeGI=true; GFX.refraction=true; GFX.ssao=false; GFX.maxPixelRatio=2;
-  } else { // low — preserve compatibility + framerate, full resolution still allowed
-    GFX.shadows=false; GFX.shadowSize=512; GFX.envReflections=true; GFX.caustics=false;
-    GFX.fakeGI=true; GFX.refraction=false; GFX.ssao=false; GFX.maxPixelRatio=GFX.isIOS?2:1.5;
-  }
-  // float textures unavailable → disable HDR bloom motion targets gracefully
-  if(!GFX.floatTex&&!GFX.halfFloatTex){ if(STATE&&STATE.settings){STATE.settings.bloom=false;STATE.settings.motion=false;} }
+function resolvePreset(){
+  if(GFX.preset==='auto')return autoPreset();
+  if(GFX.preset==='custom')return 'custom';
+  return GFX.preset;
 }
+
+// Apply a named preset, CLAMPED to what the hardware can actually do.
+function applyPreset(name){
+  if(name==='custom'){ /* values already set individually */ clampToHardware(); return; }
+  const t=(name&&name!=='auto')?name:autoPreset();
+  const p=PRESETS[t]||PRESETS.medium;
+  Object.assign(GFX,{
+    resScale:p.resScale, shadows:p.shadows, shadowSize:p.shadowSize,
+    envReflections:p.envReflections, caustics:p.caustics, fakeGI:p.fakeGI,
+    refraction:p.refraction, ssao:p.ssao, volumetricDust:p.volumetricDust,
+    dustDensity:p.dustDensity, aniso:p.aniso, antialias:p.antialias,
+  });
+  GFX.maxPixelRatio=GFX.isMobile?2:2;
+  clampToHardware();
+}
+
+// Hard ceilings — never let a setting exceed device capability.
+function clampToHardware(){
+  GFX.shadowSize=Math.min(GFX.shadowSize, GFX.maxTexSize, GFX.isMobile?2048:4096);
+  GFX.aniso=Math.min(GFX.aniso, GFX.maxAniso||1);
+  if(!GFX.floatTex&&!GFX.halfFloatTex){ if(STATE&&STATE.settings){STATE.settings.bloom=false;STATE.settings.motion=false;} }
+  if(GFX.isMobile&&GFX.shadowSize>2048)GFX.shadowSize=2048;
+}
+
+// keep old name working for any existing callers
+function resolveTier(){return resolvePreset();}
+function applyQualityTier(){applyPreset(GFX.preset);}
 
 // Effective pixel ratio = device DPR (capped) × manual resolution scale
 function effectivePixelRatio(){
   return Math.min(GFX.dpr,GFX.maxPixelRatio)*GFX.resScale;
+}
+
+// ── Persistence ─────────────────────────────────────────────────
+const GFX_STORE_KEY='dm_gfx_v1';
+function saveGfxChoice(){
+  try{
+    localStorage.setItem(GFX_STORE_KEY,JSON.stringify({
+      preset:GFX.preset, resScale:GFX.resScale, shadows:GFX.shadows, shadowSize:GFX.shadowSize,
+      envReflections:GFX.envReflections, caustics:GFX.caustics, fakeGI:GFX.fakeGI, refraction:GFX.refraction,
+      ssao:GFX.ssao, volumetricDust:GFX.volumetricDust, dustDensity:GFX.dustDensity, aniso:GFX.aniso,
+      antialias:GFX.antialias, pathTraceAccents:GFX.pathTraceAccents, chosen:true
+    }));
+  }catch(e){}
+}
+function loadGfxChoice(){
+  try{
+    const raw=localStorage.getItem(GFX_STORE_KEY);
+    if(!raw)return false;
+    const d=JSON.parse(raw);
+    Object.assign(GFX,d);
+    clampToHardware();
+    return !!d.chosen;
+  }catch(e){return false;}
+}
+
+// ── Preset selection screen ─────────────────────────────────────
+const PRESET_META={
+  low:   {label:'LOW',   icon:'○',  blurb:'Max compatibility · lightest load'},
+  medium:{label:'MEDIUM',icon:'◐',  blurb:'Balanced shadows + reflections'},
+  high:  {label:'HIGH',  icon:'◕',  blurb:'Soft shadows, SSAO, dense dust'},
+  ultra: {label:'ULTRA', icon:'●',  blurb:'4K shadows, full volumetrics'},
+};
+let _gfxScreenPick='auto', _gfxCustomOpen=false;
+
+function showGfxScreen(force){
+  detectCapabilities();
+  const hadChoice=loadGfxChoice();
+  // If user already chose before and we're not forcing, skip the screen entirely
+  if(hadChoice&&!force){ applyPreset(GFX.preset); return false; }
+  const reco=autoPreset();
+  _gfxScreenPick = hadChoice ? GFX.preset : 'auto';
+  $('gfx-scan-line').textContent =
+    `GPU: ${GFX.renderer||'unknown'} · ${GFX.webgl2?'WebGL2':'WebGL1'}${GFX.webgpu?' · WebGPU':''} · ${GFX.cores} cores · score ${GFX.score}/100`;
+  $('gfx-reco-line').textContent = `★ Recommended for your device: ${PRESET_META[reco].label} (targets 30fps+ at best quality)`;
+  renderPresetCards(reco);
+  buildCustomPanel();
+  $('gfx-screen').style.display='block';
+  return true;
+}
+
+function renderPresetCards(reco){
+  const wrap=$('gfx-presets');wrap.innerHTML='';
+  ['low','medium','high','ultra'].forEach(name=>{
+    const m=PRESET_META[name];
+    const isReco=name===reco;
+    const active=(_gfxScreenPick==='auto'?reco:_gfxScreenPick)===name && _gfxScreenPick!=='custom';
+    const card=document.createElement('div');
+    card.style.cssText=`position:relative;padding:0.9rem 0.8rem;border:1px solid ${active?'var(--cyan)':'var(--border)'};background:${active?'rgba(0,245,255,0.12)':'rgba(0,245,255,0.03)'};border-radius:4px;cursor:pointer;transition:var(--trans);text-align:center;`;
+    card.innerHTML=`
+      ${isReco?'<div style="position:absolute;top:6px;right:8px;font-size:0.5rem;color:var(--gold);letter-spacing:0.1em;">★ BEST</div>':''}
+      <div style="font-size:1.4rem;color:${active?'var(--cyan)':'var(--text-dim)'};line-height:1;">${m.icon}</div>
+      <div style="font-family:var(--font-hud);font-size:0.7rem;letter-spacing:0.12em;color:${active?'var(--cyan)':'var(--text)'};margin-top:0.4rem;">${m.label}</div>
+      <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-dim);margin-top:0.35rem;line-height:1.35;">${m.blurb}</div>`;
+    card.onclick=()=>{ _gfxScreenPick=name; _gfxCustomOpen=false; $('gfx-custom-panel').style.display='none'; renderPresetCards(reco); };
+    wrap.appendChild(card);
+  });
+}
+
+function toggleCustomPanel(){
+  _gfxCustomOpen=!_gfxCustomOpen;
+  $('gfx-custom-panel').style.display=_gfxCustomOpen?'block':'none';
+  if(_gfxCustomOpen){
+    // seed custom values from current pick
+    const base=(_gfxScreenPick==='auto'?autoPreset():(_gfxScreenPick==='custom'?GFX.preset:_gfxScreenPick));
+    if(PRESETS[base])applyPreset(base);
+    _gfxScreenPick='custom';
+    buildCustomPanel();
+    const reco=autoPreset();renderPresetCards(reco);
+  }
+}
+
+// Build advanced custom toggles, hardware-gating ones the device can't do.
+function buildCustomPanel(){
+  const p=$('gfx-custom-panel');if(!p)return;
+  const cap={
+    shadows:true,
+    ssao:!GFX.isMobile,                          // SSAO desktop-class only
+    refraction:GFX.webgl2,
+    caustics:true,
+    envReflections:true,
+    volumetricDust:true,
+    antialias:true,
+    pathTraceAccents:!!GFX.webgpu,               // only if WebGPU actually present
+  };
+  const reason={
+    ssao:'Requires desktop-class GPU',
+    refraction:'Requires WebGL2',
+    pathTraceAccents:'Requires WebGPU (experimental)',
+  };
+  const row=(id,label,sub,on,enabled,why)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;opacity:${enabled?1:0.4};">
+      <div><div style="font-family:var(--font-body);font-size:0.72rem;color:var(--text);">${label}</div>
+      <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-dim);">${enabled?sub:('🔒 '+(why||sub))}</div></div>
+      <label style="position:relative;width:34px;height:18px;${enabled?'':'pointer-events:none;'}">
+        <input type="checkbox" id="${id}" ${on?'checked':''} ${enabled?'':'disabled'} style="opacity:0;width:0;height:0;">
+        <span class="toggle-track"></span></label>
+    </div>`;
+  const sel=(id,label,opts,val)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;">
+      <div style="font-family:var(--font-body);font-size:0.72rem;color:var(--text);">${label}</div>
+      <select id="${id}" style="background:rgba(0,245,255,0.06);border:1px solid var(--border);color:var(--text);padding:2px 6px;font-family:var(--font-body);font-size:0.66rem;border-radius:2px;">
+        ${opts.map(o=>`<option value="${o[0]}" ${String(o[0])===String(val)?'selected':''}>${o[1]}</option>`).join('')}
+      </select></div>`;
+  p.innerHTML=
+    `<div style="font-family:var(--font-hud);font-size:0.58rem;letter-spacing:0.12em;color:var(--cyan);margin-bottom:0.5rem;">ADVANCED — CUSTOM</div>`
+    + sel('cf-res','Resolution Scale',[[0.5,'50%'],[0.65,'65%'],[0.8,'80%'],[1,'100%'],[1.25,'125% (super-sample)']],GFX.resScale)
+    + sel('cf-shadowsize','Shadow Resolution',[[512,'512'],[1024,'1024'],[2048,'2048'],[4096,'4096 (Ultra)']],GFX.shadowSize)
+    + sel('cf-dust','Volumetric Dust Density',[[0.3,'Sparse'],[0.8,'Medium'],[1.3,'Dense'],[2.2,'Ultra']],GFX.dustDensity)
+    + sel('cf-aniso','Anisotropic Filtering',[[1,'Off'],[2,'2×'],[4,'4×'],[8,'8×'],[16,'16×']].filter(o=>o[0]<=Math.max(1,GFX.maxAniso)),GFX.aniso)
+    + row('cf-shadows','Real-time Shadows','Soft PCF shadow maps',GFX.shadows,cap.shadows)
+    + row('cf-ssao','Ambient Occlusion (SSAO)','Contact shadowing in crevices',GFX.ssao,cap.ssao,reason.ssao)
+    + row('cf-refraction','Refraction','Glass / water bending',GFX.refraction,cap.refraction,reason.refraction)
+    + row('cf-caustics','Water Caustics','Animated underwater light',GFX.caustics,cap.caustics)
+    + row('cf-reflections','Env Reflections','Cubemap reflections on metal/water',GFX.envReflections,cap.envReflections)
+    + row('cf-aa','Anti-aliasing','Smooth edges (MSAA)',GFX.antialias,cap.antialias)
+    + row('cf-ptx','⚡ Path-traced Accents','Experimental WebGPU GI/reflections',GFX.pathTraceAccents,cap.pathTraceAccents,reason.pathTraceAccents);
+}
+
+function readCustomPanel(){
+  const g=id=>$(id);
+  if(g('cf-res'))GFX.resScale=parseFloat(g('cf-res').value);
+  if(g('cf-shadowsize'))GFX.shadowSize=parseInt(g('cf-shadowsize').value);
+  if(g('cf-dust'))GFX.dustDensity=parseFloat(g('cf-dust').value);
+  if(g('cf-aniso'))GFX.aniso=parseInt(g('cf-aniso').value);
+  if(g('cf-shadows'))GFX.shadows=g('cf-shadows').checked;
+  if(g('cf-ssao'))GFX.ssao=g('cf-ssao').checked;
+  if(g('cf-refraction'))GFX.refraction=g('cf-refraction').checked;
+  if(g('cf-caustics'))GFX.caustics=g('cf-caustics').checked;
+  if(g('cf-reflections'))GFX.envReflections=g('cf-reflections').checked;
+  if(g('cf-aa'))GFX.antialias=g('cf-aa').checked;
+  if(g('cf-ptx'))GFX.pathTraceAccents=g('cf-ptx').checked;
+  clampToHardware();
+}
+
+// APPLY button on the preset screen
+function applyGfxScreen(){
+  if(_gfxScreenPick==='custom'){ readCustomPanel(); GFX.preset='custom'; }
+  else if(_gfxScreenPick==='auto'){ GFX.preset='auto'; applyPreset('auto'); }
+  else { GFX.preset=_gfxScreenPick; applyPreset(_gfxScreenPick); }
+  saveGfxChoice();
+  $('gfx-screen').style.display='none';
+  // First-launch path: menu hasn't been revealed yet
+  if(!$('app').classList.contains('vis')){ _revealMenuAfterGfx(); }
+  // If flight already running, a rebuild is needed for shadow/quality changes
+  if(typeof flightInited!=='undefined'&&flightInited){ toast('✅ Graphics applied — re-enter flight for full effect'); if(typeof applyRenderSettings==='function')applyRenderSettings(); }
 }
 
 // Build a small cubemap env so PBR materials get reflections everywhere.
@@ -1622,6 +1889,7 @@ function initFlightScene(){
   try{buildFlightGalaxies();}catch(e){console.warn('gal:',e);}
   try{buildFlightNebulae();}catch(e){console.warn('neb:',e);}
   try{buildFlightGalaxyBand();}catch(e){console.warn('mwband:',e);}
+  try{buildVolumetricDust();}catch(e){console.warn('dust:',e);}
   try{buildDistantStarSystems();}catch(e){console.warn('systems:',e);}
   try{buildSolarSystem();}catch(e){console.warn('solar:',e);}
   try{applyProceduralTextures();}catch(e){console.warn('tex:',e);}
@@ -1668,6 +1936,7 @@ function initFlightScene(){
     try{updateFlight(dt);}catch(e){}
     try{updateBodies(dt);}catch(e){}
     try{updateDistantSystems(dt);}catch(e){}
+    try{updateVolumetricDust(dt);}catch(e){}
     try{updateHUD();}catch(e){}
     try{drawMinimap();}catch(e){}
     renderWithPostFX();
@@ -2463,7 +2732,7 @@ function initGalaxyMapScene(){
 function openSettings(){
   // sync controls to live GFX state
   try{
-    if($('set-quality'))$('set-quality').value=GFX.tier;
+    if($('set-quality'))$('set-quality').value=(GFX.preset==='custom'?'auto':GFX.preset);
     if($('set-resscale'))$('set-resscale').value=String(GFX.resScale);
     if($('set-shadows'))$('set-shadows').checked=GFX.shadows;
     if($('set-reflections'))$('set-reflections').checked=GFX.envReflections;
@@ -2482,7 +2751,7 @@ function applySettings(){
   if(flightCamera)flightCamera.far=STATE.settings.fov;
   // ── Graphics quality / lighting effects ──
   let needsRebuild=false;
-  if($('set-quality')){const q=$('set-quality').value;if(GFX.tier!==q){GFX.tier=q;needsRebuild=true;}}
+  if($('set-quality')){const q=$('set-quality').value;if(GFX.preset!==q){GFX.preset=q;if(q!=='custom')applyPreset(q);needsRebuild=true;}}
   if($('set-resscale')){
     const rs=parseFloat($('set-resscale').value);
     if(GFX.resScale!==rs){
@@ -2494,13 +2763,15 @@ function applySettings(){
     }
   }
   // shadow/reflection/caustic/GI toggles take effect on next scene build
-  if($('set-shadows')&&$('set-shadows').checked!==GFX.shadows){GFX.shadows=$('set-shadows').checked;needsRebuild=true;}
-  if($('set-reflections')&&$('set-reflections').checked!==GFX.envReflections){GFX.envReflections=$('set-reflections').checked;needsRebuild=true;}
+  if($('set-shadows')&&$('set-shadows').checked!==GFX.shadows){GFX.shadows=$('set-shadows').checked;GFX.preset='custom';needsRebuild=true;}
+  if($('set-reflections')&&$('set-reflections').checked!==GFX.envReflections){GFX.envReflections=$('set-reflections').checked;GFX.preset='custom';needsRebuild=true;}
   if($('set-caustics'))GFX.caustics=$('set-caustics').checked;
   if($('set-gi'))GFX.fakeGI=$('set-gi').checked;
-  STATE.settings.gfxQuality=GFX.tier;STATE.settings.resScale=GFX.resScale;
+  clampToHardware();
+  STATE.settings.gfxQuality=GFX.preset;STATE.settings.resScale=GFX.resScale;
   STATE.settings.shadows=GFX.shadows;STATE.settings.reflections=GFX.envReflections;
   STATE.settings.caustics=GFX.caustics;STATE.settings.gi=GFX.fakeGI;
+  saveGfxChoice(); // remember last setting until changed again
   if(typeof applyRenderSettings==='function')applyRenderSettings();
   closeSettings();
   toast(needsRebuild?'✅ Settings applied — re-enter flight for shadows/quality':'✅ Settings applied');
@@ -2683,6 +2954,7 @@ function makePlanetTexture(type,baseHex,seed){
   cx.putImageData(img,0,0);
   const tex=new THREE.CanvasTexture(cv);
   tex.wrapS=THREE.RepeatWrapping;
+  if(GFX.aniso>1&&flightRenderer){try{tex.anisotropy=Math.min(GFX.aniso,flightRenderer.capabilities.getMaxAnisotropy());}catch(e){}}
   _texCache[key]=tex;return tex;
 }
 
@@ -2899,7 +3171,67 @@ function renderWithPostFX(){
 }
 function applyRenderSettings(){
   buildFlightGalaxyBand();
+  buildVolumetricDust();
   if(STATE.settings.textures)applyProceduralTextures();
+}
+
+// ── VOLUMETRIC SPACE DUST / DRIFTING NEBULA VOLUME ──────────────
+// Soft additive point sprites that drift near the camera, giving the
+// universe a sense of depth and atmosphere. Density scales by tier.
+let flightDust=null,_dustVel=null,_dustT=0;
+function buildVolumetricDust(){
+  if(flightDust){flightScene.remove(flightDust);flightDust.geometry.dispose();flightDust=null;}
+  if(!GFX.volumetricDust){return;}
+  const base=2200;
+  const N=Math.max(200,Math.round(base*(GFX.dustDensity||1)));
+  const p=new Float32Array(N*3),c=new Float32Array(N*3),sz=new Float32Array(N);
+  _dustVel=new Float32Array(N*3);
+  const R=160; // dust occupies a moving cube around the camera
+  const tints=[[0.5,0.7,1.0],[0.7,0.55,1.0],[1.0,0.8,0.55],[0.6,0.9,0.85]];
+  for(let i=0;i<N;i++){
+    p[i*3]=(Math.random()-0.5)*R*2;
+    p[i*3+1]=(Math.random()-0.5)*R*2;
+    p[i*3+2]=(Math.random()-0.5)*R*2;
+    const t=tints[Math.floor(Math.random()*tints.length)];
+    const b=0.15+Math.random()*0.5;
+    c[i*3]=t[0]*b;c[i*3+1]=t[1]*b;c[i*3+2]=t[2]*b;
+    sz[i]=rnd(0.6,2.6);
+    // gentle drift
+    _dustVel[i*3]=rnd(-2,2);_dustVel[i*3+1]=rnd(-2,2);_dustVel[i*3+2]=rnd(-2,2);
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  g.setAttribute('color',new THREE.BufferAttribute(c,3));
+  g.setAttribute('asize',new THREE.BufferAttribute(sz,1));
+  const tex=makeCircleTex(32,'rgb(200,220,255)',0.7);
+  const mat=new THREE.PointsMaterial({
+    size:2.2,sizeAttenuation:true,vertexColors:true,map:tex,
+    transparent:true,opacity:0.6,depthWrite:false,blending:THREE.AdditiveBlending,alphaTest:0.01
+  });
+  flightDust=new THREE.Points(g,mat);
+  flightDust.frustumCulled=false;
+  flightScene.add(flightDust);
+}
+function updateVolumetricDust(dt){
+  if(!flightDust||!flightCamera)return;
+  _dustT+=dt;
+  // recenter the dust cube on the camera and wrap particles that drift out
+  const cam=flightCamera.position;
+  const pos=flightDust.geometry.attributes.position;
+  const R=160;
+  flightDust.position.set(0,0,0);
+  for(let i=0;i<pos.count;i++){
+    let x=pos.getX(i)+_dustVel[i*3]*dt;
+    let y=pos.getY(i)+_dustVel[i*3+1]*dt;
+    let z=pos.getZ(i)+_dustVel[i*3+2]*dt;
+    // wrap relative to camera so dust always surrounds the player
+    const rx=x-cam.x, ry=y-cam.y, rz=z-cam.z;
+    if(rx> R)x-=R*2; else if(rx<-R)x+=R*2;
+    if(ry> R)y-=R*2; else if(ry<-R)y+=R*2;
+    if(rz> R)z-=R*2; else if(rz<-R)z+=R*2;
+    pos.setXYZ(i,x,y,z);
+  }
+  pos.needsUpdate=true;
 }
 
 // ── 5. PROCEDURAL SURFACE WALK MODE ──────────────────────────────
@@ -2927,7 +3259,7 @@ function enterSurface(body){
   $('surface-grav').textContent='GRAV '+pal.grav.toFixed(2)+'g';
   const cv=$('surface-canvas');
   const W=window.innerWidth,H=window.innerHeight;cv.width=W;cv.height=H;
-  if(!GFX.tier)try{detectCapabilities();applyQualityTier();}catch(e){}
+  if(!GFX.scanned)try{detectCapabilities();loadGfxChoice();applyPreset(GFX.preset);}catch(e){}
   surfRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:!GFX.isMobile,powerPreference:'high-performance'});
   surfRenderer.setPixelRatio(effectivePixelRatio());
   surfRenderer.setSize(W,H);
