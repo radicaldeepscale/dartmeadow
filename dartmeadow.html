@@ -311,6 +311,9 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
 .art-btn{padding:4px 10px;background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.25);color:rgba(0,245,255,0.8);font-family:var(--font-hud);font-size:0.5rem;letter-spacing:0.1em;cursor:pointer;transition:var(--trans);border-radius:2px;pointer-events:auto;}
 .art-btn:hover{background:var(--dim-cyan);color:var(--cyan);}
 .art-btn.active{background:rgba(0,245,255,0.2);color:var(--cyan);}
+.aud-btn{width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:rgba(0,245,255,0.65);font-size:0.6rem;cursor:pointer;border-radius:50%;transition:var(--trans);padding:0;pointer-events:auto;}
+.aud-btn:hover{background:rgba(0,245,255,0.15);color:var(--cyan);}
+.aud-btn.playing{color:#00ff88;}
 /* HUD panels */
 #ar-left{position:absolute;left:8px;top:50px;width:180px;display:flex;flex-direction:column;gap:4px;pointer-events:none;z-index:22;}
 #ar-right{position:absolute;right:8px;top:50px;width:175px;display:flex;flex-direction:column;gap:4px;pointer-events:none;z-index:22;}
@@ -452,6 +455,18 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
 </div>
 
 <input type="file" id="file-upload" accept=".dartprofile,.json">
+
+<!-- ♫ AUDIO ENGINE -->
+<audio id="game-audio" loop preload="auto"></audio>
+<input type="file" id="music-file-input" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" multiple style="display:none;">
+
+<!-- Floating music control — visible across menus/settings until in-game -->
+<div id="float-music" style="display:none;position:fixed;top:12px;right:14px;z-index:9600;display:flex;align-items:center;gap:6px;background:rgba(4,10,22,0.82);border:1px solid rgba(0,245,255,0.25);border-radius:20px;padding:5px 8px 5px 12px;backdrop-filter:blur(10px);">
+  <span id="float-music-icon" style="font-size:0.7rem;">♫</span>
+  <span style="font-family:var(--font-mono);font-size:0.52rem;color:rgba(0,245,255,0.7);letter-spacing:0.06em;">CLINICAL BLOOM</span>
+  <button onclick="audioToggle()" id="float-music-toggle" title="Play / Pause" style="background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3);color:var(--cyan);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:0.6rem;display:flex;align-items:center;justify-content:center;">⏸</button>
+  <button onclick="audioStop()" title="Stop music" style="background:rgba(255,80,100,0.1);border:1px solid rgba(255,80,100,0.4);color:#ff6478;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:0.55rem;display:flex;align-items:center;justify-content:center;">■</button>
+</div>
 
 <div id="app">
 <!-- MENU -->
@@ -697,6 +712,15 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
       <div>ETA <span id="hud-eta">—</span></div>
     </div>
     <div class="art-btns">
+      <!-- ♫ In-game audio player -->
+      <div id="audio-player" style="display:flex;align-items:center;gap:3px;margin-right:8px;padding:2px 6px;background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.18);border-radius:14px;">
+        <button class="aud-btn" onclick="audioPrev()" title="Previous track">⏮</button>
+        <button class="aud-btn" id="aud-playpause" onclick="audioToggle()" title="Play / Pause">⏸</button>
+        <button class="aud-btn" onclick="audioStop()" title="Stop">■</button>
+        <button class="aud-btn" onclick="audioNext()" title="Next track">⏭</button>
+        <button class="aud-btn" onclick="audioPickFiles()" title="Load music from your device">📁</button>
+        <button class="aud-btn" onclick="audioLoadDefault()" title="Reload game soundtrack">♫</button>
+      </div>
       <button class="art-btn active" id="cam-btn" onclick="cycleCamMode()">CAM 1</button>
       <button class="art-btn" id="lockon-btn" onclick="returnHome()" title="Return to home base (Earth) and track it">⌂ HOME</button>
       <button class="art-btn" onclick="openGalaxyMap()">MAP</button>
@@ -1041,9 +1065,14 @@ function closeSaveModal(){$('save-modal').classList.remove('open');}
 function goScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   STATE.screen=name;
-  if(name==='builder'){$('screen-builder').classList.add('active');requestAnimationFrame(()=>requestAnimationFrame(initBuilderScene));}
-  else if(name==='flight'){$('screen-flight').classList.add('active');}
-  else{$('screen-menu').classList.add('active');initMenuBg();}
+  if(name==='builder'){$('screen-builder').classList.add('active');requestAnimationFrame(()=>requestAnimationFrame(initBuilderScene));showFloatingMusic();}
+  else if(name==='flight'){$('screen-flight').classList.add('active');hideFloatingMusicInGame();}
+  else{$('screen-menu').classList.add('active');initMenuBg();startMenuMusic();}
+}
+// Show floating music control on pre-flight screens (if music isn't stopped)
+function showFloatingMusic(){
+  if(AUDIO&&AUDIO.stopped)return;
+  const fm=$('float-music');if(fm)fm.style.display='flex';
 }
 function launchFlight(){
   goScreen('flight');
@@ -1074,6 +1103,8 @@ function launchFlight(){
   const bar=$('ls-bar'),stat=$('ls-status'),enter=$('ls-enter');
   const adv=()=>{p=Math.min(p+rnd(7,18),100);bar.style.width=p+'%';stat.textContent=msgs[Math.min(Math.floor(p/15),msgs.length-1)];if(p<100)setTimeout(adv,rnd(180,380));else setTimeout(()=>enter.classList.add('vis'),300);};
   setTimeout(adv,350);
+  // initAudio deferred — AUDIO const is declared later in this script
+  setTimeout(()=>{try{initAudio();}catch(e){console.warn('audio:',e);}},0);
 })();
 function enterApp(){
   // First launch → show graphics setup; returning users skip straight in.
@@ -1090,6 +1121,130 @@ function enterApp(){
 function _revealMenuAfterGfx(){
   $('app').classList.add('vis');goScreen('menu');
 }
+
+// ══════════════════════════════════════════════════════════════
+//  ♫ AUDIO ENGINE — game soundtrack + local file player
+// ══════════════════════════════════════════════════════════════
+const AUDIO = {
+  el:null,
+  defaultSrc:'clinical_bloom.mp3',
+  defaultName:'CLINICAL BLOOM',
+  playlist:[],          // [{name, src, isObjectUrl}]
+  index:-1,
+  stopped:false,        // user explicitly stopped (don't autoplay)
+  started:false,
+  userInteracted:false,
+};
+
+function initAudio(){
+  AUDIO.el=$('game-audio');
+  if(!AUDIO.el)return;
+  // seed playlist with the bundled soundtrack
+  AUDIO.playlist=[{name:AUDIO.defaultName,src:AUDIO.defaultSrc,isObjectUrl:false}];
+  AUDIO.index=0;
+  AUDIO.el.src=AUDIO.defaultSrc;
+  AUDIO.el.loop=false; // we handle next-track on end (loop single via playlist of 1)
+  AUDIO.el.addEventListener('ended',()=>{ audioNext(); });
+  AUDIO.el.addEventListener('play',()=>syncAudioUI(true));
+  AUDIO.el.addEventListener('pause',()=>syncAudioUI(false));
+  // music file picker
+  const fi=$('music-file-input');
+  if(fi)fi.addEventListener('change',onMusicFilesPicked);
+  // Autoplay needs a user gesture in every browser. Capture the FIRST tap/click
+  // anywhere and start the soundtrack then (covers the "LAUNCH SEQUENCE" click).
+  const kick=()=>{
+    AUDIO.userInteracted=true;
+    if(!AUDIO.started&&!AUDIO.stopped)audioPlay();
+    window.removeEventListener('pointerdown',kick);
+    window.removeEventListener('keydown',kick);
+  };
+  window.addEventListener('pointerdown',kick,{once:false});
+  window.addEventListener('keydown',kick,{once:false});
+}
+
+// Start music when entering the main menu (if not stopped by user)
+function startMenuMusic(){
+  if(AUDIO.stopped||AUDIO.started)return;
+  audioPlay();
+  // show the floating control while in menus/settings
+  const fm=$('float-music');if(fm)fm.style.display='flex';
+}
+
+function audioPlay(){
+  if(!AUDIO.el)return;
+  AUDIO.stopped=false;
+  const pr=AUDIO.el.play();
+  if(pr&&pr.catch)pr.catch(()=>{ /* blocked until gesture — kick handles it */ });
+  AUDIO.started=true;
+  syncAudioUI(true);
+}
+function audioPause(){ if(AUDIO.el){AUDIO.el.pause();syncAudioUI(false);} }
+function audioToggle(){ if(!AUDIO.el)return; if(AUDIO.el.paused)audioPlay(); else audioPause(); }
+function audioStop(){
+  if(!AUDIO.el)return;
+  AUDIO.el.pause();AUDIO.el.currentTime=0;AUDIO.stopped=true;
+  syncAudioUI(false);
+  // hide the floating control once stopped from menu
+  const fm=$('float-music');if(fm)fm.style.display='none';
+  toast('♫ Music stopped');
+}
+function audioPrev(){
+  if(AUDIO.playlist.length===0)return;
+  AUDIO.index=(AUDIO.index-1+AUDIO.playlist.length)%AUDIO.playlist.length;
+  loadTrack(AUDIO.index,true);
+}
+function audioNext(){
+  if(AUDIO.playlist.length===0)return;
+  if(AUDIO.playlist.length===1){ // single track → loop it
+    AUDIO.el.currentTime=0;if(!AUDIO.stopped)audioPlay();return;
+  }
+  AUDIO.index=(AUDIO.index+1)%AUDIO.playlist.length;
+  loadTrack(AUDIO.index,true);
+}
+function loadTrack(i,autoplay){
+  const t=AUDIO.playlist[i];if(!t)return;
+  AUDIO.el.src=t.src;AUDIO.index=i;
+  updateTrackName(t.name);
+  if(autoplay&&!AUDIO.stopped)audioPlay();
+}
+function audioPickFiles(){ const fi=$('music-file-input');if(fi)fi.click(); }
+function onMusicFilesPicked(e){
+  const files=[...(e.target.files||[])];
+  if(files.length===0)return;
+  // Replace playlist with the picked folder/files (keep default reachable via ♫ button)
+  const newList=files.filter(f=>f.type.startsWith('audio/')||/\.(mp3|wav|ogg|m4a|flac)$/i.test(f.name))
+    .map(f=>({name:f.name.replace(/\.[^.]+$/,''),src:URL.createObjectURL(f),isObjectUrl:true}));
+  if(newList.length===0){toast('⚠ No audio files selected');return;}
+  // revoke old object URLs
+  AUDIO.playlist.forEach(t=>{if(t.isObjectUrl)try{URL.revokeObjectURL(t.src);}catch(_){}});
+  AUDIO.playlist=newList;AUDIO.index=0;AUDIO.stopped=false;
+  loadTrack(0,true);
+  toast('♫ Loaded '+newList.length+' track'+(newList.length>1?'s':''));
+}
+function audioLoadDefault(){
+  // restore bundled soundtrack
+  AUDIO.playlist.forEach(t=>{if(t.isObjectUrl)try{URL.revokeObjectURL(t.src);}catch(_){}});
+  AUDIO.playlist=[{name:AUDIO.defaultName,src:AUDIO.defaultSrc,isObjectUrl:false}];
+  AUDIO.index=0;AUDIO.stopped=false;
+  loadTrack(0,true);
+  toast('♫ Game soundtrack loaded');
+}
+function syncAudioUI(playing){
+  const a=$('aud-playpause');if(a)a.textContent=playing?'⏸':'▶';
+  if(a)a.classList.toggle('playing',playing);
+  const ft=$('float-music-toggle');if(ft)ft.textContent=playing?'⏸':'▶';
+  const fi=$('float-music-icon');if(fi)fi.style.opacity=playing?'1':'0.5';
+}
+function updateTrackName(name){
+  // update both the floating label and (if present) any in-game label
+  const fm=$('float-music');
+  if(fm){const span=fm.querySelector('span:nth-child(2)');if(span)span.textContent=(name||'').toUpperCase().slice(0,18);}
+}
+// Hide the floating control once the player is actually in the flight screen
+function hideFloatingMusicInGame(){
+  const fm=$('float-music');if(fm)fm.style.display='none';
+}
+
 
 // ── Menu BG ───────────────────────────────────────────────────
 let menuAnim=null;
