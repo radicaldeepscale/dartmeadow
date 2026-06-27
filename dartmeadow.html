@@ -745,6 +745,22 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
 <div id="settings-modal">
   <div class="modal-box">
     <div class="modal-title">⚙ GRAPHICS &amp; RENDER</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Quality Preset</div><div class="setting-sub">Auto-detects your device</div></div>
+      <select id="set-quality" style="background:rgba(0,245,255,0.06);border:1px solid var(--border);color:var(--text);padding:3px 7px;font-family:var(--font-body);font-size:0.7rem;border-radius:2px;outline:none;">
+        <option value="auto" selected>Auto-detect</option><option value="low">Low (max compat)</option><option value="balanced">Balanced</option><option value="ultra">Ultra</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Resolution Scale</div><div class="setting-sub">Lower = faster framerate</div></div>
+      <select id="set-resscale" style="background:rgba(0,245,255,0.06);border:1px solid var(--border);color:var(--text);padding:3px 7px;font-family:var(--font-body);font-size:0.7rem;border-radius:2px;outline:none;">
+        <option value="0.5">50%</option><option value="0.65">65%</option><option value="0.8">80%</option><option value="1" selected>100% (Full)</option>
+      </select>
+    </div>
+    <div class="setting-row"><div><div class="setting-label">Real-time Shadows</div><div class="setting-sub">Soft shadow maps on surfaces</div></div><label class="toggle-switch"><input type="checkbox" id="set-shadows" checked><span class="toggle-track"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">Reflections</div><div class="setting-sub">Env-map reflections on metal/water</div></div><label class="toggle-switch"><input type="checkbox" id="set-reflections" checked><span class="toggle-track"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">Water Caustics</div><div class="setting-sub">Animated underwater light</div></div><label class="toggle-switch"><input type="checkbox" id="set-caustics" checked><span class="toggle-track"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">Global Illumination</div><div class="setting-sub">Hemisphere bounce lighting</div></div><label class="toggle-switch"><input type="checkbox" id="set-gi" checked><span class="toggle-track"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">Star Field Density</div><div class="setting-sub">Volumetric parallax stars</div></div><label class="toggle-switch"><input type="checkbox" id="set-stars" checked><span class="toggle-track"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">Galaxy Dust Clouds</div><div class="setting-sub">Nebula particle systems</div></div><label class="toggle-switch"><input type="checkbox" id="set-dust" checked><span class="toggle-track"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">Bloom / Glow</div><div class="setting-sub">Emissive object halo</div></div><label class="toggle-switch"><input type="checkbox" id="set-bloom" checked><span class="toggle-track"></span></label></div>
@@ -831,7 +847,7 @@ const STATE={
   flight:{speed:0,dart:false,energy:100,hull:100,shield:100,destIdx:0,time:0,
     camPitch:0,camYaw:0,thrust:0,strafe:0,lift:0,
     pos:new THREE.Vector3(28,2,3),vel:new THREE.Vector3()},
-  settings:{stars:true,dust:true,bloom:true,motion:true,textures:true,galaxyband:true,particles:'med',fov:50000,dartSpeed:15}
+  settings:{stars:true,dust:true,bloom:true,motion:true,textures:true,galaxyband:true,particles:'med',fov:50000,dartSpeed:15,gfxQuality:'auto',resScale:1.0,shadows:true,reflections:true,caustics:true,gi:true}
 };
 
 // ── Save System ───────────────────────────────────────────────
@@ -858,7 +874,15 @@ function loadSaveData(data){
     STATE.flight.hull=data.flight.hull||100;
     STATE.flight.shield=data.flight.shield||100;
   }
-  if(data.settings)Object.assign(STATE.settings,data.settings);
+  if(data.settings){Object.assign(STATE.settings,data.settings);
+    // restore graphics knobs into the live GFX object
+    if(data.settings.gfxQuality!==undefined)GFX.tier=data.settings.gfxQuality;
+    if(data.settings.resScale!==undefined)GFX.resScale=data.settings.resScale;
+    if(data.settings.shadows!==undefined)GFX.shadows=data.settings.shadows;
+    if(data.settings.reflections!==undefined)GFX.envReflections=data.settings.reflections;
+    if(data.settings.caustics!==undefined)GFX.caustics=data.settings.caustics;
+    if(data.settings.gi!==undefined)GFX.fakeGI=data.settings.gi;
+  }
   return true;
 }
 function getSaveSlots(){
@@ -1427,6 +1451,96 @@ function applyPreset(name){
 }
 
 // ══════════════════════════════════════════════════════════════
+//  ✦ DEVICE CAPABILITY + GRAPHICS QUALITY SYSTEM
+//  Detects what each browser/device can actually do, then auto-scales.
+//  Works across Safari (iOS/macOS), Chrome, Edge, Firefox on all OSes.
+// ══════════════════════════════════════════════════════════════
+const GFX = {
+  // detected capabilities (filled by detectCapabilities)
+  webgl2:false, floatTex:false, halfFloatTex:false, maxTexSize:2048,
+  isMobile:false, isIOS:false, isSafari:false, dpr:1,
+  // active quality knobs (set by applyQualityTier)
+  tier:'auto',           // 'low' | 'balanced' | 'ultra' | 'auto'
+  resScale:1.0,          // render resolution multiplier (manual control)
+  shadows:false, shadowSize:1024,
+  envReflections:true,   // cubemap reflections (fake RT reflections)
+  caustics:true,         // animated caustic projection on water
+  fakeGI:true,           // hemisphere + AO approximation of global illum
+  refraction:true,       // refraction shader on glass/water
+  ssao:false,            // screen-space ambient occlusion (desktop only)
+  maxPixelRatio:2,
+};
+
+function detectCapabilities(){
+  const ua=navigator.userAgent;
+  GFX.isIOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  GFX.isSafari=/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(ua);
+  GFX.isMobile=/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)||navigator.maxTouchPoints>1&&window.innerWidth<1100;
+  GFX.dpr=window.devicePixelRatio||1;
+  // probe a throwaway WebGL context
+  try{
+    const c=document.createElement('canvas');
+    let gl=c.getContext('webgl2');
+    GFX.webgl2=!!gl;
+    if(!gl)gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+    if(gl){
+      GFX.maxTexSize=gl.getParameter(gl.MAX_TEXTURE_SIZE)||2048;
+      // float render-target support (needed for HDR bloom). iOS Safari is picky.
+      GFX.floatTex=!!(gl.getExtension('OES_texture_float')||GFX.webgl2);
+      GFX.halfFloatTex=!!(gl.getExtension('OES_texture_half_float')||GFX.webgl2);
+    }
+  }catch(e){console.warn('cap probe:',e);}
+  console.log('[GFX]',{webgl2:GFX.webgl2,iOS:GFX.isIOS,safari:GFX.isSafari,mobile:GFX.isMobile,dpr:GFX.dpr,maxTex:GFX.maxTexSize});
+}
+
+// Choose effect set per tier. 'auto' picks based on detected device.
+function resolveTier(){
+  if(GFX.tier!=='auto')return GFX.tier;
+  // Auto: desktop → ultra, capable mobile → balanced, old/iOS-limited → low
+  if(!GFX.isMobile)return 'ultra';
+  // mobile path — keep 30fps target at full res, so trim the heavy stuff
+  if(GFX.webgl2&&GFX.maxTexSize>=4096)return 'balanced';
+  return 'low';
+}
+
+function applyQualityTier(){
+  const t=resolveTier();
+  if(t==='ultra'){
+    GFX.shadows=true; GFX.shadowSize=2048; GFX.envReflections=true; GFX.caustics=true;
+    GFX.fakeGI=true; GFX.refraction=true; GFX.ssao=true; GFX.maxPixelRatio=2;
+  } else if(t==='balanced'){
+    GFX.shadows=true; GFX.shadowSize=1024; GFX.envReflections=true; GFX.caustics=true;
+    GFX.fakeGI=true; GFX.refraction=true; GFX.ssao=false; GFX.maxPixelRatio=2;
+  } else { // low — preserve compatibility + framerate, full resolution still allowed
+    GFX.shadows=false; GFX.shadowSize=512; GFX.envReflections=true; GFX.caustics=false;
+    GFX.fakeGI=true; GFX.refraction=false; GFX.ssao=false; GFX.maxPixelRatio=GFX.isIOS?2:1.5;
+  }
+  // float textures unavailable → disable HDR bloom motion targets gracefully
+  if(!GFX.floatTex&&!GFX.halfFloatTex){ if(STATE&&STATE.settings){STATE.settings.bloom=false;STATE.settings.motion=false;} }
+}
+
+// Effective pixel ratio = device DPR (capped) × manual resolution scale
+function effectivePixelRatio(){
+  return Math.min(GFX.dpr,GFX.maxPixelRatio)*GFX.resScale;
+}
+
+// Build a small cubemap env so PBR materials get reflections everywhere.
+// This is the browser-real stand-in for ray-traced reflections.
+let _envMap=null;
+function buildEnvMap(renderer,scene){
+  try{
+    const pmrem=new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    // render the existing scene into an env map (captures stars/sun/galaxy)
+    const cubeCam=new THREE.CubeCamera(1,200000,new THREE.WebGLCubeRenderTarget(128,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter}));
+    cubeCam.position.set(0,0,0);
+    cubeCam.update(renderer,scene);
+    _envMap=cubeCam.renderTarget.texture;
+    return _envMap;
+  }catch(e){console.warn('envmap:',e);return null;}
+}
+
+// ══════════════════════════════════════════════════════════════
 //  FLIGHT SCENE
 // ══════════════════════════════════════════════════════════════
 let flightRenderer,flightScene,flightCamera,boardFlight,flightInited=false;
@@ -1477,13 +1591,22 @@ function initFlightScene(){
   cv.style.cssText='position:absolute;top:0;left:0;display:block;touch-action:none;z-index:1;';
   container.insertBefore(cv,container.firstChild);
 
-  // Renderer — mirror mr.html exactly: alpha:false, setClearColor, pixel-exact setSize
-  flightRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
-  flightRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  // Detect device capabilities + pick a quality tier before building the renderer
+  try{ detectCapabilities(); applyQualityTier(); }catch(e){console.warn('cap init:',e);}
+
+  // Renderer — compatibility-first across Safari/Chrome/Edge/Firefox on all OSes
+  flightRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:!GFX.isMobile,alpha:false,powerPreference:'high-performance'});
+  flightRenderer.setPixelRatio(effectivePixelRatio());
   flightRenderer.setClearColor(0x000206,1);
   flightRenderer.setSize(W,H);
   flightRenderer.toneMapping=THREE.ACESFilmicToneMapping;
   flightRenderer.toneMappingExposure=1.0;
+  flightRenderer.outputEncoding=THREE.sRGBEncoding;
+  // Real-time shadow maps (soft PCF) — disabled on low tier for framerate
+  if(GFX.shadows){
+    flightRenderer.shadowMap.enabled=true;
+    flightRenderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  }
 
   flightScene=new THREE.Scene();
 
@@ -1507,6 +1630,19 @@ function initFlightScene(){
   try{initJoysticks();}catch(e){console.warn('joy:',e);}
   try{initDeviceOrientation();}catch(e){}
   try{initPostFX();}catch(e){console.warn('postfx:',e);}
+  // Build env-map reflections (browser-real stand-in for ray-traced reflections)
+  if(GFX.envReflections){
+    try{
+      buildEnvMap(flightRenderer,flightScene);
+      if(_envMap){
+        flightScene.traverse(o=>{
+          if(o.isMesh&&o.material&&o.material.isMeshStandardMaterial&&(o.material.metalness>0.3)){
+            o.material.envMap=_envMap;o.material.envMapIntensity=0.8;o.material.needsUpdate=true;
+          }
+        });
+      }
+    }catch(e){console.warn('flight env:',e);}
+  }
 
   window.addEventListener('keydown',onKey);
   window.addEventListener('keyup',onKeyUp);
@@ -1518,10 +1654,11 @@ function initFlightScene(){
     const dt=Math.min((now-last)/1000,0.05);
     last=now;flightTime+=dt;
 
-    // Sync to actual window size each frame
+    // Sync to actual window size each frame (compare CSS size, not buffer size)
     const nW=window.innerWidth;const nH=window.innerHeight;
-    if(nW>10&&nH>10&&(cv.width!==nW||cv.height!==nH)){
-      cv.width=nW;cv.height=nH;
+    const curW=parseInt(cv.style.width)||cv.clientWidth||0;
+    if(nW>10&&nH>10&&Math.abs(curW-nW)>1){
+      flightRenderer.setPixelRatio(effectivePixelRatio());
       flightRenderer.setSize(nW,nH);
       flightCamera.aspect=nW/nH;
       flightCamera.updateProjectionMatrix();
@@ -1711,6 +1848,8 @@ function buildSolarSystem(){
 function addSunLight(){
   // Sun point light — range extends past Neptune (~842 scene units at AU=28)
   const sl=new THREE.PointLight(0xffffee,3,300000);sl.position.set(0,0,0);flightScene.add(sl);
+  // Hemisphere fill = cheap global-illumination approximation (universal)
+  if(GFX.fakeGI){flightScene.add(new THREE.HemisphereLight(0x223a55,0x0a0a14,0.4));}
   flightScene.add(new THREE.PointLight(0x4455ff,0.6,500000));
   flightScene.add(new THREE.AmbientLight(0x223355,1.2));
   // Load Earth coastlines from proven source
@@ -2321,7 +2460,18 @@ function initGalaxyMapScene(){
 // ══════════════════════════════════════════════════════════════
 //  SETTINGS
 // ══════════════════════════════════════════════════════════════
-function openSettings(){$('settings-modal').classList.add('open');}
+function openSettings(){
+  // sync controls to live GFX state
+  try{
+    if($('set-quality'))$('set-quality').value=GFX.tier;
+    if($('set-resscale'))$('set-resscale').value=String(GFX.resScale);
+    if($('set-shadows'))$('set-shadows').checked=GFX.shadows;
+    if($('set-reflections'))$('set-reflections').checked=GFX.envReflections;
+    if($('set-caustics'))$('set-caustics').checked=GFX.caustics;
+    if($('set-gi'))$('set-gi').checked=GFX.fakeGI;
+  }catch(e){}
+  $('settings-modal').classList.add('open');
+}
 function closeSettings(){$('settings-modal').classList.remove('open');}
 function applySettings(){
   STATE.settings.stars=$('set-stars').checked;STATE.settings.dust=$('set-dust').checked;STATE.settings.bloom=$('set-bloom').checked;
@@ -2330,9 +2480,30 @@ function applySettings(){
   STATE.settings.galaxyband=$('set-galaxyband')?$('set-galaxyband').checked:true;
   STATE.settings.particles=$('set-particles').value;STATE.settings.fov=parseInt($('set-fov').value);STATE.settings.dartSpeed=parseInt($('set-dart-speed').value);
   if(flightCamera)flightCamera.far=STATE.settings.fov;
-  // Apply post-processing + galaxy band live
+  // ── Graphics quality / lighting effects ──
+  let needsRebuild=false;
+  if($('set-quality')){const q=$('set-quality').value;if(GFX.tier!==q){GFX.tier=q;needsRebuild=true;}}
+  if($('set-resscale')){
+    const rs=parseFloat($('set-resscale').value);
+    if(GFX.resScale!==rs){
+      GFX.resScale=rs;
+      // resolution scale applies live — no rebuild needed
+      if(flightRenderer)flightRenderer.setPixelRatio(effectivePixelRatio());
+      if(surfRenderer)surfRenderer.setPixelRatio(effectivePixelRatio());
+      resizePostFX();
+    }
+  }
+  // shadow/reflection/caustic/GI toggles take effect on next scene build
+  if($('set-shadows')&&$('set-shadows').checked!==GFX.shadows){GFX.shadows=$('set-shadows').checked;needsRebuild=true;}
+  if($('set-reflections')&&$('set-reflections').checked!==GFX.envReflections){GFX.envReflections=$('set-reflections').checked;needsRebuild=true;}
+  if($('set-caustics'))GFX.caustics=$('set-caustics').checked;
+  if($('set-gi'))GFX.fakeGI=$('set-gi').checked;
+  STATE.settings.gfxQuality=GFX.tier;STATE.settings.resScale=GFX.resScale;
+  STATE.settings.shadows=GFX.shadows;STATE.settings.reflections=GFX.envReflections;
+  STATE.settings.caustics=GFX.caustics;STATE.settings.gi=GFX.fakeGI;
   if(typeof applyRenderSettings==='function')applyRenderSettings();
-  closeSettings();toast('✅ Settings applied');
+  closeSettings();
+  toast(needsRebuild?'✅ Settings applied — re-enter flight for shadows/quality':'✅ Settings applied');
 }
 
 window.addEventListener('resize',()=>{if(menuAnim){const c=$('menu-bg-canvas');c.width=innerWidth;c.height=innerHeight;}});
@@ -2651,8 +2822,11 @@ let _postInited=false,_rtScene,_rtA,_rtB,_rtPrev,_fsScene,_fsCam,_fsQuad;
 let _brightMat,_blurMat,_compMat,_blendMat;
 function initPostFX(){
   if(_postInited||!flightRenderer)return;
-  const W=window.innerWidth,H=window.innerHeight;
-  const opts={minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat};
+  const sz=new THREE.Vector2();flightRenderer.getDrawingBufferSize(sz);
+  const W=Math.max(2,Math.floor(sz.x)),H=Math.max(2,Math.floor(sz.y));
+  // half-float targets preserve HDR for bloom where supported; fall back to byte
+  const ftype=(GFX.halfFloatTex&&THREE.HalfFloatType)?THREE.HalfFloatType:THREE.UnsignedByteType;
+  const opts={minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,type:ftype};
   _rtScene=new THREE.WebGLRenderTarget(W,H,opts);
   _rtA=new THREE.WebGLRenderTarget(W>>1,H>>1,opts);
   _rtB=new THREE.WebGLRenderTarget(W>>1,H>>1,opts);
@@ -2683,7 +2857,8 @@ function initPostFX(){
 }
 function resizePostFX(){
   if(!_postInited)return;
-  const W=window.innerWidth,H=window.innerHeight;
+  const sz=new THREE.Vector2();flightRenderer.getDrawingBufferSize(sz);
+  const W=Math.max(2,sz.x),H=Math.max(2,sz.y);
   _rtScene.setSize(W,H);_rtPrev.setSize(W,H);
   _rtA.setSize(W>>1,H>>1);_rtB.setSize(W>>1,H>>1);
   _blurMat.uniforms.res.value.set(W>>1,H>>1);
@@ -2752,19 +2927,41 @@ function enterSurface(body){
   $('surface-grav').textContent='GRAV '+pal.grav.toFixed(2)+'g';
   const cv=$('surface-canvas');
   const W=window.innerWidth,H=window.innerHeight;cv.width=W;cv.height=H;
-  surfRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
-  surfRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  if(!GFX.tier)try{detectCapabilities();applyQualityTier();}catch(e){}
+  surfRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:!GFX.isMobile,powerPreference:'high-performance'});
+  surfRenderer.setPixelRatio(effectivePixelRatio());
   surfRenderer.setSize(W,H);
   surfRenderer.toneMapping=THREE.ACESFilmicToneMapping;surfRenderer.toneMappingExposure=1.05;
+  surfRenderer.outputEncoding=THREE.sRGBEncoding;
+  if(GFX.shadows){
+    surfRenderer.shadowMap.enabled=true;
+    surfRenderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  }
   surfScene=new THREE.Scene();
   surfScene.background=new THREE.Color(pal.sky[1]);
   if(pal.atmos)surfScene.fog=new THREE.Fog(pal.fog,40,420);
   surfCamera=new THREE.PerspectiveCamera(72,W/H,0.1,2000);
   surfCamera.position.set(0,3.2,0);
   surfCamera.rotation.order='YXZ';
-  // lights
-  const sun=new THREE.DirectionalLight(0xfff2e0,pal.atmos?2.0:2.6);sun.position.set(80,120,40);surfScene.add(sun);
-  surfScene.add(new THREE.AmbientLight(pal.atmos?0x6688aa:0x222233,pal.atmos?1.1:0.4));
+  // ── Lighting: shadow-casting sun + hemisphere fake-GI ──────────
+  const sun=new THREE.DirectionalLight(0xfff2e0,pal.atmos?2.0:2.6);
+  sun.position.set(80,120,40);
+  if(GFX.shadows){
+    sun.castShadow=true;
+    sun.shadow.mapSize.set(GFX.shadowSize,GFX.shadowSize);
+    sun.shadow.camera.near=1;sun.shadow.camera.far=600;
+    sun.shadow.camera.left=-200;sun.shadow.camera.right=200;
+    sun.shadow.camera.top=200;sun.shadow.camera.bottom=-200;
+    sun.shadow.bias=-0.0004;
+  }
+  surfScene.add(sun);
+  // Hemisphere light approximates global illumination: sky color bounces
+  // from above, ground color bounces from below — soft, free, universal.
+  if(GFX.fakeGI){
+    const hemi=new THREE.HemisphereLight(pal.sky[0],pal.ground,pal.atmos?0.9:0.35);
+    surfScene.add(hemi);
+  }
+  surfScene.add(new THREE.AmbientLight(pal.atmos?0x6688aa:0x222233,pal.atmos?0.5:0.25));
   if(!pal.atmos){ // star dome for airless worlds
     const sn=2000,sp=new Float32Array(sn*3);
     for(let i=0;i<sn;i++){const ph=Math.acos(2*Math.random()-1),th=Math.random()*6.28,r=800;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=Math.abs(r*Math.cos(ph));sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
@@ -2781,12 +2978,28 @@ function enterSurface(body){
   if(pal.atmos)surfScene.add(new THREE.Mesh(skyGeo,skyMat));
   // the skyboard (parked craft) the player stepped off of
   const board=new THREE.Group();
-  const deck=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.25,1.1),new THREE.MeshStandardMaterial({color:0x0a2530,emissive:0x00343f,emissiveIntensity:0.5,metalness:0.7,roughness:0.3}));
+  const deckMat=new THREE.MeshStandardMaterial({color:0x0a2530,emissive:0x00343f,emissiveIntensity:0.5,metalness:0.85,roughness:0.18});
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.25,1.1),deckMat);
+  if(GFX.shadows){deck.castShadow=true;deck.receiveShadow=true;}
   board.add(deck);
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.55,1.4,4),new THREE.MeshStandardMaterial({color:0x00f5ff,emissive:0x00b5cf,emissiveIntensity:0.7,metalness:0.6,roughness:0.3}));
-  nose.rotation.z=-Math.PI/2;nose.position.set(2.0,0,0);board.add(nose);
+  const noseMat=new THREE.MeshStandardMaterial({color:0x00f5ff,emissive:0x00b5cf,emissiveIntensity:0.7,metalness:0.7,roughness:0.15});
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.55,1.4,4),noseMat);
+  nose.rotation.z=-Math.PI/2;nose.position.set(2.0,0,0);
+  if(GFX.shadows)nose.castShadow=true;
+  board.add(nose);
   board.position.set(5,0.6,4);surfScene.add(board);
   surfBoard=board;
+  // Env reflections on the metallic board (browser-real stand-in for RT reflections)
+  if(GFX.envReflections){
+    try{
+      const cubeRT=new THREE.WebGLCubeRenderTarget(128,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});
+      const cubeCam=new THREE.CubeCamera(0.5,1500,cubeRT);
+      cubeCam.position.set(5,3,4);surfScene.add(cubeCam);
+      cubeCam.update(surfRenderer,surfScene);
+      deckMat.envMap=cubeRT.texture;deckMat.envMapIntensity=1.1;deckMat.needsUpdate=true;
+      noseMat.envMap=cubeRT.texture;noseMat.envMapIntensity=1.0;noseMat.needsUpdate=true;
+    }catch(e){console.warn('surf env:',e);}
+  }
   // player proxy (first person — invisible; camera is the eyes)
   surfPlayer={pos:new THREE.Vector3(0,3.2,8),vel:new THREE.Vector3(),yaw:0,pitch:0,grav:pal.grav,onGround:true};
   // input
@@ -2800,6 +3013,7 @@ function enterSurface(body){
     surfAnimId=requestAnimationFrame(sloop);
     const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;
     updateSurface(dt);
+    try{updateCaustics(dt);}catch(e){}
     surfRenderer.render(surfScene,surfCamera);
   })();
 }
@@ -2834,11 +3048,30 @@ function buildSurfaceTerrain(pal){
   geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   geo.computeVertexNormals();
   const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95,metalness:0.0,flatShading:false});
-  surfTerrainMesh=new THREE.Mesh(geo,mat);surfScene.add(surfTerrainMesh);
-  // water plane for habitable
+  surfTerrainMesh=new THREE.Mesh(geo,mat);
+  if(GFX.shadows)surfTerrainMesh.receiveShadow=true;
+  surfScene.add(surfTerrainMesh);
+  // water plane for habitable — with animated caustics (browser-real fake)
   if(pal.water){
-    const wm=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ),new THREE.MeshStandardMaterial({color:0x1a4a7a,transparent:true,opacity:0.82,roughness:0.2,metalness:0.3}));
-    wm.rotation.x=-Math.PI/2;wm.position.y=2.0;surfScene.add(wm);
+    const waterMat=new THREE.MeshStandardMaterial({color:0x1a4a7a,transparent:true,opacity:0.82,roughness:0.15,metalness:0.4});
+    if(GFX.envReflections&&_envMap)waterMat.envMap=_envMap;
+    const wm=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ,1,1),waterMat);
+    wm.rotation.x=-Math.PI/2;wm.position.y=2.0;
+    if(GFX.shadows)wm.receiveShadow=true;
+    surfScene.add(wm);
+    surfWater=wm;
+    // Caustics: animated light pattern projected onto water + lakebed.
+    // Implemented as a scrolling procedural texture — runs on every browser.
+    if(GFX.caustics){
+      const cz=256,cc=document.createElement('canvas');cc.width=cz;cc.height=cz;
+      surfCausticCanvas=cc;surfCausticCtx=cc.getContext('2d');
+      const ctex=new THREE.CanvasTexture(cc);
+      ctex.wrapS=ctex.wrapT=THREE.RepeatWrapping;ctex.repeat.set(8,8);
+      surfCausticTex=ctex;
+      const causticMat=new THREE.MeshBasicMaterial({map:ctex,transparent:true,opacity:0.22,blending:THREE.AdditiveBlending,depthWrite:false});
+      const cm=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ),causticMat);
+      cm.rotation.x=-Math.PI/2;cm.position.y=2.05;surfScene.add(cm);
+    }
   }
   // scatter rocks / vegetation billboards
   const rockGeo=new THREE.DodecahedronGeometry(1,0);
@@ -2850,13 +3083,39 @@ function buildSurfaceTerrain(pal){
     const rk=new THREE.Mesh(rockGeo,rockMat);
     const s=rnd(0.4,2.4);rk.scale.set(s,s*rnd(0.6,1.2),s);
     rk.position.set(x,h+s*0.3,z);rk.rotation.set(rnd(0,6),rnd(0,6),rnd(0,6));
+    if(GFX.shadows){rk.castShadow=true;rk.receiveShadow=true;}
     surfScene.add(rk);
     // simple "tree"/spire for habitable
     if(pal.ground===0x3a7d34&&Math.random()>0.6&&h>3&&h<40){
       const tr=new THREE.Mesh(new THREE.ConeGeometry(rnd(1,2.5),rnd(4,9),6),new THREE.MeshStandardMaterial({color:0x1f5520,roughness:1}));
-      tr.position.set(x+rnd(-3,3),h+3,z+rnd(-3,3));surfScene.add(tr);
+      tr.position.set(x+rnd(-3,3),h+3,z+rnd(-3,3));
+      if(GFX.shadows)tr.castShadow=true;
+      surfScene.add(tr);
     }
   }
+}
+// Animated caustic pattern — interfering sine ripples drawn each frame
+let surfWater=null,surfCausticCanvas=null,surfCausticCtx=null,surfCausticTex=null,_causticT=0;
+function updateCaustics(dt){
+  if(!surfCausticCtx||!surfCausticTex)return;
+  _causticT+=dt;
+  const c=surfCausticCtx,S=surfCausticCanvas.width;
+  const img=c.createImageData(S,S),d=img.data;
+  const t=_causticT*1.4;
+  for(let y=0;y<S;y+=2){
+    for(let x=0;x<S;x+=2){
+      const u=x/S*6.283,v=y/S*6.283;
+      let n=Math.sin(u*3+t)+Math.sin(v*3-t*0.8)+Math.sin((u+v)*2+t*1.3)+Math.sin((u-v)*2.5-t);
+      n=(n+4)/8; // 0..1
+      const b=Math.pow(n,3.5)*255;
+      for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){
+        const i=((y+dy)*S+(x+dx))*4;
+        d[i]=b*0.6;d[i+1]=b*0.9;d[i+2]=b;d[i+3]=b;
+      }
+    }
+  }
+  c.putImageData(img,0,0);
+  surfCausticTex.needsUpdate=true;
 }
 function _surfKeyDown(e){surfKeys[e.code]=true;}
 function _surfKeyUp(e){surfKeys[e.code]=false;}
@@ -2919,7 +3178,8 @@ function exitSurface(){
       flightAnimId=requestAnimationFrame(loop);
       const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;flightTime+=dt;
       const cv=$('flight-canvas');const nW=window.innerWidth,nH=window.innerHeight;
-      if(cv&&nW>10&&nH>10&&(cv.width!==nW||cv.height!==nH)){cv.width=nW;cv.height=nH;flightRenderer.setSize(nW,nH);flightCamera.aspect=nW/nH;flightCamera.updateProjectionMatrix();resizePostFX();}
+      const curW=cv?(parseInt(cv.style.width)||cv.clientWidth||0):0;
+      if(cv&&nW>10&&nH>10&&Math.abs(curW-nW)>1){flightRenderer.setPixelRatio(effectivePixelRatio());flightRenderer.setSize(nW,nH);flightCamera.aspect=nW/nH;flightCamera.updateProjectionMatrix();resizePostFX();}
       try{updateFlight(dt);}catch(e){}
       try{updateBodies(dt);}catch(e){}
       try{updateDistantSystems(dt);}catch(e){}
