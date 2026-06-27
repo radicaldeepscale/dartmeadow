@@ -314,6 +314,10 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
 .aud-btn{width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:rgba(0,245,255,0.65);font-size:0.6rem;cursor:pointer;border-radius:50%;transition:var(--trans);padding:0;pointer-events:auto;}
 .aud-btn:hover{background:rgba(0,245,255,0.15);color:var(--cyan);}
 .aud-btn.playing{color:#00ff88;}
+#fs-exit:hover,#fs-enter:hover{opacity:1 !important;background:rgba(0,245,255,0.18) !important;color:var(--cyan) !important;}
+/* iPhone immersive fallback: maximize usable area, hide overflow chrome */
+html.immersive,html.immersive body{height:100vh;height:100dvh;overflow:hidden;}
+html.immersive #app,html.immersive #loading-screen{height:100dvh;}
 /* HUD panels */
 #ar-left{position:absolute;left:8px;top:50px;width:180px;display:flex;flex-direction:column;gap:4px;pointer-events:none;z-index:22;}
 #ar-right{position:absolute;right:8px;top:50px;width:175px;display:flex;flex-direction:column;gap:4px;pointer-events:none;z-index:22;}
@@ -467,6 +471,12 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
   <button onclick="audioToggle()" id="float-music-toggle" title="Play / Pause" style="background:rgba(0,245,255,0.1);border:1px solid rgba(0,245,255,0.3);color:var(--cyan);width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:0.6rem;display:flex;align-items:center;justify-content:center;">⏸</button>
   <button onclick="audioStop()" title="Stop music" style="background:rgba(255,80,100,0.1);border:1px solid rgba(255,80,100,0.4);color:#ff6478;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:0.55rem;display:flex;align-items:center;justify-content:center;">■</button>
 </div>
+
+<!-- ⛶ FULLSCREEN exit button — top-left, only while in fullscreen -->
+<button id="fs-exit" onclick="exitFullscreen()" title="Exit fullscreen (Esc or F)" style="display:none;position:fixed;top:10px;left:10px;z-index:9700;width:34px;height:34px;border-radius:8px;background:rgba(4,10,22,0.55);border:1px solid rgba(0,245,255,0.3);color:rgba(0,245,255,0.8);font-size:0.85rem;cursor:pointer;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;transition:opacity .2s;opacity:0.55;">⤢</button>
+
+<!-- ⛶ Re-enter fullscreen button — shows when not fullscreen on capable devices -->
+<button id="fs-enter" onclick="requestFullscreenNow()" title="Go fullscreen (F)" style="display:none;position:fixed;top:10px;left:10px;z-index:9700;width:34px;height:34px;border-radius:8px;background:rgba(4,10,22,0.55);border:1px solid rgba(0,245,255,0.3);color:rgba(0,245,255,0.8);font-size:0.85rem;cursor:pointer;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;transition:opacity .2s;opacity:0.55;">⛶</button>
 
 <div id="app">
 <!-- MENU -->
@@ -1104,9 +1114,11 @@ function launchFlight(){
   const adv=()=>{p=Math.min(p+rnd(7,18),100);bar.style.width=p+'%';stat.textContent=msgs[Math.min(Math.floor(p/15),msgs.length-1)];if(p<100)setTimeout(adv,rnd(180,380));else setTimeout(()=>enter.classList.add('vis'),300);};
   setTimeout(adv,350);
   // initAudio deferred — AUDIO const is declared later in this script
-  setTimeout(()=>{try{initAudio();}catch(e){console.warn('audio:',e);}},0);
+  setTimeout(()=>{try{initAudio();}catch(e){console.warn('audio:',e);}try{initFullscreenSupport();}catch(e){console.warn('fs init:',e);}},0);
 })();
 function enterApp(){
+  // This runs inside the LAUNCH button click — the legal moment to go fullscreen.
+  try{ requestFullscreenNow(); }catch(e){console.warn('fs:',e);}
   // First launch → show graphics setup; returning users skip straight in.
   let shown=false;
   try{ shown=showGfxScreen(false); }catch(e){console.warn('gfx screen:',e);}
@@ -1114,6 +1126,7 @@ function enterApp(){
   setTimeout(()=>{
     $('loading-screen').style.display='none';
     if(!shown){ $('app').classList.add('vis');goScreen('menu'); }
+    updateFullscreenButtons();
     // if shown, the gfx screen sits on top; applyGfxScreen() reveals the menu
   },850);
 }
@@ -1121,6 +1134,92 @@ function enterApp(){
 function _revealMenuAfterGfx(){
   $('app').classList.add('vis');goScreen('menu');
 }
+
+// ══════════════════════════════════════════════════════════════
+//  ⛶ FULLSCREEN / IMMERSIVE MODE
+//  Fullscreen API must be triggered by a user gesture, so we fire it
+//  from the LAUNCH button. iPhone Safari has no Fullscreen API → we
+//  fall back to a CSS immersive mode + Add-to-Home-Screen hint.
+// ══════════════════════════════════════════════════════════════
+const FS = { isIphone:false, supported:false, immersive:false };
+
+function initFullscreenSupport(){
+  const ua=navigator.userAgent;
+  FS.isIphone=/iPhone|iPod/.test(ua)&&!window.MSStream;
+  const el=document.documentElement;
+  FS.supported=!!(el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen||document.fullscreenEnabled);
+  // listen for native fullscreen changes (incl. Esc) to sync our buttons
+  ['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(ev=>
+    document.addEventListener(ev,onFullscreenChange));
+  // F key toggles fullscreen
+  window.addEventListener('keydown',e=>{
+    if(e.key==='f'||e.key==='F'){
+      // don't hijack typing in inputs
+      if(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+      toggleFullscreen();
+    }
+  });
+}
+
+function isFullscreenActive(){
+  return !!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement);
+}
+
+// Request fullscreen — MUST be called from within a user gesture.
+function requestFullscreenNow(){
+  if(FS.isIphone){ enableImmersiveMode(); return; } // no FS API on iPhone
+  const el=document.documentElement;
+  const req=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
+  if(req){
+    try{ const p=req.call(el); if(p&&p.catch)p.catch(()=>{}); }catch(e){}
+  } else {
+    enableImmersiveMode(); // fallback
+  }
+}
+
+function exitFullscreen(){
+  if(FS.immersive){ disableImmersiveMode(); }
+  const ex=document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen;
+  if(ex&&isFullscreenActive()){ try{ex.call(document);}catch(e){} }
+  updateFullscreenButtons();
+}
+
+function toggleFullscreen(){
+  if(isFullscreenActive()||FS.immersive){ exitFullscreen(); }
+  else { requestFullscreenNow(); }
+}
+
+function onFullscreenChange(){ updateFullscreenButtons(); }
+
+function updateFullscreenButtons(){
+  const active=isFullscreenActive()||FS.immersive;
+  const exitBtn=$('fs-exit'),enterBtn=$('fs-enter');
+  if(exitBtn)exitBtn.style.display=active?'flex':'none';
+  // Only offer the "enter" button on devices that can actually do it,
+  // and only once the app is visible (not on the loading screen).
+  const appVisible=$('app')&&$('app').classList.contains('vis');
+  if(enterBtn)enterBtn.style.display=(!active&&appVisible&&(FS.supported||FS.isIphone))?'flex':'none';
+}
+
+// ── iPhone immersive fallback (no real fullscreen available) ──────
+function enableImmersiveMode(){
+  FS.immersive=true;
+  document.documentElement.classList.add('immersive');
+  // Hint to add to home screen for true fullscreen — once per session
+  if(!sessionStorage.getItem('dm_a2hs_hint')){
+    try{sessionStorage.setItem('dm_a2hs_hint','1');}catch(e){}
+    toast('📱 Tip: Add to Home Screen for true fullscreen',4500);
+  }
+  updateFullscreenButtons();
+  // nudge the address bar to collapse
+  window.scrollTo(0,1);
+}
+function disableImmersiveMode(){
+  FS.immersive=false;
+  document.documentElement.classList.remove('immersive');
+  updateFullscreenButtons();
+}
+
 
 // ══════════════════════════════════════════════════════════════
 //  ♫ AUDIO ENGINE — game soundtrack + local file player
