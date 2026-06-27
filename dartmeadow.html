@@ -698,10 +698,31 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
     <span id="dart-mode-label">OFF</span>
     <span style="font-size:0.38rem;opacity:0.7">DART</span>
   </button>
-  <div id="land-prompt" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,245,255,.12);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.15em;padding:.5rem 1.2rem;border-radius:3px;pointer-events:none;z-index:30;text-align:center;"></div>
+  <div id="land-prompt" onclick="if(_landTargetBody)enterSurface(_landTargetBody);" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,245,255,.12);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.15em;padding:.5rem 1.2rem;border-radius:3px;pointer-events:none;z-index:30;text-align:center;"></div>
   <div id="ar-bottom">
     <div id="ar-dest-title">⟶ DESTINATION</div>
     <div id="dest-scroll"></div>
+  </div>
+</div>
+
+<!-- ✦ SURFACE WALK OVERLAY -->
+<div id="surface-overlay" style="display:none;position:fixed;inset:0;z-index:3500;background:#000;">
+  <canvas id="surface-canvas" style="position:absolute;inset:0;display:block;touch-action:none;"></canvas>
+  <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px calc(10px);background:rgba(0,3,8,.55);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,245,255,.15);pointer-events:none;">
+    <span id="surface-title" style="font-family:var(--font-hud);font-size:.62rem;letter-spacing:.15em;color:var(--cyan);">SURFACE</span>
+    <span id="surface-grav" style="font-family:var(--font-mono);font-size:.55rem;color:rgba(0,245,255,.7);">GRAV 1.00g</span>
+    <button id="liftoff-btn" onclick="exitSurface()" style="pointer-events:auto;padding:5px 14px;background:rgba(245,196,0,.12);border:1px solid var(--gold);color:var(--gold);font-family:var(--font-hud);font-size:.52rem;letter-spacing:.12em;cursor:pointer;border-radius:2px;">🚀 LIFTOFF</button>
+  </div>
+  <!-- surface dual joysticks -->
+  <div style="position:absolute;bottom:calc(30px + var(--safe-bot));left:24px;width:100px;height:100px;pointer-events:auto;" id="surf-move-zone">
+    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">MOVE</div>
+    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,3,8,.6);border:1px solid rgba(0,245,255,.25);backdrop-filter:blur(8px);"></div>
+    <div id="surf-move-knob" style="position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(0,245,255,.18);border:1px solid rgba(0,245,255,.5);left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(0,245,255,.3);"></div>
+  </div>
+  <div style="position:absolute;bottom:calc(30px + var(--safe-bot));right:24px;width:100px;height:100px;pointer-events:auto;" id="surf-look-zone">
+    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">LOOK</div>
+    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,3,8,.6);border:1px solid rgba(0,245,255,.25);backdrop-filter:blur(8px);"></div>
+    <div id="surf-look-knob" style="position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(0,245,255,.18);border:1px solid rgba(0,245,255,.5);left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(0,245,255,.3);"></div>
   </div>
 </div>
 
@@ -727,6 +748,9 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
     <div class="setting-row"><div><div class="setting-label">Star Field Density</div><div class="setting-sub">Volumetric parallax stars</div></div><label class="toggle-switch"><input type="checkbox" id="set-stars" checked><span class="toggle-track"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">Galaxy Dust Clouds</div><div class="setting-sub">Nebula particle systems</div></div><label class="toggle-switch"><input type="checkbox" id="set-dust" checked><span class="toggle-track"></span></label></div>
     <div class="setting-row"><div><div class="setting-label">Bloom / Glow</div><div class="setting-sub">Emissive object halo</div></div><label class="toggle-switch"><input type="checkbox" id="set-bloom" checked><span class="toggle-track"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">Motion Blur</div><div class="setting-sub">Velocity-based frame blending</div></div><label class="toggle-switch"><input type="checkbox" id="set-motion" checked><span class="toggle-track"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">Procedural Textures</div><div class="setting-sub">High-detail planet surfaces</div></div><label class="toggle-switch"><input type="checkbox" id="set-textures" checked><span class="toggle-track"></span></label></div>
+    <div class="setting-row"><div><div class="setting-label">Galaxy Point Cloud</div><div class="setting-sub">In-flight Milky Way band</div></div><label class="toggle-switch"><input type="checkbox" id="set-galaxyband" checked><span class="toggle-track"></span></label></div>
     <div class="setting-row">
       <div><div class="setting-label">Particle Count</div><div class="setting-sub">Near-camera volumetric density</div></div>
       <select id="set-particles" style="background:rgba(0,245,255,0.06);border:1px solid var(--border);color:var(--text);padding:3px 7px;font-family:var(--font-body);font-size:0.7rem;border-radius:2px;outline:none;">
@@ -807,7 +831,7 @@ const STATE={
   flight:{speed:0,dart:false,energy:100,hull:100,shield:100,destIdx:0,time:0,
     camPitch:0,camYaw:0,thrust:0,strafe:0,lift:0,
     pos:new THREE.Vector3(28,2,3),vel:new THREE.Vector3()},
-  settings:{stars:true,dust:true,bloom:true,particles:'med',fov:50000,dartSpeed:15}
+  settings:{stars:true,dust:true,bloom:true,motion:true,textures:true,galaxyband:true,particles:'med',fov:50000,dartSpeed:15}
 };
 
 // ── Save System ───────────────────────────────────────────────
@@ -1406,6 +1430,7 @@ function applyPreset(name){
 //  FLIGHT SCENE
 // ══════════════════════════════════════════════════════════════
 let flightRenderer,flightScene,flightCamera,boardFlight,flightInited=false;
+let _landTargetBody=null;
 let flightAnimId,flightTime=0,celestialBodies=[],sunMesh,earthMesh;
 let dartActive=false,dartTimer=0;
 const DESTINATIONS=[];
@@ -1473,11 +1498,15 @@ function initFlightScene(){
   try{buildFlightStars();}catch(e){console.warn('stars:',e);}
   try{buildFlightGalaxies();}catch(e){console.warn('gal:',e);}
   try{buildFlightNebulae();}catch(e){console.warn('neb:',e);}
+  try{buildFlightGalaxyBand();}catch(e){console.warn('mwband:',e);}
+  try{buildDistantStarSystems();}catch(e){console.warn('systems:',e);}
   try{buildSolarSystem();}catch(e){console.warn('solar:',e);}
+  try{applyProceduralTextures();}catch(e){console.warn('tex:',e);}
   try{buildFlightBoard();}catch(e){console.warn('board:',e);}
   try{addSunLight();}catch(e){console.warn('sun:',e);}
   try{initJoysticks();}catch(e){console.warn('joy:',e);}
   try{initDeviceOrientation();}catch(e){}
+  try{initPostFX();}catch(e){console.warn('postfx:',e);}
 
   window.addEventListener('keydown',onKey);
   window.addEventListener('keyup',onKeyUp);
@@ -1496,13 +1525,15 @@ function initFlightScene(){
       flightRenderer.setSize(nW,nH);
       flightCamera.aspect=nW/nH;
       flightCamera.updateProjectionMatrix();
+      resizePostFX();
     }
 
     try{updateFlight(dt);}catch(e){}
     try{updateBodies(dt);}catch(e){}
+    try{updateDistantSystems(dt);}catch(e){}
     try{updateHUD();}catch(e){}
     try{drawMinimap();}catch(e){}
-    flightRenderer.render(flightScene,flightCamera);
+    renderWithPostFX();
   })();
 }
 
@@ -2087,7 +2118,16 @@ function updateBodies(dt){
       // Proximity approach — show landing prompt when very close
       if(dist<checkMesh.geometry.parameters.radius*2.5&&b.name!=='Sun'){
         const ld=$('land-prompt');
-        if(ld){ld.style.display='block';ld.textContent='⬇ APPROACH '+b.name.toUpperCase()+' — ENTER ATMOSPHERE';}
+        const landable=['Habitable','Rocky'].includes(b.type)||['Mars','Moon','Earth','Mercury','Venus'].includes(b.name);
+        if(ld){
+          ld.style.display='block';
+          ld.style.pointerEvents='auto';
+          ld.style.cursor=landable?'pointer':'default';
+          ld.innerHTML=landable
+            ? '⬇ TAP TO LAND ON '+b.name.toUpperCase()
+            : '⬇ APPROACH '+b.name.toUpperCase()+' — ENTER ATMOSPHERE';
+          _landTargetBody=landable?b:null;
+        }
       }
     }
   });
@@ -2121,7 +2161,7 @@ function updateHUD(){
   }
   // Clear approach prompt if far from all bodies
   const ld=$('land-prompt');
-  if(ld&&minD>10)ld.style.display='none';
+  if(ld&&minD>10){ld.style.display='none';_landTargetBody=null;}
 }
 function drawMinimap(){
   const cv=$('minimap-canvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height,cx=W/2,cy=H/2,scale=1.4;
@@ -2285,8 +2325,13 @@ function openSettings(){$('settings-modal').classList.add('open');}
 function closeSettings(){$('settings-modal').classList.remove('open');}
 function applySettings(){
   STATE.settings.stars=$('set-stars').checked;STATE.settings.dust=$('set-dust').checked;STATE.settings.bloom=$('set-bloom').checked;
+  STATE.settings.motion=$('set-motion')?$('set-motion').checked:true;
+  STATE.settings.textures=$('set-textures')?$('set-textures').checked:true;
+  STATE.settings.galaxyband=$('set-galaxyband')?$('set-galaxyband').checked:true;
   STATE.settings.particles=$('set-particles').value;STATE.settings.fov=parseInt($('set-fov').value);STATE.settings.dartSpeed=parseInt($('set-dart-speed').value);
   if(flightCamera)flightCamera.far=STATE.settings.fov;
+  // Apply post-processing + galaxy band live
+  if(typeof applyRenderSettings==='function')applyRenderSettings();
   closeSettings();toast('✅ Settings applied');
 }
 
@@ -2397,6 +2442,493 @@ function buildGMStars(){
     const pts=new THREE.Points(g,new THREE.PointsMaterial({size:sz,sizeAttenuation:false,vertexColors:true}));
     pts.userData.tier=ti;gmScene.add(pts);
   });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ✦ EXTENSION MODULE — procedural textures, galaxy band, post-FX,
+//    multi-star systems, and procedural surface walk mode
+// ══════════════════════════════════════════════════════════════
+
+// ── 1. PROCEDURAL PLANET TEXTURES (canvas value-noise) ──────────
+function _vnoise(x,y,seed){
+  // cheap hash-based value noise
+  let n=Math.sin(x*12.9898+y*78.233+seed*37.719)*43758.5453;
+  return n-Math.floor(n);
+}
+function _fbm(x,y,seed,oct){
+  let v=0,amp=0.5,freq=1;
+  for(let i=0;i<oct;i++){
+    // bilinear smooth interp of value noise
+    const xi=Math.floor(x*freq),yi=Math.floor(y*freq);
+    const xf=x*freq-xi,yf=y*freq-yi;
+    const a=_vnoise(xi,yi,seed),b=_vnoise(xi+1,yi,seed);
+    const c=_vnoise(xi,yi+1,seed),d=_vnoise(xi+1,yi+1,seed);
+    const ux=xf*xf*(3-2*xf),uy=yf*yf*(3-2*yf);
+    v+=amp*(a*(1-ux)+b*ux+(c-a)*uy*(1-ux)+(d-b)*ux*uy);
+    amp*=0.5;freq*=2;
+  }
+  return v;
+}
+const _texCache={};
+function makePlanetTexture(type,baseHex,seed){
+  const key=type+baseHex+seed;
+  if(_texCache[key])return _texCache[key];
+  const S=256;const cv=document.createElement('canvas');cv.width=S*2;cv.height=S;
+  const cx=cv.getContext('2d');
+  const base=new THREE.Color(baseHex);
+  const img=cx.createImageData(S*2,S);const d=img.data;
+  for(let y=0;y<S;y++){
+    for(let x=0;x<S*2;x++){
+      const u=x/(S*2)*6,v=y/S*3;
+      let n=_fbm(u,v,seed,5);
+      let r,g,b;
+      if(type==='Habitable'){
+        // continents (green/brown) over oceans (blue), polar caps
+        const land=n>0.52;
+        const pole=Math.abs(y/S-0.5)>0.42;
+        if(pole){r=235;g=240;b=250;}
+        else if(land){const e=(n-0.52)*3;r=60+e*90;g=110+e*70;b=50+e*30;}
+        else {r=20;g=50+n*60;b=110+n*90;}
+      } else if(type==='Gas Giant'||type==='Ice Giant'){
+        // horizontal banding
+        const band=Math.sin(v*9+ _fbm(u*0.5,v*4,seed,3)*4);
+        const t=0.5+0.5*band;
+        r=base.r*255*(0.7+t*0.5);g=base.g*255*(0.7+t*0.5);b=base.b*255*(0.7+t*0.5);
+        const storm=_fbm(u*2,v*2,seed+5,4);
+        if(storm>0.78){r=Math.min(255,r+60);g*=0.8;b*=0.7;}
+      } else {
+        // rocky — craters + albedo variation
+        let c2=_fbm(u*2,v*2,seed,5);
+        const shade=0.55+c2*0.6;
+        r=base.r*255*shade;g=base.g*255*shade;b=base.b*255*shade;
+        // craters
+        const cr=_vnoise(Math.floor(u*8),Math.floor(v*8),seed+9);
+        if(cr>0.93){r*=0.6;g*=0.6;b*=0.6;}
+      }
+      const i=(y*S*2+x)*4;
+      d[i]=Math.min(255,r);d[i+1]=Math.min(255,g);d[i+2]=Math.min(255,b);d[i+3]=255;
+    }
+  }
+  cx.putImageData(img,0,0);
+  const tex=new THREE.CanvasTexture(cv);
+  tex.wrapS=THREE.RepeatWrapping;
+  _texCache[key]=tex;return tex;
+}
+
+// Apply procedural textures to existing planets (called after buildSolarSystem)
+function applyProceduralTextures(){
+  if(!STATE.settings.textures||!celestialBodies)return;
+  celestialBodies.forEach(b=>{
+    if(b.name==='Sun'||b.textured)return;
+    const m=b.renderMesh||b.mesh;
+    if(!m||!m.material||m.material.uniforms)return; // skip shader (Earth handled separately)
+    const baseCol=m.material.color?('#'+m.material.color.getHexString()):'#888888';
+    const tex=makePlanetTexture(b.type,baseCol,b.name.length*7+3);
+    m.material.map=tex;
+    m.material.roughness=b.type.includes('Giant')?0.85:0.95;
+    m.material.metalness=0.02;
+    m.material.needsUpdate=true;
+    b.textured=true;
+  });
+}
+
+// ── 2. IN-FLIGHT MILKY WAY BAND (point cloud, scaled, colorful) ──
+let flightGalaxyBand=null;
+function buildFlightGalaxyBand(){
+  if(flightGalaxyBand){flightScene.remove(flightGalaxyBand);flightGalaxyBand=null;}
+  if(!STATE.settings.galaxyband)return;
+  const density=({low:0.4,med:1,high:2,ultra:3.5})[STATE.settings.particles]||1;
+  const N_ARMS=5, perArm=Math.round(5000*density);
+  const armCols=[[.5,.7,1],[1,.8,.45],[.7,.45,1],[.45,1,.7],[1,.5,.45]];
+  const pts=[],cols=[];
+  // The band sits FAR out — a ring wrapping the sky, scaled so it reads as the galaxy
+  const RG=120000; // galaxy radius in scene units (way past draw distance of planets)
+  for(let a=0;a<N_ARMS;a++){
+    const base=(a/N_ARMS)*Math.PI*2;const col=armCols[a];
+    for(let j=0;j<perArm;j++){
+      const t=Math.pow(Math.random(),0.6);
+      const ang=t*Math.PI*3.2+base+(Math.random()-.5)*0.35;
+      const d=t*RG;
+      const scatter=d*0.05+200;
+      const px=Math.cos(ang)*d+(Math.random()-.5)*scatter;
+      const pz=Math.sin(ang)*d+(Math.random()-.5)*scatter;
+      const py=(Math.random()-.5)*d*0.025+(Math.random()-.5)*400;
+      pts.push(px,py,pz);
+      const b=0.25+t*0.6+Math.random()*0.2;
+      cols.push(col[0]*b,col[1]*b,col[2]*b);
+    }
+  }
+  // bright core bulge
+  const coreN=Math.round(4000*density);
+  for(let i=0;i<coreN;i++){
+    const r=Math.pow(Math.random(),2)*RG*0.12;
+    const phi=Math.random()*Math.PI*2,th=Math.acos(2*Math.random()-1);
+    pts.push(r*Math.sin(th)*Math.cos(phi),r*Math.cos(th)*0.4,r*Math.sin(th)*Math.sin(phi));
+    const b=0.6+Math.random()*0.4;cols.push(b,b*0.92,b*0.72);
+  }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));
+  g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(cols),3));
+  const tex=makeCircleTex(16,'rgb(255,255,255)',1);
+  flightGalaxyBand=new THREE.Points(g,new THREE.PointsMaterial({
+    size:2.4,sizeAttenuation:true,vertexColors:true,map:tex,
+    alphaTest:0.02,transparent:true,opacity:0.95,depthWrite:false,
+    blending:THREE.AdditiveBlending
+  }));
+  // Tilt the galactic plane so our solar system sits within an arm, not dead center
+  flightGalaxyBand.rotation.set(0.5,0.3,0.1);
+  // Offset so the solar system is ~2/3 out on the Orion arm
+  flightGalaxyBand.position.set(-RG*0.22,-3000,RG*0.12);
+  flightScene.add(flightGalaxyBand);
+}
+
+// ── 3. MULTI-STAR DISTANT SYSTEMS (visible as systems you can fly to) ─
+let distantSystems=[];
+function buildDistantStarSystems(){
+  // A handful of named star systems scattered in mid-field — each a real
+  // light source with planets you can approach. Far enough to read as "stars".
+  const defs=[
+    {name:'Alpha Centauri A',pos:[26000,1200,-9000],col:0xfff0d0,binary:true,planets:2},
+    {name:'Alpha Centauri B',pos:[26900,1100,-9400],col:0xffd8a0,planets:1},
+    {name:'Proxima Centauri',pos:[28000,-800,-11000],col:0xff8855,planets:1},
+    {name:'Sirius',pos:[-32000,4000,18000],col:0xcfe0ff,planets:2},
+    {name:'Trappist',pos:[40000,-3000,-22000],col:0xff9966,planets:3},
+    {name:'Vega',pos:[-44000,6000,-30000],col:0xeaeaff,planets:1},
+  ];
+  defs.forEach(s=>{
+    const grp=new THREE.Group();
+    const starMat=new THREE.MeshBasicMaterial({color:s.col});
+    const star=new THREE.Mesh(new THREE.SphereGeometry(120,20,20),starMat);
+    grp.add(star);
+    // glow sprite
+    const gt=makeCircleTex(64,'rgb(255,240,210)',1);
+    const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:gt,color:s.col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+    spr.scale.set(900,900,1);grp.add(spr);
+    // companion star (binary)
+    if(s.binary){
+      const c2=new THREE.Mesh(new THREE.SphereGeometry(80,16,16),new THREE.MeshBasicMaterial({color:0xffccaa}));
+      c2.position.set(500,0,0);grp.add(c2);
+    }
+    // planets — small orbiting bodies
+    const sysPlanets=[];
+    for(let i=0;i<s.planets;i++){
+      const pr=30+Math.random()*40;
+      const types=['Rocky','Gas Giant','Habitable','Ice Giant'];
+      const ty=types[Math.floor(Math.random()*types.length)];
+      const pcol=ty==='Habitable'?0x3388cc:ty==='Gas Giant'?0xcc9955:ty==='Ice Giant'?0x88ddee:0xaa7755;
+      const pm=new THREE.Mesh(new THREE.SphereGeometry(pr,18,18),
+        new THREE.MeshStandardMaterial({color:pcol,roughness:.9,map:STATE.settings.textures?makePlanetTexture(ty,'#'+new THREE.Color(pcol).getHexString(),i*11+3):null}));
+      const oR=400+i*350+Math.random()*120;
+      pm.userData={oR,ang:Math.random()*6.28,spd:0.0006/(i+1)};
+      grp.add(pm);
+      sysPlanets.push({mesh:pm,type:ty});
+    }
+    grp.position.set(s.pos[0],s.pos[1],s.pos[2]);
+    // light so its planets are lit
+    const pl=new THREE.PointLight(s.col,1.2,6000);grp.add(pl);
+    flightScene.add(grp);
+    // label sprite
+    const lc=document.createElement('canvas');lc.width=256;lc.height=40;const lcx=lc.getContext('2d');
+    lcx.font='bold 18px Orbitron,monospace';lcx.fillStyle='rgba(200,220,255,0.85)';lcx.fillText(s.name,4,26);
+    const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(lc),transparent:true,depthWrite:false}));
+    ls.scale.set(2600,400,1);ls.position.set(s.pos[0],s.pos[1]+400,s.pos[2]);flightScene.add(ls);
+    distantSystems.push({group:grp,planets:sysPlanets,name:s.name,pos:new THREE.Vector3(...s.pos)});
+  });
+}
+function updateDistantSystems(dt){
+  distantSystems.forEach(s=>{
+    s.planets.forEach(p=>{
+      const u=p.mesh.userData;u.ang+=u.spd*dt*60;
+      p.mesh.position.set(Math.cos(u.ang)*u.oR,Math.sin(u.ang*0.4)*u.oR*0.1,Math.sin(u.ang)*u.oR);
+      p.mesh.rotation.y+=0.003;
+    });
+  });
+}
+
+// ── 4. POST-PROCESSING: bloom + motion blur (r128, no addons) ────
+// Implemented with manual render targets + fullscreen quad passes.
+let _postInited=false,_rtScene,_rtA,_rtB,_rtPrev,_fsScene,_fsCam,_fsQuad;
+let _brightMat,_blurMat,_compMat,_blendMat;
+function initPostFX(){
+  if(_postInited||!flightRenderer)return;
+  const W=window.innerWidth,H=window.innerHeight;
+  const opts={minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat};
+  _rtScene=new THREE.WebGLRenderTarget(W,H,opts);
+  _rtA=new THREE.WebGLRenderTarget(W>>1,H>>1,opts);
+  _rtB=new THREE.WebGLRenderTarget(W>>1,H>>1,opts);
+  _rtPrev=new THREE.WebGLRenderTarget(W,H,opts);
+  _fsScene=new THREE.Scene();
+  _fsCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  // bright-pass: extract highlights
+  _brightMat=new THREE.ShaderMaterial({
+    uniforms:{tDiffuse:{value:null},threshold:{value:0.62}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+    fragmentShader:'uniform sampler2D tDiffuse;uniform float threshold;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);float l=dot(c.rgb,vec3(0.299,0.587,0.114));float f=smoothstep(threshold,threshold+0.25,l);gl_FragColor=vec4(c.rgb*f,1.0);}'
+  });
+  // separable blur
+  _blurMat=new THREE.ShaderMaterial({
+    uniforms:{tDiffuse:{value:null},dir:{value:new THREE.Vector2(1,0)},res:{value:new THREE.Vector2(W>>1,H>>1)}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+    fragmentShader:'uniform sampler2D tDiffuse;uniform vec2 dir;uniform vec2 res;varying vec2 vUv;void main(){vec2 px=dir/res;vec4 s=vec4(0.0);s+=texture2D(tDiffuse,vUv-px*4.0)*0.05;s+=texture2D(tDiffuse,vUv-px*3.0)*0.09;s+=texture2D(tDiffuse,vUv-px*2.0)*0.12;s+=texture2D(tDiffuse,vUv-px*1.0)*0.15;s+=texture2D(tDiffuse,vUv)*0.18;s+=texture2D(tDiffuse,vUv+px*1.0)*0.15;s+=texture2D(tDiffuse,vUv+px*2.0)*0.12;s+=texture2D(tDiffuse,vUv+px*3.0)*0.09;s+=texture2D(tDiffuse,vUv+px*4.0)*0.05;gl_FragColor=s;}'
+  });
+  // composite scene + bloom, then motion-blur blend with previous frame
+  _compMat=new THREE.ShaderMaterial({
+    uniforms:{tScene:{value:null},tBloom:{value:null},tPrev:{value:null},bloomStr:{value:0.9},motionAmt:{value:0.0}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+    fragmentShader:'uniform sampler2D tScene;uniform sampler2D tBloom;uniform sampler2D tPrev;uniform float bloomStr;uniform float motionAmt;varying vec2 vUv;void main(){vec4 sc=texture2D(tScene,vUv);vec4 bl=texture2D(tBloom,vUv);vec3 col=sc.rgb+bl.rgb*bloomStr;vec4 pv=texture2D(tPrev,vUv);col=mix(col,pv.rgb,motionAmt);gl_FragColor=vec4(col,1.0);}'
+  });
+  _fsQuad=new THREE.Mesh(new THREE.PlaneGeometry(2,2),_brightMat);
+  _fsScene.add(_fsQuad);
+  _postInited=true;
+}
+function resizePostFX(){
+  if(!_postInited)return;
+  const W=window.innerWidth,H=window.innerHeight;
+  _rtScene.setSize(W,H);_rtPrev.setSize(W,H);
+  _rtA.setSize(W>>1,H>>1);_rtB.setSize(W>>1,H>>1);
+  _blurMat.uniforms.res.value.set(W>>1,H>>1);
+}
+function renderWithPostFX(){
+  const useBloom=STATE.settings.bloom, useMotion=STATE.settings.motion;
+  if(!useBloom&&!useMotion){ flightRenderer.setRenderTarget(null); flightRenderer.render(flightScene,flightCamera); return; }
+  if(!_postInited)initPostFX();
+  const r=flightRenderer;
+  // 1. render scene to RT
+  r.setRenderTarget(_rtScene);r.render(flightScene,flightCamera);
+  if(useBloom){
+    // 2. bright pass → _rtA
+    _fsQuad.material=_brightMat;_brightMat.uniforms.tDiffuse.value=_rtScene.texture;
+    r.setRenderTarget(_rtA);r.render(_fsScene,_fsCam);
+    // 3. blur H → _rtB, blur V → _rtA
+    _fsQuad.material=_blurMat;_blurMat.uniforms.tDiffuse.value=_rtA.texture;_blurMat.uniforms.dir.value.set(1,0);
+    r.setRenderTarget(_rtB);r.render(_fsScene,_fsCam);
+    _blurMat.uniforms.tDiffuse.value=_rtB.texture;_blurMat.uniforms.dir.value.set(0,1);
+    r.setRenderTarget(_rtA);r.render(_fsScene,_fsCam);
+  }
+  // 4. composite → screen
+  _fsQuad.material=_compMat;
+  _compMat.uniforms.tScene.value=_rtScene.texture;
+  _compMat.uniforms.tBloom.value=useBloom?_rtA.texture:_rtScene.texture;
+  _compMat.uniforms.bloomStr.value=useBloom?0.9:0.0;
+  _compMat.uniforms.tPrev.value=_rtPrev.texture;
+  // motion blur amount scales with ship speed for a sense of velocity
+  let mb=0;
+  if(useMotion){const spd=STATE.flight?STATE.flight.speed:0;mb=Math.min(0.55,0.25+spd*0.04);}
+  _compMat.uniforms.motionAmt.value=mb;
+  r.setRenderTarget(null);r.render(_fsScene,_fsCam);
+  // 5. copy current composite into _rtPrev for next frame's motion blur
+  if(useMotion){
+    _fsQuad.material=_compMat; // re-render same into prev
+    r.setRenderTarget(_rtPrev);r.render(_fsScene,_fsCam);
+  }
+}
+function applyRenderSettings(){
+  buildFlightGalaxyBand();
+  if(STATE.settings.textures)applyProceduralTextures();
+}
+
+// ── 5. PROCEDURAL SURFACE WALK MODE ──────────────────────────────
+let surfaceActive=false,surfRenderer,surfScene,surfCamera,surfAnimId=null;
+let surfPlayer,surfKeys={},surfJoyMove={x:0,y:0},surfLookJoy={x:0,y:0};
+let _surfBody=null;
+function getSurfacePalette(body){
+  const P={
+    Earth:{ground:0x3a7d34,ground2:0x2a5d24,rock:0x6b5d4f,sky:[0x88bbff,0x3a6ea5],fog:0x9ec4e8,water:true,grav:1.0,atmos:true},
+    Mars:{ground:0xa0461e,ground2:0x7a3416,rock:0x8a4020,sky:[0xd9a066,0x9a5a3a],fog:0xc97f4a,grav:0.38,atmos:true},
+    Moon:{ground:0x888888,ground2:0x666666,rock:0x999999,sky:[0x000000,0x000000],fog:0x000000,grav:0.17,atmos:false},
+    Mercury:{ground:0x999088,ground2:0x77706a,rock:0xaaa098,sky:[0x000000,0x000000],fog:0x000000,grav:0.38,atmos:false},
+    Venus:{ground:0xb08a3a,ground2:0x806220,rock:0xc09a4a,sky:[0xe0b050,0xa07820],fog:0xc89840,grav:0.9,atmos:true},
+  };
+  return P[body.name]||{ground:0x556644,ground2:0x445533,rock:0x778866,sky:[0x223344,0x112233],fog:0x334455,grav:0.6,atmos:Math.random()>0.4};
+}
+function enterSurface(body){
+  if(surfaceActive)return;
+  _surfBody=body;surfaceActive=true;
+  // pause flight loop visuals (keep flight scene but stop rendering it)
+  if(flightAnimId){cancelAnimationFrame(flightAnimId);flightAnimId=null;}
+  const pal=getSurfacePalette(body);
+  const ov=$('surface-overlay');ov.style.display='block';
+  $('surface-title').textContent='SURFACE — '+body.name.toUpperCase();
+  $('surface-grav').textContent='GRAV '+pal.grav.toFixed(2)+'g';
+  const cv=$('surface-canvas');
+  const W=window.innerWidth,H=window.innerHeight;cv.width=W;cv.height=H;
+  surfRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  surfRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  surfRenderer.setSize(W,H);
+  surfRenderer.toneMapping=THREE.ACESFilmicToneMapping;surfRenderer.toneMappingExposure=1.05;
+  surfScene=new THREE.Scene();
+  surfScene.background=new THREE.Color(pal.sky[1]);
+  if(pal.atmos)surfScene.fog=new THREE.Fog(pal.fog,40,420);
+  surfCamera=new THREE.PerspectiveCamera(72,W/H,0.1,2000);
+  surfCamera.position.set(0,3.2,0);
+  surfCamera.rotation.order='YXZ';
+  // lights
+  const sun=new THREE.DirectionalLight(0xfff2e0,pal.atmos?2.0:2.6);sun.position.set(80,120,40);surfScene.add(sun);
+  surfScene.add(new THREE.AmbientLight(pal.atmos?0x6688aa:0x222233,pal.atmos?1.1:0.4));
+  if(!pal.atmos){ // star dome for airless worlds
+    const sn=2000,sp=new Float32Array(sn*3);
+    for(let i=0;i<sn;i++){const ph=Math.acos(2*Math.random()-1),th=Math.random()*6.28,r=800;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=Math.abs(r*Math.cos(ph));sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
+    const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+    surfScene.add(new THREE.Points(sg,new THREE.PointsMaterial({size:1.5,sizeAttenuation:false,color:0xffffff})));
+  }
+  // procedural terrain — heightmapped plane
+  buildSurfaceTerrain(pal);
+  // sky gradient dome
+  const skyGeo=new THREE.SphereGeometry(1000,16,16);
+  const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:{top:{value:new THREE.Color(pal.sky[1])},bot:{value:new THREE.Color(pal.sky[0])}},
+    vertexShader:'varying vec3 vp;void main(){vp=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'varying vec3 vp;uniform vec3 top;uniform vec3 bot;void main(){float h=normalize(vp).y*0.5+0.5;gl_FragColor=vec4(mix(bot,top,h),1.0);}'});
+  if(pal.atmos)surfScene.add(new THREE.Mesh(skyGeo,skyMat));
+  // the skyboard (parked craft) the player stepped off of
+  const board=new THREE.Group();
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.25,1.1),new THREE.MeshStandardMaterial({color:0x0a2530,emissive:0x00343f,emissiveIntensity:0.5,metalness:0.7,roughness:0.3}));
+  board.add(deck);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.55,1.4,4),new THREE.MeshStandardMaterial({color:0x00f5ff,emissive:0x00b5cf,emissiveIntensity:0.7,metalness:0.6,roughness:0.3}));
+  nose.rotation.z=-Math.PI/2;nose.position.set(2.0,0,0);board.add(nose);
+  board.position.set(5,0.6,4);surfScene.add(board);
+  surfBoard=board;
+  // player proxy (first person — invisible; camera is the eyes)
+  surfPlayer={pos:new THREE.Vector3(0,3.2,8),vel:new THREE.Vector3(),yaw:0,pitch:0,grav:pal.grav,onGround:true};
+  // input
+  window.addEventListener('keydown',_surfKeyDown);
+  window.addEventListener('keyup',_surfKeyUp);
+  setupSurfaceJoysticks();
+  toast('🚶 Stepped off the skyboard — explore '+body.name);
+  // loop
+  let last=performance.now();
+  (function sloop(){
+    surfAnimId=requestAnimationFrame(sloop);
+    const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;
+    updateSurface(dt);
+    surfRenderer.render(surfScene,surfCamera);
+  })();
+}
+let surfBoard=null,surfTerrainMesh=null,_surfHeight=null;
+function buildSurfaceTerrain(pal){
+  const SZ=600,SEG=140;
+  const geo=new THREE.PlaneGeometry(SZ,SZ,SEG,SEG);
+  geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position;
+  const seed=(_surfBody?_surfBody.name.length:5)*13+1;
+  // store height function for player collision
+  function H(x,z){
+    let h=_fbm(x*0.012+100,z*0.012+100,seed,5)*22;
+    h+=_fbm(x*0.04,z*0.04,seed+3,3)*5;
+    // mountains
+    const m=_fbm(x*0.005,z*0.005,seed+7,4);
+    if(m>0.6)h+=(m-0.6)*120;
+    return h;
+  }
+  _surfHeight=H;
+  const col=[];const c1=new THREE.Color(pal.ground),c2=new THREE.Color(pal.ground2),cr=new THREE.Color(pal.rock);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i);
+    const h=H(x,z);pos.setY(i,h);
+    // color by height + slope
+    let c;const t=Math.min(1,Math.max(0,h/60));
+    if(h>55)c=new THREE.Color(0xffffff).lerp(cr,0.3); // snow caps
+    else if(h>22)c=cr.clone();
+    else c=c1.clone().lerp(c2,Math.random()*0.5+t*0.3);
+    col.push(c.r,c.g,c.b);
+  }
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.computeVertexNormals();
+  const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95,metalness:0.0,flatShading:false});
+  surfTerrainMesh=new THREE.Mesh(geo,mat);surfScene.add(surfTerrainMesh);
+  // water plane for habitable
+  if(pal.water){
+    const wm=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ),new THREE.MeshStandardMaterial({color:0x1a4a7a,transparent:true,opacity:0.82,roughness:0.2,metalness:0.3}));
+    wm.rotation.x=-Math.PI/2;wm.position.y=2.0;surfScene.add(wm);
+  }
+  // scatter rocks / vegetation billboards
+  const rockGeo=new THREE.DodecahedronGeometry(1,0);
+  const rockMat=new THREE.MeshStandardMaterial({color:pal.rock,roughness:1});
+  const inst=Math.min(300,({low:60,med:140,high:240,ultra:300})[STATE.settings.particles]||140);
+  for(let i=0;i<inst;i++){
+    const x=rnd(-280,280),z=rnd(-280,280);const h=H(x,z);
+    if(h<3&&pal.water)continue;
+    const rk=new THREE.Mesh(rockGeo,rockMat);
+    const s=rnd(0.4,2.4);rk.scale.set(s,s*rnd(0.6,1.2),s);
+    rk.position.set(x,h+s*0.3,z);rk.rotation.set(rnd(0,6),rnd(0,6),rnd(0,6));
+    surfScene.add(rk);
+    // simple "tree"/spire for habitable
+    if(pal.ground===0x3a7d34&&Math.random()>0.6&&h>3&&h<40){
+      const tr=new THREE.Mesh(new THREE.ConeGeometry(rnd(1,2.5),rnd(4,9),6),new THREE.MeshStandardMaterial({color:0x1f5520,roughness:1}));
+      tr.position.set(x+rnd(-3,3),h+3,z+rnd(-3,3));surfScene.add(tr);
+    }
+  }
+}
+function _surfKeyDown(e){surfKeys[e.code]=true;}
+function _surfKeyUp(e){surfKeys[e.code]=false;}
+function updateSurface(dt){
+  const p=surfPlayer;if(!p)return;
+  // look from right joystick + drag
+  p.yaw-=surfLookJoy.x*2.4*dt;
+  p.pitch-=surfLookJoy.y*2.0*dt;
+  p.pitch=Math.max(-1.3,Math.min(1.3,p.pitch));
+  // movement from left joystick + WASD
+  let mf=0,ms=0;
+  if(surfKeys['KeyW'])mf+=1;if(surfKeys['KeyS'])mf-=1;
+  if(surfKeys['KeyA'])ms-=1;if(surfKeys['KeyD'])ms+=1;
+  mf-=surfJoyMove.y;ms+=surfJoyMove.x;
+  const spd=14;
+  const fx=-Math.sin(p.yaw),fz=-Math.cos(p.yaw);
+  const rx=Math.cos(p.yaw),rz=-Math.sin(p.yaw);
+  p.pos.x+=(fx*mf+rx*ms)*spd*dt;
+  p.pos.z+=(fz*mf+rz*ms)*spd*dt;
+  // gravity + ground collision
+  p.vel.y-=9.8*p.grav*dt;
+  p.pos.y+=p.vel.y*dt;
+  const groundH=_surfHeight?_surfHeight(p.pos.x,p.pos.z):0;
+  const eye=groundH+3.0;
+  if(p.pos.y<=eye){p.pos.y=eye;p.vel.y=0;p.onGround=true;}else p.onGround=false;
+  if((surfKeys['Space'])&&p.onGround){p.vel.y=6*Math.sqrt(p.grav);} // jump
+  // apply to camera
+  surfCamera.position.copy(p.pos);
+  surfCamera.rotation.y=p.yaw;surfCamera.rotation.x=p.pitch;
+}
+function setupSurfaceJoysticks(){
+  // reuse the surface-specific joystick zones
+  const mk=(zoneId,knobId,out,invY)=>{
+    const zone=$(zoneId),knob=$(knobId);if(!zone)return;
+    let active=false,tid=null,ox=0,oy=0;const R=50;
+    const start=(x,y)=>{active=true;const r=zone.getBoundingClientRect();ox=r.left+r.width/2;oy=r.top+r.height/2;mv(x,y);};
+    const mv=(x,y)=>{if(!active)return;let dx=clamp(x-ox,-R,R),dy=clamp(y-oy,-R,R);knob.style.left=(50+dx/R*42)+'%';knob.style.top=(50+dy/R*42)+'%';out.x=dx/R;out.y=(invY?-1:1)*dy/R;};
+    const end=()=>{active=false;tid=null;knob.style.left='50%';knob.style.top='50%';out.x=0;out.y=0;};
+    zone.addEventListener('touchstart',e=>{e.preventDefault();if(active)return;const t=e.changedTouches[0];tid=t.identifier;start(t.clientX,t.clientY);},{passive:false});
+    window.addEventListener('touchmove',e=>{if(!active||tid===null)return;for(const t of e.changedTouches)if(t.identifier===tid){mv(t.clientX,t.clientY);break;}},{passive:true});
+    window.addEventListener('touchend',e=>{if(!active||tid===null)return;for(const t of e.changedTouches)if(t.identifier===tid){end();break;}});
+    zone.addEventListener('mousedown',e=>{start(e.clientX,e.clientY);const m=ev=>mv(ev.clientX,ev.clientY),u=()=>{end();document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u);};document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);});
+  };
+  mk('surf-move-zone','surf-move-knob',surfJoyMove,true);
+  mk('surf-look-zone','surf-look-knob',surfLookJoy,false);
+}
+function exitSurface(){
+  if(!surfaceActive)return;surfaceActive=false;
+  if(surfAnimId){cancelAnimationFrame(surfAnimId);surfAnimId=null;}
+  window.removeEventListener('keydown',_surfKeyDown);
+  window.removeEventListener('keyup',_surfKeyUp);
+  $('surface-overlay').style.display='none';
+  // dispose surface scene
+  if(surfRenderer){surfRenderer.dispose();}
+  surfScene=null;surfPlayer=null;surfBoard=null;surfTerrainMesh=null;
+  // resume flight loop
+  if(!flightAnimId){
+    let last=performance.now();
+    (function loop(){
+      flightAnimId=requestAnimationFrame(loop);
+      const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;flightTime+=dt;
+      const cv=$('flight-canvas');const nW=window.innerWidth,nH=window.innerHeight;
+      if(cv&&nW>10&&nH>10&&(cv.width!==nW||cv.height!==nH)){cv.width=nW;cv.height=nH;flightRenderer.setSize(nW,nH);flightCamera.aspect=nW/nH;flightCamera.updateProjectionMatrix();resizePostFX();}
+      try{updateFlight(dt);}catch(e){}
+      try{updateBodies(dt);}catch(e){}
+      try{updateDistantSystems(dt);}catch(e){}
+      try{updateHUD();}catch(e){}
+      try{drawMinimap();}catch(e){}
+      renderWithPostFX();
+    })();
+  }
+  toast('🚀 Back aboard the skyboard');
 }
 
 function buildMilkyWay(){
