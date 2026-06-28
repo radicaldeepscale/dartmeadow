@@ -3454,7 +3454,7 @@ function initGalaxyMapScene(){
   gmControls=new THREE.OrbitControls(gmCamera,cv);
   gmControls.enableDamping=true;gmControls.dampingFactor=0.09;gmControls.rotateSpeed=0.5;
   gmControls.zoomSpeed=0.9;gmControls.panSpeed=1.0;gmControls.target.set(0,0,0);
-  gmControls.minDistance=8;gmControls.maxDistance=260000;
+  gmControls.minDistance=60;gmControls.maxDistance=800000;
   // Two-finger drag to zoom (in addition to pinch) — map touch to dolly
   gmControls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
 
@@ -3487,7 +3487,7 @@ function buildGalaxySolarTier(){
   sun.userData={isHome:true};grp.add(sun);
   grp.add(makeGlowSprite('rgba(255,220,120,0.9)',60));
   // Sun label
-  addGmLabel(grp,'☉ SOL',new THREE.Vector3(0,18,0),'rgba(255,210,58,0.95)');
+  gmSolarSunLabel=addGmLabel(grp,'☉ SOL',new THREE.Vector3(0,18,0),'rgba(255,210,58,0.95)');
   // Planets — compact log-spaced radii so all fit within ~190 units
   const planets=[
     {name:'Low Earth Orbit',r:30, c:0x4a90d9, s:3.5, idx:0},
@@ -3508,7 +3508,8 @@ function buildGalaxySolarTier(){
       const an=600;const ap=new Float32Array(an*3),ac=new Float32Array(an*3);
       for(let i=0;i<an;i++){const a=Math.random()*Math.PI*2,rr=p.r+(Math.random()-0.5)*10;ap[i*3]=Math.cos(a)*rr;ap[i*3+1]=(Math.random()-0.5)*3;ap[i*3+2]=Math.sin(a)*rr;const b=0.4+Math.random()*0.4;ac[i*3]=0.6*b;ac[i*3+1]=0.55*b;ac[i*3+2]=0.4*b;}
       addPoints(grp,ap,ac,null,1.5,true);
-      gmSolarPlanets.push({mesh:null,r:p.r,ang:0,spd:0.0009,name:p.name,destIdx:p.idx,belt:true,labelSprite:addGmLabel(grp,p.name,new THREE.Vector3(p.r,6,0),'rgba(0,245,255,0.9)')});
+      const bl=addGmLabel(grp,p.name,new THREE.Vector3(p.r,6,0),'rgba(0,245,255,0.9)');
+      gmSolarPlanets.push({mesh:null,r:p.r,ang:0,spd:0.0009,name:p.name,destIdx:p.idx,belt:true,labelSprite:bl,lblBaseW:bl.userData.baseW,lblBaseH:bl.userData.baseH});
       return;
     }
     const ang=Math.random()*Math.PI*2;
@@ -3517,7 +3518,7 @@ function buildGalaxySolarTier(){
     m.userData={destIdx:p.idx};grp.add(m);
     if(p.ring){const rg=new THREE.Mesh(new THREE.RingGeometry(p.s*1.5,p.s*2.4,32),new THREE.MeshBasicMaterial({color:0xccbb99,side:THREE.DoubleSide,transparent:true,opacity:0.6}));rg.rotation.x=-Math.PI/2.2;m.add(rg);}
     const lbl=addGmLabel(grp,p.name,m.position.clone().add(new THREE.Vector3(0,p.s+5,0)),'rgba(0,245,255,0.9)');
-    gmSolarPlanets.push({mesh:m,r:p.r,ang,spd:0.0016/(p.idx*0.4+1),name:p.name,destIdx:p.idx,labelSprite:lbl,size:p.s});
+    gmSolarPlanets.push({mesh:m,r:p.r,ang,spd:0.0016/(p.idx*0.4+1),name:p.name,destIdx:p.idx,labelSprite:lbl,size:p.s,lblBaseW:lbl.userData.baseW,lblBaseH:lbl.userData.baseH});
   });
 }
 function addGmLabel(grp,text,pos,color,worldW){
@@ -3531,21 +3532,35 @@ function addGmLabel(grp,text,pos,color,worldW){
   const lt=new THREE.CanvasTexture(lc);lt.minFilter=THREE.LinearFilter;
   const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true,depthTest:false}));
   const ww=worldW||(tw/lc.height*7); // proportional, ~7 units tall
-  ls.scale.set(ww,ww*lc.height/tw,1);ls.position.copy(pos);ls.center.set(0,0.5);grp.add(ls);return ls;
+  const wh=ww*lc.height/tw;
+  ls.scale.set(ww,wh,1);ls.position.copy(pos);ls.center.set(0,0.5);ls.userData.baseW=ww;ls.userData.baseH=wh;grp.add(ls);return ls;
 }
 // Animate the compact solar system each frame.
 function updateGmSolarTier(){
   if(!gmTierGroups.solar||!gmTierGroups.solar.visible)return;
+  const camDist=gmCamera.position.distanceTo(gmControls.target);
+  // Constant-screen-size factor: labels keep a steady on-screen height instead
+  // of ballooning as you zoom in (which caused the inner labels to collide).
+  const lblScale=Math.max(0.12,Math.min(1.0,camDist/420));
   gmSolarPlanets.forEach(p=>{
     p.ang+=p.spd;
     if(p.mesh){
       p.mesh.position.set(Math.cos(p.ang)*p.r,0,Math.sin(p.ang)*p.r);
-      if(p.labelSprite)p.labelSprite.position.set(p.mesh.position.x,(p.size||4)+5,p.mesh.position.z);
+      if(p.labelSprite){
+        p.labelSprite.position.set(p.mesh.position.x,(p.size||4)+5*lblScale,p.mesh.position.z);
+        if(p.lblBaseW)p.labelSprite.scale.set(p.lblBaseW*lblScale,p.lblBaseH*lblScale,1);
+      }
     } else if(p.belt&&p.labelSprite){
-      p.labelSprite.position.set(Math.cos(p.ang)*p.r,6,Math.sin(p.ang)*p.r);
+      p.labelSprite.position.set(Math.cos(p.ang)*p.r,6*lblScale,Math.sin(p.ang)*p.r);
+      if(p.lblBaseW)p.labelSprite.scale.set(p.lblBaseW*lblScale,p.lblBaseH*lblScale,1);
     }
   });
+  // sun label too
+  if(gmSolarSunLabel&&gmSolarSunLabel.userData.baseW){
+    gmSolarSunLabel.scale.set(gmSolarSunLabel.userData.baseW*lblScale,gmSolarSunLabel.userData.baseH*lblScale,1);
+  }
 }
+let gmSolarSunLabel=null;
 
 // ── Procedural realistic Milky Way + tiers ──────────────────────
 let gmTierGroups={}, gmSunMarker=null, gmFidelity=0.6, gmDestGroup=null, gmCurrentTier='';
