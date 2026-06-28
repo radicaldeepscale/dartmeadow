@@ -5629,14 +5629,18 @@ function updateAtmoFlight(dt){
   atmoBoard.rotation.y=s.yaw-Math.PI/2;
   atmoBoard.rotation.x=THREE.MathUtils.lerp(atmoBoard.rotation.x||0, -s.pitch, 0.12);
   atmoBoard.rotation.z=THREE.MathUtils.lerp(atmoBoard.rotation.z||0, s.roll, 0.10);
-  // ── Follow camera: behind & above along the heading, looking over the board
-  //    (same trailing feel as the space follow-cam) ────────────────────────
+  // ── Follow camera: behind & above along the heading, looking over the board.
+  //    Use the SAME CAM_OFFSETS as space, but scale up by the board's visual
+  //    scale (2.4×) so the camera sits the same RELATIVE distance behind the
+  //    board as it does in interstellar space. Previously the 1.4× fudge was
+  //    too small for the enlarged board, making the camera feel glued on top.
   const o=CAM_OFFSETS[camMode]||CAM_OFFSETS[0];
-  const back=o.back*1.4, up=o.up*1.4, look=o.look*1.4; // scaled up for atmo speed
+  const boardScale=atmoBoard.scale.x||2.4;
+  const back=o.back*boardScale, up=o.up*boardScale, look=o.look*boardScale;
   const fwd=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(s.pitch*0.5,s.yaw,0,'YXZ'));
   const desired=s.pos.clone().addScaledVector(fwd,-back).add(new THREE.Vector3(0,up,0));
   if(!_atmoCamInit){atmoCamera.position.copy(desired);_atmoCamInit=true;}
-  else atmoCamera.position.lerp(desired,Math.min(1,dt*6));
+  else atmoCamera.position.lerp(desired,Math.min(1,dt*4));
   atmoCamera.lookAt(s.pos.clone().addScaledVector(fwd,look).add(new THREE.Vector3(0,0.6,0)));
   // HUD
   const altFt=Math.round((s.pos.y-groundH)*3.28);
