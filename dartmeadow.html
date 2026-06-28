@@ -2269,7 +2269,7 @@ function initFlightScene(){
   try{ detectCapabilities(); applyQualityTier(); }catch(e){console.warn('cap init:',e);}
 
   // Renderer — compatibility-first across Safari/Chrome/Edge/Firefox on all OSes
-  flightRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:!GFX.isMobile,alpha:false,powerPreference:'high-performance'});
+  flightRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:!GFX.isMobile,alpha:false,powerPreference:'high-performance',logarithmicDepthBuffer:true});
   flightRenderer.setPixelRatio(effectivePixelRatio());
   flightRenderer.setClearColor(0x000206,1);
   flightRenderer.setSize(W,H);
@@ -2284,6 +2284,10 @@ function initFlightScene(){
 
   flightScene=new THREE.Scene();
 
+  // Near plane 0.1 (the skyboard sits ~0.5u from the lens, so it must stay
+  // under that) paired with the logarithmic depth buffer above — that combo
+  // resolves depth across the whole 0.1→300k range so the surrounding galaxy
+  // particles don't z-fight/clip as you rotate while embedded inside the band.
   flightCamera=new THREE.PerspectiveCamera(60,W/H,0.1,300000);
   // Camera will be positioned in buildFlightBoard — set reasonable default here
   flightCamera.position.set(0,2,10);
@@ -2672,7 +2676,7 @@ function buildFlightBoard(){
   flightCamera.position.set(AU*1.0+2, 2, 3); // LEO offset from Earth center
   flightCamera.rotation.order='YXZ';
   flightCamera.rotation.set(0,0,0);
-  flightCamera.near=0.01; flightCamera.far=300000;
+  flightCamera.near=0.1; flightCamera.far=300000;
   flightCamera.updateProjectionMatrix();
   STATE.flight.pos.set(AU*1.0+2, 2, 3);
   STATE.flight.camYaw=0;
@@ -3513,7 +3517,7 @@ function initGalaxyMapScene(){
   // above + a generous far plane keeps everything from the nearby compact solar
   // system to distant galaxy clusters crisp without clipping.
   gmCamera=new THREE.PerspectiveCamera(55,W/H,0.02,2000000);
-  gmCamera.position.set(1600,4200,5600);  // opens in the Milky Way tier (~7200u out)
+  gmCamera.position.set(700,1500,2000);  // opens RIGHT UP ON the Milky Way (~2600u, disc fills the frame)
   gmControls=new THREE.OrbitControls(gmCamera,cv);
   gmControls.enableDamping=true;gmControls.dampingFactor=0.09;gmControls.rotateSpeed=0.5;
   gmControls.zoomSpeed=0.9;gmControls.panSpeed=1.0;gmControls.target.set(0,0,0);
@@ -4079,7 +4083,7 @@ function updateGalaxyTier(){
   // back to a closer tier just because your orbit target moved with you.
   if(dOrigin>38000){tier='intergalactic';label='INTERGALACTIC';scale='~'+(dOrigin/1000*0.05).toFixed(2)+' Mly';}
   else if(d<650){tier='solar';label='SOLAR SYSTEM';scale='Sol · '+Math.round(d)+' units out';}
-  else if(d<5000){tier='stellar';label='STELLAR NEIGHBORHOOD';scale='~'+(d/80).toFixed(1)+' ly across';}
+  else if(d<1900){tier='stellar';label='STELLAR NEIGHBORHOOD';scale='~'+(d/80).toFixed(1)+' ly across';}
   else {tier='galaxy';label='MILKY WAY';scale='~'+Math.round(d/1000*50)+' kly from view';}
   if(tier!==gmCurrentTier){
     gmCurrentTier=tier;
