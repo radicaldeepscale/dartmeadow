@@ -1205,7 +1205,16 @@ function goScreen(name){
   if(name==='builder'){$('screen-builder').classList.add('active');requestAnimationFrame(()=>requestAnimationFrame(initBuilderScene));showFloatingMusic();}
   else if(name==='flight'){$('screen-flight').classList.add('active');hideFloatingMusicInGame();}
   else{$('screen-menu').classList.add('active');initMenuBg();startMenuMusic();
-    const rb=$('resume-btn');if(rb)rb.style.display=(_gameInProgress&&flightInited)?'block':'none';}
+    const rb=$('resume-btn');
+    if(rb){
+      if(_gameInProgress&&flightInited){
+        // live game in memory — resume restarts the loop instantly
+        rb.textContent='▶ RESUME GAME';rb.onclick=()=>launchFlight();rb.style.display='block';
+      } else {
+        _checkAutosaveResume(); // check localStorage for a saved session
+      }
+    }
+  }
 }
 // Show floating music control on pre-flight screens (if music isn't stopped)
 function showFloatingMusic(){
@@ -1277,7 +1286,7 @@ function enterApp(){
   $('loading-screen').classList.add('out');
   setTimeout(()=>{
     $('loading-screen').style.display='none';
-    if(!shown){ $('app').classList.add('vis');goScreen('menu'); }
+    if(!shown){ $('app').classList.add('vis');goScreen('menu');_checkAutosaveResume(); }
     updateFullscreenButtons();
     // if shown, the gfx screen sits on top; applyGfxScreen() reveals the menu
   },850);
@@ -1285,6 +1294,25 @@ function enterApp(){
 // Called after the gfx preset screen is dismissed on first launch
 function _revealMenuAfterGfx(){
   $('app').classList.add('vis');goScreen('menu');
+  _checkAutosaveResume();
+}
+// Check if there's a valid autosave in localStorage and show resume button.
+function _checkAutosaveResume(){
+  try{
+    const raw=localStorage.getItem('dm_autosave');
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(data&&data.v==='DM2'){
+      const rb=$('resume-btn');
+      if(rb){
+        const when=data.ts?new Date(data.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';
+        rb.textContent='▶ RESUME GAME'+(when?' — saved '+when:'');
+        rb.style.display='block';
+        // onclick loads the autosave then launches flight
+        rb.onclick=()=>{try{loadSaveData(data);}catch(e){}launchFlight();};
+      }
+    }
+  }catch(e){}
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2762,26 +2790,60 @@ function preloadSkyboardTemplates(){
   Object.entries(SKYBOARD_TEMPLATES).forEach(([k,url])=>{
     if(_glbCache[url])return;
     L.load(url,gltf=>{
-      // Normalize so the board flies correctly:
-      //  • long axis runs along X (the board's forward/aft line)
-      //  • the STAFF end sits at -X (aft) so it points toward the trailing
-      //    camera, and the nose end points +X straight away into the scene
-      //  • centered at origin, scaled to the game board length
+      // Normalize the sculpted model so it matches the procedural board convention:
+      //   • long axis along +X (nose forward)
+      //   • deck facing +Y (up)
+      //   • centered at origin, scaled to ~3 game units long
+      //
+      // We BAKE all transforms into the geometry rather than leaving rotations on
+      // parent groups. The flight code sets boardFlight.rotation.y = camYaw - PI/2
+      // on the whole board; any un-baked child rotation compounds incorrectly.
       const root=gltf.scene;
+
+      // Step 1: apply all existing transforms so we're measuring pure geometry
+      root.updateMatrixWorld(true);
+      root.traverse(o=>{if(o.isMesh&&o.geometry){o.geometry=o.geometry.clone();o.geometry.applyMatrix4(o.matrixWorld);}});
+      root.position.set(0,0,0);root.rotation.set(0,0,0);root.scale.set(1,1,1);
+      root.updateMatrixWorld(true);
+
+      // Step 2: measure bounds
       const box=new THREE.Box3().setFromObject(root);
       const size=new THREE.Vector3();box.getSize(size);
       const ctr=new THREE.Vector3();box.getCenter(ctr);
-      root.position.sub(ctr); // center at origin
-      const wrap=new THREE.Group();wrap.add(root);
-      // The sculpt's long axis is Y, with the staff extending toward +Y.
-      // Rotate +Y → -X so the staff ends up AFT (-X, toward the camera) and the
-      // board lies flat (deck facing up, long axis fore/aft).
-      if(size.y>=size.x&&size.y>=size.z) wrap.rotation.z=Math.PI/2;   // +Y → -X
-      else if(size.z>=size.x&&size.z>=size.y) wrap.rotation.y=-Math.PI/2; // +Z → -X
-      const longest=Math.max(size.x,size.y,size.z)||1;
-      const target=3.0;                 // game board length in world units
-      wrap.scale.setScalar(target/longest);
-      _glbCache[url]=wrap;
+
+      // Step 3: determine which source axis to map to +X.
+      // The sculpt's long axis is Y (board lies along Y, staff extends +Y).
+      // We want: source +Y → game +X (so nose points +X for the flight cam).
+      // Build a rotation matrix and bake it into every mesh geometry.
+      let bakeRot=new THREE.Matrix4();
+      if(size.y>=size.x&&size.y>=size.z){
+        // +Y → +X: rotate -90° around Z (rotation.z = -PI/2 in euler terms)
+        bakeRot.makeRotationZ(-Math.PI/2);
+      } else if(size.z>=size.x){
+        // +Z → +X: rotate +90° around Y
+        bakeRot.makeRotationY(Math.PI/2);
+      }
+      // also center at origin
+      const centerMat=new THREE.Matrix4().makeTranslation(-ctr.x,-ctr.y,-ctr.z);
+      const fullMat=bakeRot.clone().multiply(centerMat);
+
+      root.traverse(o=>{
+        if(o.isMesh&&o.geometry){
+          o.geometry.applyMatrix4(fullMat);
+          o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.set(1,1,1);
+        }
+      });
+
+      // Step 4: re-measure after bake and scale to target length
+      root.updateMatrixWorld(true);
+      const box2=new THREE.Box3().setFromObject(root);
+      const size2=new THREE.Vector3();box2.getSize(size2);
+      const target=3.0;
+      const scale=target/Math.max(size2.x,size2.y,size2.z,0.001);
+      root.scale.setScalar(scale);
+
+      // Store the root directly (no wrapper group with pending rotations)
+      _glbCache[url]=root;
     }, undefined, err=>{ console.warn('GLB load failed',url,err); });
   });
 }
@@ -4380,15 +4442,20 @@ function updateGalaxyTier(){
     const tEl=$('gm-tier');if(tEl)tEl.textContent=label;
     onTierChanged(tier);
   }
-  // STRICT separation for the DETAILED tier content (so markers never leak)...
-  if(gmDestGroup)gmDestGroup.visible=(tier==='solar');
-  if(gmTierGroups.stellar)gmTierGroups.stellar.visible=(tier==='stellar');
-  if(gmTierGroups.galaxy)gmTierGroups.galaxy.visible=(tier==='galaxy');
+  // The galaxy particle system (arms, core, dust) stays visible at ALL tiers —
+  // you're flying THROUGH the galaxy, not looking at it from outside. Only hide
+  // it at intergalactic (where you're outside the galaxy entirely).
+  if(gmTierGroups.galaxy){
+    gmTierGroups.galaxy.visible=(tier!=='intergalactic');
+    // At solar/stellar tier we're inside the system: hide the "YOU ARE HERE"
+    // marker text (redundant) but keep all the star particles for volumetric depth.
+    if(gmSunMarker)gmSunMarker.visible=(tier==='galaxy');
+  }
+  if(gmTierGroups.stellar)gmTierGroups.stellar.visible=(tier==='stellar'||tier==='solar');
   if(gmTierGroups.intergalactic)gmTierGroups.intergalactic.visible=(tier==='intergalactic');
-  // ...BUT the dim galaxy backdrop stays lit at the inner tiers, so when you
-  // zoom into the solar system you still see the Milky Way's stars all around
-  // (you're inside the galaxy). Hidden at galaxy/intergalactic where the real
-  // detailed galaxy is shown instead, to avoid double-rendering.
+  if(gmDestGroup)gmDestGroup.visible=(tier==='solar');
+  // The backdrop (simplified distant shell) supplements at solar/stellar but is
+  // redundant at galaxy tier where the real volumetric system is fully visible.
   if(gmBackdrop)gmBackdrop.visible=(tier==='solar'||tier==='stellar');
   const sEl=$('gm-scale');if(sEl)sEl.textContent='scale: '+scale;
   // animate the compact solar system when it's the active tier
