@@ -2943,10 +2943,16 @@ function toggleFocus(){
   if(!body){toast('⚠ No object under crosshair');return;}
   ASSIST.mode='focus';ASSIST.target=body;
   ASSIST.orbitOffset=null;ASSIST.homeOffset=null;
-  // Capture the CURRENT offset from the body — we hold this offset and let it
-  // travel along with the body. The ship does NOT fly to the body; it tracks
-  // it from wherever it is right now.
-  ASSIST.lockOffset=flightCamera.position.clone().sub(body.mesh.position);
+  // Capture the offset from the body using the BOARD's position (sp.pos), not
+  // the camera, so tracking is tight and jitter-free. If we're far away, pull
+  // the offset in to a close orbit-following distance scaled to the body size,
+  // so FOCUS hugs the body's orbit instead of trailing way out.
+  const sp=STATE.flight;
+  let off=sp.pos.clone().sub(body.mesh.position);
+  const r=(body.mesh.geometry&&body.mesh.geometry.parameters&&body.mesh.geometry.parameters.radius)||1;
+  const want=Math.max(r*4,3); // close follow distance
+  if(off.length()>want*1.6||off.length()<0.001) off.setLength(want);
+  ASSIST.lockOffset=off;
   updateAssistButtons();
   toast('◎ FOCUS LOCKED: '+body.name.toUpperCase()+' — tracking');
 }
@@ -3021,7 +3027,11 @@ function bodyUnderCrosshair(){
 // Steer the camera toward a world point (used by travel/focus/orbit).
 function steerToward(worldPos,dt,rate){
   const sp=STATE.flight;
-  const to=worldPos.clone().sub(flightCamera.position);
+  // Aim the BOARD heading from the board's own position (sp.pos). Reading the
+  // camera position here caused jitter, because the follow-cam is itself lerping
+  // toward the board every frame — the two fought each other. Steering the board
+  // and letting the camera trail it smoothly removes the shake.
+  const to=worldPos.clone().sub(sp.pos);
   const dist=to.length();if(dist<0.001)return 0;
   to.normalize();
   const tYaw=Math.atan2(to.x,-to.z);
