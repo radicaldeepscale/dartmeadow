@@ -851,12 +851,12 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
   </div>
   <!-- surface dual joysticks -->
   <div style="position:absolute;bottom:calc(30px + var(--safe-bot));left:24px;width:100px;height:100px;pointer-events:auto;" id="surf-move-zone">
-    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">MOVE</div>
+    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">LOOK</div>
     <div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,3,8,.6);border:1px solid rgba(0,245,255,.25);backdrop-filter:blur(8px);"></div>
     <div id="surf-move-knob" style="position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(0,245,255,.18);border:1px solid rgba(0,245,255,.5);left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(0,245,255,.3);"></div>
   </div>
   <div style="position:absolute;bottom:calc(30px + var(--safe-bot));right:24px;width:100px;height:100px;pointer-events:auto;" id="surf-look-zone">
-    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">LOOK</div>
+    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">MOVE</div>
     <div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,3,8,.6);border:1px solid rgba(0,245,255,.25);backdrop-filter:blur(8px);"></div>
     <div id="surf-look-knob" style="position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(0,245,255,.18);border:1px solid rgba(0,245,255,.5);left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(0,245,255,.3);"></div>
   </div>
@@ -4935,11 +4935,11 @@ function _surfKeyDown(e){surfKeys[e.code]=true;}
 function _surfKeyUp(e){surfKeys[e.code]=false;}
 function updateSurface(dt){
   const p=surfPlayer;if(!p)return;
-  // look from right joystick + drag
+  // LOOK from LEFT joystick + drag
   p.yaw-=surfLookJoy.x*2.4*dt;
   p.pitch-=surfLookJoy.y*2.0*dt;
   p.pitch=Math.max(-1.3,Math.min(1.3,p.pitch));
-  // movement from left joystick + WASD
+  // MOVE from RIGHT joystick + WASD (push up = walk forward)
   let mf=0,ms=0;
   if(surfKeys['KeyW'])mf+=1;if(surfKeys['KeyS'])mf-=1;
   if(surfKeys['KeyA'])ms-=1;if(surfKeys['KeyD'])ms+=1;
@@ -4975,8 +4975,8 @@ function setupSurfaceJoysticks(){
     window.addEventListener('touchend',e=>{if(!active||tid===null)return;for(const t of e.changedTouches)if(t.identifier===tid){end();break;}});
     zone.addEventListener('mousedown',e=>{start(e.clientX,e.clientY);const m=ev=>mv(ev.clientX,ev.clientY),u=()=>{end();document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u);};document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);});
   };
-  mk('surf-move-zone','surf-move-knob',surfJoyMove,true);
-  mk('surf-look-zone','surf-look-knob',surfLookJoy,false);
+  mk('surf-move-zone','surf-move-knob',surfLookJoy,false);   // LEFT zone → LOOK
+  mk('surf-look-zone','surf-look-knob',surfJoyMove,false);   // RIGHT zone → MOVE
 }
 function exitSurface(){
   if(!surfaceActive)return;surfaceActive=false;
