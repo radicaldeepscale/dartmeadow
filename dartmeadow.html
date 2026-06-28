@@ -358,7 +358,10 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
 .assist-btn.active{background:rgba(0,245,255,0.22);border-color:var(--cyan);color:#fff;box-shadow:0 0 12px rgba(0,245,255,0.5);}
 #dart-mode-label{font-size:0.55rem;}
 /* Minimap */
-#minimap{position:absolute;bottom:calc(100px + var(--safe-bot));left:8px;width:88px;height:88px;background:rgba(0,3,8,0.82);border:1px solid rgba(0,245,255,0.18);border-radius:50%;overflow:hidden;pointer-events:none;z-index:22;}
+#minimap{position:absolute;bottom:calc(100px + var(--safe-bot));left:8px;width:88px;height:88px;background:rgba(0,3,8,0.82);border:1px solid rgba(0,245,255,0.18);border-radius:50%;overflow:hidden;pointer-events:auto;z-index:22;touch-action:none;}
+#minimap-canvas{touch-action:none;}
+#mm-toggle{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0,3,8,0.8);border:1px solid rgba(0,245,255,0.3);color:rgba(0,245,255,0.7);font-size:0.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:23;pointer-events:auto;}
+#mm-toggle:hover{background:rgba(0,245,255,0.15);color:var(--cyan);}
 #minimap canvas{width:100%;height:100%;}
 /* Warp */
 #warp-overlay{position:fixed;inset:0;z-index:7000;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(0,245,255,0.06) 0%,#000308 70%);}
@@ -785,7 +788,9 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
       <circle cx="18" cy="18" r="1.5" fill="#00f5ff"/>
     </svg>
   </div>
-  <div id="minimap"><canvas id="minimap-canvas" width="100" height="100"></canvas></div>
+  <div id="minimap"><canvas id="minimap-canvas" width="100" height="100"></canvas>
+    <button id="mm-toggle" onclick="toggleMinimapMode(event)" title="Toggle solar / galaxy view">◐</button>
+  </div>
   <!-- Dual joysticks -->
   <div id="joysticks">
     <div class="joystick-zone" id="jL">
@@ -917,10 +922,12 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
   <button id="gm-close" onclick="closeGalaxyMap()">CLOSE ✕</button>
   <canvas id="gm-canvas"></canvas>
   <div id="gm-selected"></div>
+  <div id="gm-tier" style="position:absolute;top:5.4rem;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:0.62rem;letter-spacing:0.18em;color:var(--cyan);text-shadow:0 0 12px rgba(0,245,255,0.5);pointer-events:none;text-align:center;">SOLAR SYSTEM</div>
+  <div id="gm-scale" style="position:absolute;top:6.6rem;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:0.5rem;letter-spacing:0.08em;color:rgba(0,245,255,0.45);pointer-events:none;">scale: 1 AU</div>
   <div id="gm-zoom-hint" style="position:absolute;top:3.2rem;left:50%;transform:translateX(-50%);display:flex;gap:0.8rem;font-family:var(--font-mono);font-size:0.5rem;color:rgba(0,245,255,0.35);letter-spacing:0.1em;pointer-events:none;">
-    <span>🌌 MILKY WAY</span><span style="color:rgba(176,96,255,0.45);">◈ ANDROMEDA 2.5M ly</span><span style="color:rgba(245,196,0,0.4);">⬡ SUB-GALAXIES</span>
+    <span>☉ SOLAR SYSTEM</span><span>✦ STELLAR NEIGHBORHOOD</span><span style="color:rgba(176,96,255,0.45);">🌌 MILKY WAY</span><span style="color:rgba(245,196,0,0.4);">◈ INTERGALACTIC</span>
   </div>
-  <div id="gm-info">DRAG TO ROTATE · SCROLL TO ZOOM · TAP DESTINATION TO PLOT COURSE · ZOOM OUT TO SEE ANDROMEDA</div>
+  <div id="gm-info">DRAG / 1-FINGER ROTATE · PINCH OR 2-FINGER DRAG TO ZOOM · SCROLL TO ZOOM TIERS · TAP DESTINATION TO PLOT COURSE</div>
 </div>
 
 <div id="warp-overlay"><div id="warp-status">DART DRIVE INITIATING...</div></div>
@@ -2197,6 +2204,7 @@ function initFlightScene(){
   try{buildFlightNebulae();}catch(e){console.warn('neb:',e);}
   try{buildFlightGalaxyBand();}catch(e){console.warn('mwband:',e);}
   try{buildVolumetricDust();}catch(e){console.warn('dust:',e);}
+  try{initMinimapGestures();}catch(e){console.warn('mm gestures:',e);}
   try{buildDistantStarSystems();}catch(e){console.warn('systems:',e);}
   try{buildSolarSystem();}catch(e){console.warn('solar:',e);}
   try{applyProceduralTextures();}catch(e){console.warn('tex:',e);}
@@ -3206,13 +3214,107 @@ function updateHUD(){
   const ld=$('land-prompt');
   if(ld&&minD>10){ld.style.display='none';_landTargetBody=null;}
 }
+// Minimap state: solar (local) vs galaxy (realistic position) + pan/zoom
+let mmMode='solar', mmZoom=1, mmPan={x:0,y:0};
+let _mmDrag=null, _mmPinch=null;
+function toggleMinimapMode(e){
+  if(e){e.stopPropagation();e.preventDefault();}
+  mmMode=mmMode==='solar'?'galaxy':'solar';
+  mmPan={x:0,y:0};mmZoom=1;
+  const b=$('mm-toggle');if(b)b.textContent=mmMode==='solar'?'◐':'☉';
+  toast(mmMode==='galaxy'?'🌌 Galactic position view':'☉ Solar system view',1200);
+}
+function initMinimapGestures(){
+  const cv=$('minimap-canvas');if(!cv)return;
+  // one-finger drag = pan; two-finger = pinch-zoom + two-finger pan
+  cv.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){_mmDrag={x:e.touches[0].clientX,y:e.touches[0].clientY};_mmPinch=null;}
+    else if(e.touches.length===2){
+      const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+      _mmPinch={dist:Math.hypot(dx,dy),cx:(e.touches[0].clientX+e.touches[1].clientX)/2,cy:(e.touches[0].clientY+e.touches[1].clientY)/2};
+      _mmDrag=null;
+    }
+    e.stopPropagation();
+  },{passive:true});
+  cv.addEventListener('touchmove',e=>{
+    if(e.touches.length===1&&_mmDrag){
+      const dx=e.touches[0].clientX-_mmDrag.x, dy=e.touches[0].clientY-_mmDrag.y;
+      mmPan.x+=dx;mmPan.y+=dy;_mmDrag={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    } else if(e.touches.length===2&&_mmPinch){
+      const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+      const dist=Math.hypot(dx,dy);
+      const cx=(e.touches[0].clientX+e.touches[1].clientX)/2, cy=(e.touches[0].clientY+e.touches[1].clientY)/2;
+      // pinch zoom
+      mmZoom=clamp(mmZoom*(dist/_mmPinch.dist),0.3,8);
+      // two-finger drag pan
+      mmPan.x+=(cx-_mmPinch.cx);mmPan.y+=(cy-_mmPinch.cy);
+      _mmPinch={dist,cx,cy};
+    }
+    e.stopPropagation();e.preventDefault();
+  },{passive:false});
+  cv.addEventListener('touchend',e=>{if(e.touches.length===0){_mmDrag=null;_mmPinch=null;}},{passive:true});
+  // desktop: wheel zoom, drag pan
+  cv.addEventListener('wheel',e=>{mmZoom=clamp(mmZoom*(e.deltaY<0?1.12:0.89),0.3,8);e.preventDefault();},{passive:false});
+  let mdrag=null;
+  cv.addEventListener('mousedown',e=>{mdrag={x:e.clientX,y:e.clientY};e.stopPropagation();});
+  window.addEventListener('mousemove',e=>{if(mdrag){mmPan.x+=e.clientX-mdrag.x;mmPan.y+=e.clientY-mdrag.y;mdrag={x:e.clientX,y:e.clientY};}});
+  window.addEventListener('mouseup',()=>{mdrag=null;});
+}
+
 function drawMinimap(){
-  const cv=$('minimap-canvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height,cx=W/2,cy=H/2,scale=1.4;
+  const cv=$('minimap-canvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height,cx=W/2,cy=H/2;
   ctx.clearRect(0,0,W,H);ctx.fillStyle='rgba(0,3,8,.92)';ctx.fillRect(0,0,W,H);
   ctx.beginPath();ctx.arc(cx,cy,W/2-1,0,Math.PI*2);ctx.strokeStyle='rgba(0,245,255,.22)';ctx.lineWidth=1;ctx.stroke();
-  ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fillStyle='#ffdd44';ctx.fill();
-  celestialBodies.forEach(b=>{if(!b.mesh||b.orbitR===0)return;const px=cx+b.mesh.position.x/scale,py=cy+b.mesh.position.z/scale;if(px<2||px>W-2||py<2||py>H-2)return;ctx.beginPath();ctx.arc(px,py,1.5,0,Math.PI*2);ctx.fillStyle='rgba(100,200,255,.7)';ctx.fill();});
-  const bx=cx+STATE.flight.pos.x/scale,by=cy+STATE.flight.pos.z/scale;const bxc=clamp(bx,4,W-4),byc=clamp(by,4,H-4);ctx.beginPath();ctx.arc(bxc,byc,2.5,0,Math.PI*2);ctx.fillStyle='#00f5ff';ctx.fill();ctx.beginPath();ctx.arc(bxc,byc,5,0,Math.PI*2);ctx.strokeStyle='rgba(0,245,255,.4)';ctx.lineWidth=1;ctx.stroke();
+
+  if(mmMode==='galaxy'){ drawGalaxyMinimap(ctx,W,H,cx,cy); return; }
+
+  // ── LOCAL SOLAR SYSTEM (top-down), pan/zoom aware ──
+  const scale=1.4/mmZoom;
+  const ox=mmPan.x, oy=mmPan.y;
+  ctx.beginPath();ctx.arc(cx+ox,cy+oy,4,0,Math.PI*2);ctx.fillStyle='#ffdd44';ctx.fill();
+  // faint orbit rings
+  celestialBodies.forEach(b=>{if(!b.mesh||b.orbitR===0)return;const rr=b.orbitR/scale;if(rr<W/2){ctx.beginPath();ctx.arc(cx+ox,cy+oy,rr,0,Math.PI*2);ctx.strokeStyle='rgba(0,245,255,.06)';ctx.stroke();}});
+  celestialBodies.forEach(b=>{if(!b.mesh||b.orbitR===0)return;const px=cx+ox+b.mesh.position.x/scale,py=cy+oy+b.mesh.position.z/scale;if(px<2||px>W-2||py<2||py>H-2)return;ctx.beginPath();ctx.arc(px,py,1.8,0,Math.PI*2);ctx.fillStyle='rgba(100,200,255,.8)';ctx.fill();});
+  const bx=cx+ox+STATE.flight.pos.x/scale,by=cy+oy+STATE.flight.pos.z/scale;const bxc=clamp(bx,4,W-4),byc=clamp(by,4,H-4);
+  ctx.beginPath();ctx.arc(bxc,byc,2.5,0,Math.PI*2);ctx.fillStyle='#00f5ff';ctx.fill();
+  ctx.beginPath();ctx.arc(bxc,byc,5,0,Math.PI*2);ctx.strokeStyle='rgba(0,245,255,.4)';ctx.lineWidth=1;ctx.stroke();
+  // label + toggle hint
+  ctx.font='6px "Share Tech Mono",monospace';ctx.fillStyle='rgba(0,245,255,0.45)';ctx.fillText('SOLAR SYSTEM',5,11);
+}
+
+// Realistic galactic position: Sun out on the Orion Arm, NOT at center.
+function drawGalaxyMinimap(ctx,W,H,cx,cy){
+  const R=W/2-6;
+  // central bulge glow
+  const g=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+  g.addColorStop(0,'rgba(255,240,210,0.5)');g.addColorStop(0.12,'rgba(255,230,180,0.25)');
+  g.addColorStop(0.4,'rgba(120,140,210,0.08)');g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
+  // 4 logarithmic spiral arms drawn as dotted point clouds
+  const arms=4,wind=2.7;
+  for(let a=0;a<arms;a++){
+    const base=(a/arms)*Math.PI*2;
+    ctx.fillStyle=a===0?'rgba(120,170,255,0.5)':'rgba(150,170,220,0.32)';
+    for(let t=0.06;t<1;t+=0.012){
+      const r=t*R;const ang=Math.log(t*R/3+1)*wind+base;
+      const spread=(0.05+t*0.12);
+      for(let s=0;s<2;s++){
+        const aa=ang+(Math.random()-0.5)*spread;
+        const px=cx+Math.cos(aa)*r, py=cy+Math.sin(aa)*r;
+        ctx.fillRect(px,py,1,1);
+      }
+    }
+  }
+  // Sun marker on Orion arm (arm 0, ~52% out)
+  const sunT=0.52, sunBase=0;
+  const sunR=sunT*R, sunAng=Math.log(sunT*R/3+1)*wind+sunBase+0.18;
+  const sx=cx+Math.cos(sunAng)*sunR, sy=cy+Math.sin(sunAng)*sunR;
+  // pulse
+  const pulse=1+Math.sin(performance.now()*0.004)*0.3;
+  ctx.beginPath();ctx.arc(sx,sy,3*pulse,0,Math.PI*2);ctx.fillStyle='#ffd23a';ctx.fill();
+  ctx.beginPath();ctx.arc(sx,sy,6*pulse,0,Math.PI*2);ctx.strokeStyle='rgba(255,210,58,0.6)';ctx.lineWidth=1;ctx.stroke();
+  ctx.font='6px "Share Tech Mono",monospace';ctx.fillStyle='rgba(255,210,58,0.9)';ctx.fillText('SOL',sx+7,sy+2);
+  ctx.fillStyle='rgba(0,245,255,0.45)';ctx.fillText('MILKY WAY · 26,000 ly from core',5,11);
 }
 function plotCourse(idx){
   const d=DESTINATIONS[idx];
@@ -3309,69 +3411,299 @@ function closeGalaxyMap(){$('galaxy-map').classList.remove('open');}
 function initGalaxyMapScene(){
   gmInited=true;
   const cv=$('gm-canvas');
-  const W=Math.min(innerWidth*.9,700),H=Math.min(innerHeight*.7,500);
+  const W=Math.min(innerWidth*.92,1100),H=Math.min(innerHeight*.74,640);
   cv.width=W;cv.height=H;
-  gmRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  gmRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
   gmRenderer.setPixelRatio(Math.min(devicePixelRatio,2));gmRenderer.setSize(W,H);
-  gmRenderer.setClearColor(0x000308,1);
+  gmRenderer.setClearColor(0x000206,1);
   gmScene=new THREE.Scene();
-  gmCamera=new THREE.PerspectiveCamera(55,W/H,.1,200000);gmCamera.position.set(0,500,2000);
-  gmControls=new THREE.OrbitControls(gmCamera,cv);gmControls.enableDamping=true;gmControls.dampingFactor=.10;gmControls.rotateSpeed=0.4;gmControls.zoomSpeed=0.65;gmControls.panSpeed=0.5;gmControls.target.set(0,0,0);
+  gmCamera=new THREE.PerspectiveCamera(55,W/H,0.01,500000);
+  gmCamera.position.set(80,160,360);
+  gmControls=new THREE.OrbitControls(gmCamera,cv);
+  gmControls.enableDamping=true;gmControls.dampingFactor=0.09;gmControls.rotateSpeed=0.5;
+  gmControls.zoomSpeed=0.9;gmControls.panSpeed=0.6;gmControls.target.set(0,0,0);
+  gmControls.minDistance=8;gmControls.maxDistance=260000;
+  // Two-finger drag to zoom (in addition to pinch) — map touch to dolly
+  gmControls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
 
-  // Stars
-  const sn=3000;const sp=new Float32Array(sn*3);for(let i=0;i<sn;i++){const t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1),r=rnd(5000,60000);sp[i*3]=r*Math.sin(p)*Math.cos(t);sp[i*3+1]=r*Math.sin(p)*Math.sin(t)*.3;sp[i*3+2]=r*Math.cos(p);}
-  const sg2=new THREE.BufferGeometry();sg2.setAttribute('position',new THREE.BufferAttribute(sp,3));
-  gmScene.add(new THREE.Points(sg2,new THREE.PointsMaterial({size:1.5,sizeAttenuation:false,color:0xaaaacc})));
+  // device fidelity → star counts
+  const tier=(typeof GFX!=='undefined'&&GFX.score)?GFX.score:55;
+  const fid=tier>=75?1.0:tier>=55?0.65:tier>=35?0.4:0.22;
+  gmFidelity=fid;
 
-  // Milky Way spiral arms (volumetric)
-  const mwN=8000;const mwP=new Float32Array(mwN*3),mwC=new Float32Array(mwN*3);const mwCols=[[0,.4,.8],[.4,.2,.8],[.8,.6,.2]];
-  for(let a=0;a<5;a++){const ba=(a/5)*Math.PI*2;for(let j=0;j<mwN/5;j++){const t=j/(mwN/5);const ang=t*Math.PI*3+ba;const d=t*800;const idx=a*(mwN/5)+j;mwP[idx*3]=Math.cos(ang)*d+rnd(-30,30);mwP[idx*3+1]=rnd(-60,60);mwP[idx*3+2]=Math.sin(ang)*d+rnd(-30,30);const c=mwCols[a%3];const b=.2+t*.4;mwC[idx*3]=c[0]*b;mwC[idx*3+1]=c[1]*b;mwC[idx*3+2]=c[2]*b;}}
-  const mwG=new THREE.BufferGeometry();mwG.setAttribute('position',new THREE.BufferAttribute(mwP,3));mwG.setAttribute('color',new THREE.BufferAttribute(mwC,3));
-  gmScene.add(new THREE.Points(mwG,new THREE.PointsMaterial({size:1.8,sizeAttenuation:true,vertexColors:true})));
+  buildGalaxyTiers(fid);
 
-  // Distant galaxies
-  [[60000,3000,-20000],[80000,-2000,15000],[-70000,5000,-30000]].forEach(([px,py,pz])=>{
-    const n=1200;const p=new Float32Array(n*3);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,r=rnd(0,3000),h=rnd(-400,400);p[i*3]=px+Math.cos(a)*r;p[i*3+1]=py+h;p[i*3+2]=pz+Math.sin(a)*r;}
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));
-    gmScene.add(new THREE.Points(g,new THREE.PointsMaterial({size:2,sizeAttenuation:false,color:new THREE.Color().setHSL(Math.random(),.6,.5)})));
-  });
-
-  // Destination markers
+  // Destination markers (solar-system tier only — shown/hidden by tier)
   gmDestPositions=[];
   if(DESTINATIONS.length===0)buildDestinations();
+  gmDestGroup=new THREE.Group();gmScene.add(gmDestGroup);
   const SCALE=1.4;
   DESTINATIONS.forEach((d,i)=>{
-    const p=d.pos.clone().multiplyScalar(SCALE);gmDestPositions.push(p);
-    // Sphere marker
-    const mesh=new THREE.Mesh(new THREE.SphereGeometry(i===0?18:10,8,8),new THREE.MeshBasicMaterial({color:i===STATE.flight.destIdx?0xf5c400:0x00f5ff}));
-    mesh.position.copy(p);mesh.userData={destIdx:i};gmScene.add(mesh);
-    // Label sprite (canvas)
-    const lc=document.createElement('canvas');lc.width=256;lc.height=48;const lctx=lc.getContext('2d');lctx.fillStyle='rgba(0,245,255,.85)';lctx.font='bold 18px Orbitron,monospace';lctx.fillText(d.name,4,30);
-    const lt=new THREE.CanvasTexture(lc);const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true}));ls.scale.set(200,50,1);ls.position.copy(p).add(new THREE.Vector3(20,20,0));gmScene.add(ls);
+    if(/proxima|andromeda|centauri/i.test(d.name))return; // those live in higher tiers
+    const p=d.pos.clone().multiplyScalar(SCALE);gmDestPositions.push({p,i});
+    const mesh=new THREE.Mesh(new THREE.SphereGeometry(i===0?14:8,12,12),new THREE.MeshBasicMaterial({color:i===STATE.flight.destIdx?0xf5c400:0x00f5ff}));
+    mesh.position.copy(p);mesh.userData={destIdx:i};gmDestGroup.add(mesh);
+    const lc=document.createElement('canvas');lc.width=256;lc.height=48;const lctx=lc.getContext('2d');lctx.fillStyle='rgba(0,245,255,.9)';lctx.font='bold 18px Orbitron,monospace';lctx.fillText(d.name,4,30);
+    const lt=new THREE.CanvasTexture(lc);const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true,depthTest:false}));ls.scale.set(160,38,1);ls.position.copy(p).add(new THREE.Vector3(16,16,0));ls.userData={label:true};gmDestGroup.add(ls);
   });
 
   // Raycaster for click selection
   gmRaycaster=new THREE.Raycaster();
-  cv.addEventListener('click',e=>{
-    const rect=cv.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*2-1;const my=-((e.clientY-rect.top)/rect.height)*2+1;
-    gmRaycaster.setFromCamera(new THREE.Vector2(mx,my),gmCamera);
-    const meshes=gmScene.children.filter(c=>c.isMesh&&c.userData.destIdx!==undefined);
-    const hits=gmRaycaster.intersectObjects(meshes);
-    if(hits.length){const di=hits[0].object.userData.destIdx;STATE.flight.destIdx=di;
-      $('gm-selected').textContent='→ '+DESTINATIONS[di].name.toUpperCase()+' SELECTED — CLOSE TO FLY';
-      document.querySelectorAll('.dest-card').forEach((c,ci)=>c.classList.toggle('active',ci===di));
-      if(flightInited)plotCourse(di);
-      // Highlight selected
-      meshes.forEach(m=>m.material.color.set(m.userData.destIdx===di?0xf5c400:0x00f5ff));}
-  });
+  cv.addEventListener('click',onGalaxyMapClick);
 
-  // Mark current position
-  if(flightInited&&boardFlight){
-    const pp=STATE.flight.pos.clone().multiplyScalar(1.4);
-    const pm=new THREE.Mesh(new THREE.SphereGeometry(12,8,8),new THREE.MeshBasicMaterial({color:0x00ff88}));pm.position.copy(pp);gmScene.add(pm);
+  gmAnimId=requestAnimationFrame(gmLoop);
+}
+
+// ── Procedural realistic Milky Way + tiers ──────────────────────
+let gmTierGroups={}, gmSunMarker=null, gmFidelity=0.6, gmDestGroup=null, gmCurrentTier='';
+let gmLabelSprites=[];
+
+// Realistic galaxy constants (scene units; 1 unit ≈ scaled). The galaxy disc
+// radius is 1000 units = ~50,000 ly. The Sun sits at ~26,000 ly = ~520 units
+// from center, out on the Orion (Local) Arm — NOT near the center.
+const GAL = {
+  discR:1000, sunR:520, armCount:4, armWind:2.7, thickness:26, bulgeR:150
+};
+
+function buildGalaxyTiers(fid){
+  // TIER 3: full Milky Way (logarithmic spiral arms + bulge + halo)
+  const g=new THREE.Group();gmTierGroups.galaxy=g;gmScene.add(g);
+  buildMilkyWay(g,fid);
+  // Sun position marker on the Orion Arm
+  gmSunMarker=buildSunMarker();g.add(gmSunMarker);
+  // TIER 4: intergalactic (Andromeda, Triangulum, Magellanic clouds)
+  const ig=new THREE.Group();gmTierGroups.intergalactic=ig;gmScene.add(ig);
+  buildIntergalactic(ig,fid);
+  // TIER 2: stellar neighborhood (real nearby stars around the Sun)
+  const sn=new THREE.Group();gmTierGroups.stellar=sn;gmScene.add(sn);
+  buildStellarNeighborhood(sn,fid);
+  gmTierGroups.intergalactic.visible=false;
+}
+
+// Logarithmic-spiral Milky Way with 4 arms, bar, bulge, dust lanes, HII regions
+function buildMilkyWay(group,fid){
+  const N=Math.round(160000*fid);                 // disc stars
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3),siz=new Float32Array(N);
+  const arms=GAL.armCount, wind=GAL.armWind, R=GAL.discR;
+  // arm color palette (young blue stars in arms, pinkish HII knots)
+  const armBlue=[0.55,0.7,1.0], midWhite=[0.9,0.92,1.0], hii=[1.0,0.4,0.55];
+  let k=0;
+  for(let i=0;i<N;i++){
+    // bulk of stars follow spiral arms; some are inter-arm scatter
+    const inArm=Math.random()<0.78;
+    let r,ang,arm;
+    // radial distribution denser toward center (exponential disc)
+    r=Math.pow(Math.random(),0.6)*R;
+    arm=Math.floor(Math.random()*arms);
+    const armBase=(arm/arms)*Math.PI*2;
+    // logarithmic spiral angle
+    const theta=Math.log(r/30+1)*wind + armBase;
+    if(inArm){
+      // tight to the arm with gaussian spread that widens outward
+      const spread=(0.18+ r/R*0.5);
+      ang=theta + (gaussian()*spread);
+    } else {
+      ang=Math.random()*Math.PI*2; // inter-arm field stars
+    }
+    const x=Math.cos(ang)*r, z=Math.sin(ang)*r;
+    const y=gaussian()*GAL.thickness*(1 - r/R*0.5); // thinner outer disc
+    pos[k*3]=x;pos[k*3+1]=y;pos[k*3+2]=z;
+    // color: bluer in arms, whiter mid, occasional pink HII region
+    let c;
+    const t=r/R;
+    if(inArm&&Math.random()<0.05){c=hii;siz[k]=2.4;}
+    else if(inArm){c=[lerp(armBlue[0],midWhite[0],t),lerp(armBlue[1],midWhite[1],t),lerp(armBlue[2],midWhite[2],t)];siz[k]=1.1+Math.random()*0.7;}
+    else {c=[0.85,0.8,0.7];siz[k]=0.8+Math.random()*0.5;} // older yellow field stars
+    const b=0.5+Math.random()*0.5;
+    col[k*3]=c[0]*b;col[k*3+1]=c[1]*b;col[k*3+2]=c[2]*b;
+    k++;
   }
+  addPoints(group,pos,col,siz,1.5,true);
 
-  (function loop(){gmAnimId=requestAnimationFrame(loop);if(!$('galaxy-map').classList.contains('open'))return;gmControls.update();gmScene.rotation.y+=.0003;gmRenderer.render(gmScene,gmCamera);})();
+  // Central bulge — dense warm core
+  const bn=Math.round(30000*fid);
+  const bp=new Float32Array(bn*3),bc=new Float32Array(bn*3);
+  for(let i=0;i<bn;i++){
+    const rr=Math.pow(Math.random(),1.7)*GAL.bulgeR;
+    const th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+    // slightly bar-shaped bulge
+    bp[i*3]=rr*Math.sin(ph)*Math.cos(th)*1.4;
+    bp[i*3+1]=rr*Math.cos(ph)*0.55;
+    bp[i*3+2]=rr*Math.sin(ph)*Math.sin(th);
+    const b=0.6+Math.random()*0.4;
+    bc[i*3]=1.0*b;bc[i*3+1]=0.85*b;bc[i*3+2]=0.6*b;
+  }
+  addPoints(group,bp,bc,null,2.0,true);
+
+  // Galactic center glow sprite
+  const glow=makeGlowSprite('rgba(255,240,210,0.9)',520);
+  glow.position.set(0,0,0);group.add(glow);
+
+  // faint halo
+  const hn=Math.round(12000*fid);
+  const hp=new Float32Array(hn*3),hc=new Float32Array(hn*3);
+  for(let i=0;i<hn;i++){
+    const rr=R*(0.4+Math.random()*0.9);
+    const th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+    hp[i*3]=rr*Math.sin(ph)*Math.cos(th);hp[i*3+1]=rr*Math.cos(ph);hp[i*3+2]=rr*Math.sin(ph)*Math.sin(th);
+    const b=0.15+Math.random()*0.2;hc[i*3]=0.7*b;hc[i*3+1]=0.7*b;hc[i*3+2]=0.85*b;
+  }
+  addPoints(group,hp,hc,null,1.0,false);
+}
+
+function buildSunMarker(){
+  const grp=new THREE.Group();
+  // Sun sits on the Orion Arm. Find a point on an arm at sunR.
+  const r=GAL.sunR;
+  const armBase=(0/GAL.armCount)*Math.PI*2; // arm 0 = our local arm spur
+  const ang=Math.log(r/30+1)*GAL.armWind + armBase + 0.18;
+  const x=Math.cos(ang)*r, z=Math.sin(ang)*r;
+  GAL.sunPos=new THREE.Vector3(x,0,z);
+  // pulsing marker ring
+  const ring=new THREE.Mesh(new THREE.RingGeometry(16,22,32),new THREE.MeshBasicMaterial({color:0xffd23a,side:THREE.DoubleSide,transparent:true,opacity:0.9}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(x,0,z);grp.add(ring);
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(6,12,12),new THREE.MeshBasicMaterial({color:0xffe680}));
+  dot.position.set(x,0,z);grp.add(dot);
+  // "YOU ARE HERE — SOL" label
+  const lc=document.createElement('canvas');lc.width=320;lc.height=64;const lx=lc.getContext('2d');
+  lx.fillStyle='rgba(255,210,58,0.95)';lx.font='bold 22px Orbitron,monospace';lx.fillText('☉ SOL',8,28);
+  lx.fillStyle='rgba(255,210,58,0.7)';lx.font='13px "Share Tech Mono",monospace';lx.fillText('Orion Arm · 26,000 ly',8,52);
+  const lt=new THREE.CanvasTexture(lc);const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true,depthTest:false}));
+  ls.scale.set(280,56,1);ls.position.set(x+40,40,z);grp.add(ls);
+  grp.userData.ring=ring;grp.userData.sunPos=GAL.sunPos;
+  return grp;
+}
+
+// Real nearby stars (stellar neighborhood tier), positions scaled so the
+// Sun is at origin and a few ly = a few hundred units.
+function buildStellarNeighborhood(group,fid){
+  const LY=80; // scene units per light-year at this tier
+  const stars=[
+    {n:'Sol',x:0,y:0,z:0,c:0xfff2cc,s:9},
+    {n:'Proxima Cen',x:-2.6,y:-1.5,z:3.0,c:0xff8866,s:4},
+    {n:'Alpha Cen A',x:-2.7,y:-1.5,z:3.1,c:0xffe9b0,s:6},
+    {n:'Barnard',x:4.2,y:1.0,z:-2.5,c:0xff9955,s:4},
+    {n:'Sirius',x:-1.6,y:-3.8,z:7.6,c:0xcfe3ff,s:8},
+    {n:'Vega',x:6.5,y:14,z:18,c:0xdce8ff,s:7},
+    {n:'Altair',x:9,y:-3,z:13,c:0xeef3ff,s:6},
+    {n:'Procyon',x:-5,y:-2,z:10,c:0xfff0d8,s:6},
+    {n:'Wolf 359',x:3.5,y:3.2,z:-6.3,c:0xff7744,s:3},
+    {n:'Tau Ceti',x:-10.5,y:-3,z:2.6,c:0xffe0a0,s:5},
+    {n:'Trappist-1',x:18,y:5,z:-30,c:0xff6644,s:4},
+    {n:'Epsilon Eri',x:-3,y:-7,z:9.5,c:0xffb070,s:5},
+  ];
+  stars.forEach(st=>{
+    const px=st.x*LY,py=st.y*LY,pz=st.z*LY;
+    const m=new THREE.Mesh(new THREE.SphereGeometry(st.s,12,12),new THREE.MeshBasicMaterial({color:st.c}));
+    m.position.set(px,py,pz);group.add(m);
+    group.add(makeGlowSprite('rgba(200,220,255,0.5)',st.s*6).translateX(0)).position?.set?.(px,py,pz);
+    const gl=makeGlowSprite(`rgba(220,230,255,0.45)`,st.s*7);gl.position.set(px,py,pz);group.add(gl);
+    const lc=document.createElement('canvas');lc.width=200;lc.height=40;const lx=lc.getContext('2d');
+    lx.fillStyle=st.n==='Sol'?'rgba(255,210,58,0.95)':'rgba(180,210,255,0.85)';lx.font='bold 15px Orbitron,monospace';lx.fillText(st.n,4,24);
+    const lt=new THREE.CanvasTexture(lc);const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true,depthTest:false}));
+    ls.scale.set(110,22,1);ls.position.set(px+st.s+6,py+st.s+6,pz);group.add(ls);
+  });
+  // faint local dust (Orion arm material)
+  const dn=Math.round(4000*fid);const dp=new Float32Array(dn*3),dc=new Float32Array(dn*3);
+  for(let i=0;i<dn;i++){
+    dp[i*3]=gaussian()*900;dp[i*3+1]=gaussian()*220;dp[i*3+2]=gaussian()*900;
+    const b=0.08+Math.random()*0.12;dc[i*3]=0.5*b;dc[i*3+1]=0.55*b;dc[i*3+2]=0.8*b;
+  }
+  addPoints(group,dp,dc,null,1.4,true);
+}
+
+function buildIntergalactic(group,fid){
+  // Milky Way shrinks to a disc here; show neighbors at vast distance.
+  const neighbors=[
+    {n:'Andromeda (M31)',x:46000,y:8000,z:-12000,r:2600,c:0x9fb6ff,tilt:0.5},
+    {n:'Triangulum (M33)',x:52000,y:-6000,z:18000,r:1300,c:0xb0c4ff,tilt:0.9},
+    {n:'LMC',x:-9000,y:-12000,z:6000,r:600,c:0xc8d4ff,tilt:0.3},
+    {n:'SMC',x:-12000,y:-14000,z:9000,r:400,c:0xd0dcff,tilt:0.2},
+  ];
+  neighbors.forEach(g=>{
+    const n=Math.round(3500*fid);const p=new Float32Array(n*3),c=new Float32Array(n*3);
+    for(let i=0;i<n;i++){
+      const inArm=Math.random()<0.7;const rr=Math.pow(Math.random(),0.6)*g.r;
+      let ang=Math.log(rr/40+1)*2.5+(Math.floor(Math.random()*2)/2)*Math.PI*2;
+      if(inArm)ang+=gaussian()*0.3;else ang=Math.random()*Math.PI*2;
+      const lx=Math.cos(ang)*rr, lz=Math.sin(ang)*rr, ly=gaussian()*g.r*0.06;
+      // tilt
+      const ty=ly*Math.cos(g.tilt)-lz*Math.sin(g.tilt);
+      const tz=ly*Math.sin(g.tilt)+lz*Math.cos(g.tilt);
+      p[i*3]=g.x+lx;p[i*3+1]=g.y+ty;p[i*3+2]=g.z+tz;
+      const b=0.4+Math.random()*0.6;const col=new THREE.Color(g.c);
+      c[i*3]=col.r*b;c[i*3+1]=col.g*b;c[i*3+2]=col.b*b;
+    }
+    addPoints(group,p,c,null,1.6,true);
+    const glow=makeGlowSprite('rgba(180,200,255,0.5)',g.r*1.4);glow.position.set(g.x,g.y,g.z);group.add(glow);
+    const lc=document.createElement('canvas');lc.width=256;lc.height=40;const lctx=lc.getContext('2d');
+    lctx.fillStyle='rgba(180,200,255,0.85)';lctx.font='bold 18px Orbitron,monospace';lctx.fillText(g.n,4,26);
+    const lt=new THREE.CanvasTexture(lc);const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true,depthTest:false}));
+    ls.scale.set(g.r*1.2,g.r*0.2,1);ls.position.set(g.x,g.y+g.r*0.6,g.z);group.add(ls);
+  });
+}
+
+// ── helpers ──
+function gaussian(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function addPoints(group,pos,col,siz,size,attenuate){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  if(col)g.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const m=new THREE.PointsMaterial({size:size,sizeAttenuation:attenuate,vertexColors:!!col,transparent:true,opacity:0.92,depthWrite:false,blending:THREE.AdditiveBlending});
+  if(!col)m.color=new THREE.Color(0x99aacc);
+  const pts=new THREE.Points(g,m);pts.frustumCulled=false;group.add(pts);return pts;
+}
+function makeGlowSprite(rgba,scale){
+  const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+  const grd=x.createRadialGradient(64,64,0,64,64,64);grd.addColorStop(0,rgba);grd.addColorStop(0.4,rgba.replace(/[\d.]+\)$/,'0.25)'));grd.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle=grd;x.fillRect(0,0,128,128);
+  const t=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false,blending:THREE.AdditiveBlending}));
+  s.scale.set(scale,scale,1);return s;
+}
+
+function onGalaxyMapClick(e){
+  const cv=$('gm-canvas');const rect=cv.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)/rect.width*2-1;const my=-((e.clientY-rect.top)/rect.height)*2+1;
+  gmRaycaster.setFromCamera(new THREE.Vector2(mx,my),gmCamera);
+  gmRaycaster.params.Points={threshold:6};
+  const meshes=[];gmDestGroup&&gmDestGroup.traverse(o=>{if(o.isMesh&&o.userData.destIdx!==undefined)meshes.push(o);});
+  const hits=gmRaycaster.intersectObjects(meshes);
+  if(hits.length){const di=hits[0].object.userData.destIdx;STATE.flight.destIdx=di;
+    $('gm-selected').textContent='→ '+DESTINATIONS[di].name.toUpperCase()+' SELECTED — CLOSE TO FLY';
+    document.querySelectorAll('.dest-card').forEach((c,ci)=>c.classList.toggle('active',ci===di));
+    if(flightInited)plotCourse(di);
+    meshes.forEach(m=>m.material.color.set(m.userData.destIdx===di?0xf5c400:0x00f5ff));}
+}
+
+// Determine which tier we're in based on camera distance from target, and
+// crossfade visibility. This is what keeps real scale from breaking precision.
+function updateGalaxyTier(){
+  const d=gmCamera.position.distanceTo(gmControls.target);
+  let tier,label,scale;
+  if(d<260){tier='solar';label='SOLAR SYSTEM';scale='1 AU ≈ '+ (Math.round(d/1.4)) +' units';}
+  else if(d<3500){tier='stellar';label='STELLAR NEIGHBORHOOD';scale='~'+(d/80).toFixed(1)+' ly across';}
+  else if(d<60000){tier='galaxy';label='MILKY WAY';scale='~'+Math.round(d/1000*50)+' kly from view';}
+  else {tier='intergalactic';label='INTERGALACTIC';scale='~'+(d/1000*0.05).toFixed(2)+' Mly';}
+  if(tier!==gmCurrentTier){
+    gmCurrentTier=tier;
+    // toggle group visibility per tier (with some overlap for context)
+    if(gmDestGroup)gmDestGroup.visible=(tier==='solar'||tier==='stellar');
+    if(gmTierGroups.stellar)gmTierGroups.stellar.visible=(tier==='stellar'||tier==='galaxy');
+    if(gmTierGroups.galaxy)gmTierGroups.galaxy.visible=(tier==='galaxy'||tier==='stellar'||tier==='intergalactic');
+    if(gmTierGroups.intergalactic)gmTierGroups.intergalactic.visible=(tier==='intergalactic'||tier==='galaxy');
+    const tEl=$('gm-tier');if(tEl)tEl.textContent=label;
+  }
+  const sEl=$('gm-scale');if(sEl)sEl.textContent='scale: '+scale;
+  // pulse the sun marker
+  if(gmSunMarker&&gmSunMarker.userData.ring){const s=1+Math.sin(performance.now()*0.003)*0.12;gmSunMarker.userData.ring.scale.set(s,s,s);}
+}
+
+function gmLoop(){
+  gmAnimId=requestAnimationFrame(gmLoop);
+  if(!$('galaxy-map').classList.contains('open'))return;
+  gmControls.update();
+  updateGalaxyTier();
+  gmRenderer.render(gmScene,gmCamera);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3457,85 +3789,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 // Replaces initGalaxyMapScene — richer colors, LOD zoom, Earth outline
 let gmLOD=1; // 1=solar 2=galactic 3=intergalactic
 
-function initGalaxyMapScene(){
-  gmInited=true;
-  const cv=$('gm-canvas');
-  const W=Math.min(innerWidth*.92,740),H=Math.min(innerHeight*.76,540);
-  cv.width=W;cv.height=H;
-  gmRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
-  gmRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  gmRenderer.setSize(W,H);
-  gmRenderer.setClearColor(0x000205,1);
-
-  gmScene=new THREE.Scene();
-  gmCamera=new THREE.PerspectiveCamera(55,W/H,0.005,2000000);
-  gmCamera.position.set(0,600,2200);
-
-  gmControls=new THREE.OrbitControls(gmCamera,cv);
-  gmControls.enableDamping=true;gmControls.dampingFactor=.10;
-  gmControls.rotateSpeed=0.4;gmControls.zoomSpeed=0.65;gmControls.panSpeed=0.5;
-  gmControls.minDistance=2;gmControls.maxDistance=200000;
-  gmControls.target.set(0,0,0);
-
-  // Ambient
-  gmScene.add(new THREE.AmbientLight(0x102244,1.2));
-
-  // ── Multi-tier stars ────────────────────────────────────
-  buildGMStars();
-
-  // ── Milky Way — seeded multi-color spiral ──────────────
-  buildMilkyWay();
-
-  // ── Background galaxies (zoom out to see) ──────────────
-  buildBackgroundGalaxies();
-
-  // ── Nebula dust clouds ─────────────────────────────────
-  buildGMNebulae();
-
-  // ── Solar system with Earth globe ─────────────────────
-  buildGMSolarSystem();
-
-  // ── Destination markers ────────────────────────────────
-  buildGMDestinations();
-
-  // ── Raycaster for click ────────────────────────────────
-  gmRaycaster=new THREE.Raycaster();
-  gmRaycaster.params.Points={threshold:18};
-  cv.addEventListener('click',onGMClick);
-  cv.addEventListener('touchend',e=>{if(e.changedTouches.length){const t=e.changedTouches[0];const r=cv.getBoundingClientRect();const mx=(t.clientX-r.left)/r.width*2-1,my=-((t.clientY-r.top)/r.height)*2+1;gmRaycaster.setFromCamera(new THREE.Vector2(mx,my),gmCamera);onGMClick({clientX:t.clientX,clientY:t.clientY,_fromTouch:true},mx,my);}});
-
-  // Loop
-  (function loop(){
-    gmAnimId=requestAnimationFrame(loop);
-    if(!$('galaxy-map').classList.contains('open'))return;
-    gmControls.update();
-    // LOD-based visibility
-    const dist=gmCamera.position.length();
-    updateGMLOD(dist);
-    gmScene.rotation.y+=.00015;
-    gmRenderer.render(gmScene,gmCamera);
-  })();
-}
-
-function seededRand(seed){return((Math.sin(seed)*43758.5453123)%1+1)%1;}
-
-function buildGMStars(){
-  // 3 tiers
-  [[4000,500,10000,1.2],[8000,8000,60000,1.8],[3000,60000,300000,2.5]].forEach(([n,rMin,rMax,sz],ti)=>{
-    const p=new Float32Array(n*3),c=new Float32Array(n*3);
-    const pal=[[1,1,1],[.72,.86,1],[1,.93,.76],[.6,.76,1],[1,.76,.6],[.88,1,.92]];
-    for(let i=0;i<n;i++){
-      const phi=Math.acos(2*Math.random()-1),theta=Math.random()*Math.PI*2;
-      const r=rMin+Math.random()*(rMax-rMin);
-      p[i*3]=r*Math.sin(phi)*Math.cos(theta);p[i*3+1]=r*Math.sin(phi)*Math.sin(theta)*.35;p[i*3+2]=r*Math.cos(phi);
-      const col=pal[Math.floor(Math.random()*pal.length)];const b=.4+Math.random()*.6;
-      c[i*3]=col[0]*b;c[i*3+1]=col[1]*b;c[i*3+2]=col[2]*b;
-    }
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));g.setAttribute('color',new THREE.BufferAttribute(c,3));
-    const pts=new THREE.Points(g,new THREE.PointsMaterial({size:sz,sizeAttenuation:false,vertexColors:true}));
-    pts.userData.tier=ti;gmScene.add(pts);
-  });
-}
 
 // ══════════════════════════════════════════════════════════════
 //  ✦ EXTENSION MODULE — procedural textures, galaxy band, post-FX,
