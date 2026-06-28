@@ -34,6 +34,7 @@
 })();</script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script async src="https://js.stripe.com/v3/buy-button.js"></script>
 <script>
 // Inline OrbitControls — no external dependency, always works
@@ -304,6 +305,8 @@ html,body{width:100%;height:var(--app-h);overflow:hidden;background:var(--c0);co
 .ability-pill.c{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.1);}
 #board-name-input{background:rgba(0,245,255,0.06);border:1px solid var(--border);color:var(--cyan);font-family:var(--font-hud);font-size:0.65rem;letter-spacing:0.1em;padding:0.35rem 0.55rem;border-radius:2px;outline:none;width:100%;margin:0.35rem 0;}
 #board-name-input::placeholder{color:rgba(0,245,255,0.3);}
+.tmpl-btn{flex:1;background:rgba(0,245,255,0.06);border:1px solid var(--border);color:var(--cyan);font-family:var(--font-hud);font-size:0.5rem;letter-spacing:0.06em;padding:0.4rem 0.2rem;border-radius:2px;cursor:pointer;transition:all .15s;}
+.tmpl-btn.active{background:rgba(245,196,0,0.18);border-color:var(--gold);color:var(--gold);box-shadow:0 0 10px rgba(245,196,0,.25);}
 #board-name-input:focus{border-color:var(--cyan);box-shadow:var(--glow-sm);}
 #builder-viewport{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse 100% 80% at 50% 60%,#030a1f 0%,#000308 60%);}
 #builder-canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;touch-action:none;}
@@ -583,6 +586,22 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
       <div class="tab-panel active" id="btab-shape">
         <span class="sec-label">Board Identity</span>
         <input type="text" id="board-name-input" placeholder="NAME YOUR BOARD..." maxlength="20" oninput="onNameChange()">
+        <span class="sec-label">Base Template</span>
+        <div style="display:flex;gap:6px;margin:4px 0 8px;">
+          <button type="button" id="tmpl-proc" class="tmpl-btn" onclick="setBoardTemplate('procedural')">PROCEDURAL</button>
+          <button type="button" id="tmpl-A" class="tmpl-btn" onclick="setBoardTemplate('A')">SKYBOARD A</button>
+          <button type="button" id="tmpl-B" class="tmpl-btn" onclick="setBoardTemplate('B')">SKYBOARD B</button>
+        </div>
+        <div id="zone-colors" style="display:none;">
+          <span class="sec-label">Skyboard Zones</span>
+          <div class="ctrl-row"><label>Deck</label><input type="color" id="z-deck" value="#6a5a38" oninput="onZoneColor()"></div>
+          <div class="ctrl-row"><label>DART Glow</label><input type="color" id="z-dart" value="#00f5ff" oninput="onZoneColor()"></div>
+          <div class="ctrl-row"><label>Ornaments</label><input type="color" id="z-orn" value="#d9b060" oninput="onZoneColor()"></div>
+          <div class="ctrl-row"><label>Staff/Pole</label><input type="checkbox" id="z-staff" checked onchange="onZoneColor()"></div>
+          <div class="ctrl-row"><label>Glow Intensity</label><input type="range" id="z-glow" min="0" max="1" step="0.05" value="0.3" oninput="onZoneColor()"><span class="val" id="v-zglow">0.30</span></div>
+          <div class="ctrl-row"><label>Metalness</label><input type="range" id="z-metal" min="0" max="1" step="0.05" value="0.6" oninput="onZoneColor()"><span class="val" id="v-zmetal">0.60</span></div>
+          <div style="font-size:0.58rem;color:var(--text-dim);line-height:1.5;padding:4px 0;">Sculpted Nomad model — recolor each mesh zone. The procedural shape controls below apply only to the PROCEDURAL template.</div>
+        </div>
         <span class="sec-label">Hull — Center Body</span>
         <div class="ctrl-row"><label>Length</label><input type="range" id="b-length" min="1.2" max="4.5" step="0.1" value="2.8" oninput="rb()"><span class="val" id="v-length">2.8m</span></div>
         <div class="ctrl-row"><label>Width</label><input type="range" id="b-width" min="0.25" max="1.2" step="0.05" value="0.5" oninput="rb()"><span class="val" id="v-width">0.50m</span></div>
@@ -1053,7 +1072,11 @@ const STATE={
     shard:0.38,shardang:25,shardoff:0.1,shardw:0.055,
     col1:'#0a2a3f',emit:'#00f5ff',glow:0.3,metal:0.85,
     emblem:0,sideGfx:0,decalCol:'#00f5ff',decalOpac:0.8,
-    staffIdx:0,staffMount:'upright',staffLen:1.2,staffThick:0.03
+    staffIdx:0,staffMount:'upright',staffLen:1.2,staffThick:0.03,
+    // Model template: 'procedural' (primitives) | 'A' (Skyboard A glb) | 'B' (full extraction glb)
+    template:'procedural',
+    // Per-zone colors for GLB templates (deck/dart-glow/ornament) + staff toggle
+    zoneDeck:'#6a5a38', zoneDart:'#00f5ff', zoneOrn:'#d9b060', showStaff:true
   },
   flight:{speed:0,dart:false,energy:100,hull:100,shield:100,destIdx:0,time:0,
     camPitch:0,camYaw:0,thrust:0,strafe:0,lift:0,
@@ -1514,11 +1537,27 @@ function syncSlidersToBoardConfig(){
   Object.entries(map).forEach(([k,id])=>{if($(id))$(id).value=c[k];});
   if($('board-name-input'))$('board-name-input').value=c.name||'';
   if($('s-mount'))$('s-mount').value=c.staffMount||'upright';
+  // template selector + zone inputs
+  const tk=c.template||'procedural';
+  ['proc','A','B'].forEach(k=>{const b=$('tmpl-'+k);if(b)b.classList.toggle('active',(k==='proc'?'procedural':k)===tk);});
+  if($('zone-colors'))$('zone-colors').style.display=(tk==='procedural')?'none':'block';
+  if($('z-deck'))$('z-deck').value=c.zoneDeck||'#6a5a38';
+  if($('z-dart'))$('z-dart').value=c.zoneDart||c.emit||'#00f5ff';
+  if($('z-orn')) $('z-orn').value =c.zoneOrn||'#d9b060';
+  if($('z-staff'))$('z-staff').checked=(c.showStaff!==false);
+  if($('z-glow')){$('z-glow').value=c.glow;const v=$('v-zglow');if(v)v.textContent=(c.glow||0).toFixed(2);}
+  if($('z-metal')){$('z-metal').value=c.metal;const v=$('v-zmetal');if(v)v.textContent=(c.metal||0).toFixed(2);}
   buildGfxGrids();buildStaffGrid();
 }
 function readBoardConfig(){
   const c=STATE.boardConfig;
   c.name=($('board-name-input').value||'').toUpperCase()||'UNNAMED BOARD';
+  // For GLB templates the procedural shape sliders don't apply — zone controls
+  // (read via onZoneColor) own glow/metal/colors. Only read shape for procedural.
+  if(c.template&&c.template!=='procedural'){
+    $('builder-name-display').textContent=c.name;
+    return;
+  }
   c.length=parseFloat($('b-length').value);c.width=parseFloat($('b-width').value);c.thick=parseFloat($('b-thick').value);
   c.nose=parseFloat($('b-nose').value);c.nosetip=parseFloat($('b-nosetip').value);c.noseflare=parseFloat($('b-noseflare').value);
   c.shard=parseFloat($('b-shard').value);c.shardang=parseFloat($('b-shardang').value);c.shardoff=parseFloat($('b-shardoff').value);c.shardw=parseFloat($('b-shardw').value);
@@ -1536,6 +1575,29 @@ function readBoardConfig(){
 }
 function rb(){if(!builderInited||!boardGroup)return;readBoardConfig();try{_rebuildBoard();}catch(e){console.error('Board build error:',e);}}
 function onNameChange(){STATE.boardConfig.name=($('board-name-input').value||'').toUpperCase()||'UNNAMED BOARD';$('builder-name-display').textContent=STATE.boardConfig.name;}
+
+// Switch the board base between the procedural primitives and the two sculpted
+// GLB templates (A = Skyboard_A parts pack, B = full extraction). Shows the
+// zone-color panel for GLB templates and rebuilds the preview.
+function setBoardTemplate(key){
+  STATE.boardConfig.template=key;
+  ['proc','A','B'].forEach(k=>{const b=$('tmpl-'+k);if(b)b.classList.toggle('active',(k==='proc'?'procedural':k)===key);});
+  const zc=$('zone-colors');if(zc)zc.style.display=(key==='procedural')?'none':'block';
+  if(key!=='procedural'){try{preloadSkyboardTemplates();}catch(e){}}
+  rb();
+}
+
+// Apply the zone color/material controls for GLB templates and rebuild.
+function onZoneColor(){
+  const c=STATE.boardConfig;
+  if($('z-deck'))c.zoneDeck=$('z-deck').value;
+  if($('z-dart'))c.zoneDart=$('z-dart').value;
+  if($('z-orn')) c.zoneOrn =$('z-orn').value;
+  if($('z-staff'))c.showStaff=$('z-staff').checked;
+  if($('z-glow')){c.glow=parseFloat($('z-glow').value);const v=$('v-zglow');if(v)v.textContent=c.glow.toFixed(2);}
+  if($('z-metal')){c.metal=parseFloat($('z-metal').value);const v=$('v-zmetal');if(v)v.textContent=c.metal.toFixed(2);}
+  rb();
+}
 
 function initBuilderScene(){
   if(builderInited){
@@ -1605,6 +1667,15 @@ function initBuilderScene(){
 function _rebuildBoard(){
   while(boardGroup.children.length)boardGroup.remove(boardGroup.children[0]);
   const c=STATE.boardConfig;
+  // GLB template? drop the sculpted model into the preview (falls back to
+  // procedural primitives below if it hasn't finished loading yet).
+  if(c.template&&c.template!=='procedural'){
+    const g=buildBoardFromGLB(c.template);
+    if(g){boardGroup.add(g);return;}
+    try{preloadSkyboardTemplates();}catch(e){}
+    // keep trying until the GLB is ready
+    setTimeout(()=>{try{if(STATE.boardConfig.template===c.template)_rebuildBoard();}catch(e){}},400);
+  }
   const col=new THREE.Color(c.col1),emit=new THREE.Color(c.emit);
   const hW=c.width/2,hL=c.length/2,T=c.thick;
   const nL=c.nose,nTip=c.nosetip,nFlare=c.noseflare;
@@ -2641,9 +2712,79 @@ function addProceduralPlanetDetails(){
 
 
 
+// ── Skyboard GLB templates (sculpted models from Nomad/Blender) ──────────
+// Two templates ('A' = Skyboard_A parts pack, 'B' = full extraction), each
+// built with named zones (deck / dart / ornament / staff) so the editor can
+// recolor each zone and toggle the staff — procedural build wraps AROUND them.
+const SKYBOARD_TEMPLATES={A:'skyboard_A.glb', B:'skyboard_B.glb'};
+const _glbCache={};           // url -> loaded THREE.Group (template scene)
+let _glbLoader=null;
+function _getGLBLoader(){ if(!_glbLoader&&THREE.GLTFLoader)_glbLoader=new THREE.GLTFLoader(); return _glbLoader; }
+
+// Kick off background preload so templates are ready when the editor opens.
+function preloadSkyboardTemplates(){
+  const L=_getGLBLoader();if(!L)return;
+  Object.entries(SKYBOARD_TEMPLATES).forEach(([k,url])=>{
+    if(_glbCache[url])return;
+    L.load(url,gltf=>{
+      // normalize: center + scale so the longest axis ≈ target board length,
+      // orient so the long axis runs along X (nose +X like the procedural board)
+      const root=gltf.scene;
+      const box=new THREE.Box3().setFromObject(root);
+      const size=new THREE.Vector3();box.getSize(size);
+      const ctr=new THREE.Vector3();box.getCenter(ctr);
+      root.position.sub(ctr); // center at origin
+      // longest axis is Y in these exports → rotate to X
+      const wrap=new THREE.Group();wrap.add(root);
+      if(size.y>=size.x&&size.y>=size.z) wrap.rotation.z=-Math.PI/2; // Y→X
+      else if(size.z>=size.x) wrap.rotation.y=Math.PI/2;             // Z→X
+      const longest=Math.max(size.x,size.y,size.z)||1;
+      const target=3.0;                 // game board length in world units
+      wrap.scale.setScalar(target/longest);
+      _glbCache[url]=wrap;
+    }, undefined, err=>{ console.warn('GLB load failed',url,err); });
+  });
+}
+
+// Build a board from a loaded GLB template, tinting each named zone.
+function buildBoardFromGLB(tmplKey){
+  const url=SKYBOARD_TEMPLATES[tmplKey];
+  const cached=_glbCache[url];
+  if(!cached) return null;            // not loaded yet → caller falls back
+  const grp=cached.clone(true);
+  const c=STATE.boardConfig;
+  const deckC=new THREE.Color(c.zoneDeck||'#6a5a38');
+  const dartC=new THREE.Color(c.zoneDart||c.emit||'#00f5ff');
+  const ornC =new THREE.Color(c.zoneOrn||'#d9b060');
+  grp.traverse(o=>{
+    if(!o.isMesh)return;
+    const zone=(o.name||'').toLowerCase()+' '+((o.parent&&o.parent.name)||'').toLowerCase();
+    // give every mesh a fresh standard material we control
+    let base, emissive=0x000000, emissiveInt=0, metal=c.metal!=null?c.metal:0.6, rough=0.4;
+    if(zone.includes('dart')){ base=dartC; emissive=dartC; emissiveInt=(c.glow!=null?c.glow:0.3)*6+1.2; metal=0.9; rough=0.15; }
+    else if(zone.includes('ornament')||zone.includes('orn')){ base=ornC; emissive=ornC; emissiveInt=0.25; metal=0.7; rough=0.25; }
+    else if(zone.includes('staff')){ if(!c.showStaff){o.visible=false;} base=ornC; metal=0.6; rough=0.3; }
+    else { base=deckC; metal=metal; rough=0.45; } // deck + everything else
+    o.material=new THREE.MeshStandardMaterial({color:base,emissive:emissive,emissiveIntensity:emissiveInt,metalness:metal,roughness:rough});
+    if(o.material.emissive&&emissiveInt>0)o.material.emissiveIntensity=emissiveInt;
+  });
+  // soft accent light so the board reads even in dim space
+  const pl=new THREE.PointLight(dartC,(c.glow!=null?c.glow:0.3)*2+0.5,6);pl.position.set(0,0.4,0);grp.add(pl);
+  return grp;
+}
+
 // Builds the skyboard mesh (the same craft used everywhere — space flight AND
 // atmospheric flight). Nose points +X. Returns a THREE.Group.
 function buildBoardMesh(){
+  // GLB template selected? use the sculpted model (falls back to procedural if
+  // the template hasn't finished loading yet).
+  const tmpl=STATE.boardConfig.template;
+  if(tmpl&&tmpl!=='procedural'){
+    const g=buildBoardFromGLB(tmpl);
+    if(g)return g;
+    // not ready → ensure it's loading, fall through to procedural this frame
+    preloadSkyboardTemplates();
+  }
   const grp=new THREE.Group();
   const c=STATE.boardConfig;
   const col=new THREE.Color(c.col1),emit=new THREE.Color(c.emit);
@@ -4506,6 +4647,7 @@ function doExit(){
 document.addEventListener('DOMContentLoaded',()=>{
   const exitBtns=document.querySelectorAll('.art-btn');
   exitBtns.forEach(b=>{if(b.textContent.trim()==='EXIT')b.onclick=promptExit;});
+  try{preloadSkyboardTemplates();}catch(e){}
 });
 
 // ══════════════════════════════════════════════════════════════
