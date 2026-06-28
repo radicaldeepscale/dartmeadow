@@ -3305,36 +3305,31 @@ function drawMinimap(){
 // Realistic galactic position: Sun out on the Orion Arm, NOT at center.
 function drawGalaxyMinimap(ctx,W,H,cx,cy){
   const R=W/2-6;
-  // central bulge glow
+  // central bulge glow (bar-shaped core)
   const g=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
-  g.addColorStop(0,'rgba(255,240,210,0.5)');g.addColorStop(0.12,'rgba(255,230,180,0.25)');
-  g.addColorStop(0.4,'rgba(120,140,210,0.08)');g.addColorStop(1,'rgba(0,0,0,0)');
+  g.addColorStop(0,'rgba(255,240,210,0.55)');g.addColorStop(0.1,'rgba(255,225,170,0.28)');
+  g.addColorStop(0.35,'rgba(120,140,210,0.08)');g.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
-  // 4 logarithmic spiral arms drawn as dotted point clouds
-  const arms=4,wind=2.7;
-  for(let a=0;a<arms;a++){
-    const base=(a/arms)*Math.PI*2;
-    ctx.fillStyle=a===0?'rgba(120,170,255,0.5)':'rgba(150,170,220,0.32)';
-    for(let t=0.06;t<1;t+=0.012){
-      const r=t*R;const ang=Math.log(t*R/3+1)*wind+base;
-      const spread=(0.05+t*0.12);
-      for(let s=0;s<2;s++){
-        const aa=ang+(Math.random()-0.5)*spread;
-        const px=cx+Math.cos(aa)*r, py=cy+Math.sin(aa)*r;
-        ctx.fillRect(px,py,1,1);
-      }
+  // 2 MAJOR arms (Perseus, Scutum-Centaurus) + 2 minor — matches the real galaxy
+  const armDefs=[{base:0,wind:2.4,c:'rgba(140,180,255,0.5)'},{base:Math.PI,wind:2.4,c:'rgba(140,180,255,0.5)'},
+    {base:Math.PI*0.5,wind:2.3,c:'rgba(150,165,215,0.3)'},{base:Math.PI*1.5,wind:2.3,c:'rgba(150,165,215,0.3)'}];
+  armDefs.forEach(arm=>{
+    ctx.fillStyle=arm.c;
+    for(let t=0.07;t<1;t+=0.012){
+      const r=t*R;const ang=Math.log(t*R/3+1)*arm.wind+arm.base;
+      const spread=0.04+t*0.1;
+      for(let s=0;s<2;s++){const aa=ang+(Math.random()-0.5)*spread;ctx.fillRect(cx+Math.cos(aa)*r,cy+Math.sin(aa)*r,1,1);}
     }
-  }
-  // Sun marker on Orion arm (arm 0, ~52% out)
-  const sunT=0.52, sunBase=0;
-  const sunR=sunT*R, sunAng=Math.log(sunT*R/3+1)*wind+sunBase+0.18;
+  });
+  // Sun on the Orion Spur (between Sagittarius and Perseus, ~56% out)
+  const sunT=0.56, sunBase=Math.PI*0.28;
+  const sunR=sunT*R, sunAng=Math.log(sunT*R/3+1)*2.35+sunBase;
   const sx=cx+Math.cos(sunAng)*sunR, sy=cy+Math.sin(sunAng)*sunR;
-  // pulse
   const pulse=1+Math.sin(performance.now()*0.004)*0.3;
-  ctx.beginPath();ctx.arc(sx,sy,3*pulse,0,Math.PI*2);ctx.fillStyle='#ffd23a';ctx.fill();
-  ctx.beginPath();ctx.arc(sx,sy,6*pulse,0,Math.PI*2);ctx.strokeStyle='rgba(255,210,58,0.6)';ctx.lineWidth=1;ctx.stroke();
-  ctx.font='6px "Share Tech Mono",monospace';ctx.fillStyle='rgba(255,210,58,0.9)';ctx.fillText('SOL',sx+7,sy+2);
-  ctx.fillStyle='rgba(0,245,255,0.45)';ctx.fillText('MILKY WAY · 26,000 ly from core',5,11);
+  ctx.beginPath();ctx.arc(sx,sy,2.5*pulse,0,Math.PI*2);ctx.fillStyle='#ffd23a';ctx.fill();
+  ctx.beginPath();ctx.arc(sx,sy,5.5*pulse,0,Math.PI*2);ctx.strokeStyle='rgba(255,210,58,0.6)';ctx.lineWidth=1;ctx.stroke();
+  ctx.font='6px "Share Tech Mono",monospace';ctx.fillStyle='rgba(255,210,58,0.95)';ctx.fillText('YOU ARE HERE',sx+7,sy+2);
+  ctx.fillStyle='rgba(0,245,255,0.45)';ctx.fillText('MILKY WAY · Orion Spur · 26,000 ly',5,11);
 }
 function plotCourse(idx){
   const d=DESTINATIONS[idx];
