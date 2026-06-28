@@ -512,6 +512,7 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
   <div class="menu-glass">
     <div class="menu-logo">DART MEADOW</div>
     <div class="menu-tagline">Speed of Light³ · Interstellar Zero-G Flight</div>
+    <button class="menu-btn gold" id="resume-btn" onclick="launchFlight()" style="display:none;">▶ RESUME GAME</button>
     <button class="menu-btn gold" onclick="goScreen('builder')">⚡ BUILD YOUR SKYBOARD</button>
     <button class="menu-btn" onclick="openSaveModal('load')">▶ LOAD PROFILE / GAME</button>
     <hr class="menu-sep">
@@ -588,15 +589,15 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
         <input type="text" id="board-name-input" placeholder="NAME YOUR BOARD..." maxlength="20" oninput="onNameChange()">
         <span class="sec-label">Base Template</span>
         <div style="display:flex;gap:6px;margin:4px 0 8px;">
-          <button type="button" id="tmpl-proc" class="tmpl-btn" onclick="setBoardTemplate('procedural')">PROCEDURAL</button>
-          <button type="button" id="tmpl-A" class="tmpl-btn" onclick="setBoardTemplate('A')">SKYBOARD A</button>
           <button type="button" id="tmpl-B" class="tmpl-btn" onclick="setBoardTemplate('B')">SKYBOARD B</button>
+          <button type="button" id="tmpl-A" class="tmpl-btn" onclick="setBoardTemplate('A')">SKYBOARD A</button>
+          <button type="button" id="tmpl-proc" class="tmpl-btn" onclick="setBoardTemplate('procedural')">PROCEDURAL</button>
         </div>
         <div id="zone-colors" style="display:none;">
           <span class="sec-label">Skyboard Zones</span>
-          <div class="ctrl-row"><label>Deck</label><input type="color" id="z-deck" value="#6a5a38" oninput="onZoneColor()"></div>
-          <div class="ctrl-row"><label>DART Glow</label><input type="color" id="z-dart" value="#00f5ff" oninput="onZoneColor()"></div>
-          <div class="ctrl-row"><label>Ornaments</label><input type="color" id="z-orn" value="#d9b060" oninput="onZoneColor()"></div>
+          <div class="ctrl-row"><label>Deck</label><input type="color" id="z-deck" value="#5905b3" oninput="onZoneColor()"></div>
+          <div class="ctrl-row"><label>DART Glow</label><input type="color" id="z-dart" value="#1c86ff" oninput="onZoneColor()"></div>
+          <div class="ctrl-row"><label>Ornaments</label><input type="color" id="z-orn" value="#ff290d" oninput="onZoneColor()"></div>
           <div class="ctrl-row"><label>Staff/Pole</label><input type="checkbox" id="z-staff" checked onchange="onZoneColor()"></div>
           <div class="ctrl-row"><label>Glow Intensity</label><input type="range" id="z-glow" min="0" max="1" step="0.05" value="0.3" oninput="onZoneColor()"><span class="val" id="v-zglow">0.30</span></div>
           <div class="ctrl-row"><label>Metalness</label><input type="range" id="z-metal" min="0" max="1" step="0.05" value="0.6" oninput="onZoneColor()"><span class="val" id="v-zmetal">0.60</span></div>
@@ -779,6 +780,7 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
       <button class="art-btn" onclick="openGalaxyMap()">MAP</button>
       <button class="art-btn" onclick="openSaveModal('save')">SAVE</button>
       <button class="art-btn" onclick="openSettings()">CFG</button>
+      <button class="art-btn" onclick="returnToMenu()" title="Return to main menu (your game stays loaded)">☰ MENU</button>
       <button class="art-btn" onclick="promptExit()">EXIT</button>
     </div>
   </div>
@@ -1073,10 +1075,11 @@ const STATE={
     col1:'#0a2a3f',emit:'#00f5ff',glow:0.3,metal:0.85,
     emblem:0,sideGfx:0,decalCol:'#00f5ff',decalOpac:0.8,
     staffIdx:0,staffMount:'upright',staffLen:1.2,staffThick:0.03,
-    // Model template: 'procedural' (primitives) | 'A' (Skyboard A glb) | 'B' (full extraction glb)
-    template:'procedural',
-    // Per-zone colors for GLB templates (deck/dart-glow/ornament) + staff toggle
-    zoneDeck:'#6a5a38', zoneDart:'#00f5ff', zoneOrn:'#d9b060', showStaff:true
+    // Model template: 'B' (full extraction) is the default skyboard; 'A' is the
+    // second option, procedural is third. Default zone colors are the user's
+    // chosen scheme (purple deck / blue DART glow / red-orange ornaments).
+    template:'B',
+    zoneDeck:'#5905b3', zoneDart:'#1c86ff', zoneOrn:'#ff290d', showStaff:true
   },
   flight:{speed:0,dart:false,energy:100,hull:100,shield:100,destIdx:0,time:0,
     camPitch:0,camYaw:0,thrust:0,strafe:0,lift:0,
@@ -1201,7 +1204,8 @@ function goScreen(name){
   STATE.screen=name;
   if(name==='builder'){$('screen-builder').classList.add('active');requestAnimationFrame(()=>requestAnimationFrame(initBuilderScene));showFloatingMusic();}
   else if(name==='flight'){$('screen-flight').classList.add('active');hideFloatingMusicInGame();}
-  else{$('screen-menu').classList.add('active');initMenuBg();startMenuMusic();}
+  else{$('screen-menu').classList.add('active');initMenuBg();startMenuMusic();
+    const rb=$('resume-btn');if(rb)rb.style.display=(_gameInProgress&&flightInited)?'block':'none';}
 }
 // Show floating music control on pre-flight screens (if music isn't stopped)
 function showFloatingMusic(){
@@ -1210,6 +1214,12 @@ function showFloatingMusic(){
 }
 function launchFlight(){
   goScreen('flight');
+  // Already in a game? just resume — restart the render loop and re-show HUD,
+  // keeping the existing scene/state intact (instant resume from main menu).
+  if(typeof flightInited!=='undefined'&&flightInited){
+    try{_startFlightLoop();}catch(e){}
+    return;
+  }
   // Poll until the screen has real pixel dimensions — then init
   // This handles mobile where display:block doesn't immediately give offsetWidth
   let attempts=0;
@@ -1227,6 +1237,24 @@ function launchFlight(){
   }
   requestAnimationFrame(()=>requestAnimationFrame(tryInit));
 }
+
+// Return to the main menu WITHOUT leaving the game. Pauses the flight render
+// loop (saving battery) and autosaves the current state to memory; the scene
+// stays built so tapping "Build Your Skyboard"→fly or LOAD resumes instantly.
+// (Foundation for spectator/menu-safe state in future multiuser gameplay.)
+function returnToMenu(){
+  // pause the active loop(s)
+  if(flightAnimId){cancelAnimationFrame(flightAnimId);flightAnimId=null;}
+  // autosave current state to memory so progress is safe
+  try{
+    const data=buildSaveData('auto');
+    localStorage.setItem('dm_autosave',JSON.stringify(data));
+  }catch(e){}
+  _gameInProgress=true;
+  goScreen('menu');
+  toast('☰ Returned to menu — your game is saved & paused');
+}
+let _gameInProgress=false;
 
 // ── Loading ───────────────────────────────────────────────────
 (function(){
@@ -2400,12 +2428,19 @@ function initFlightScene(){
   window.addEventListener('keydown',onKey);
   window.addEventListener('keyup',onKeyUp);
 
-  let last=performance.now();
+  _flightLoopCv=cv;
+  _startFlightLoop();
+}
+let _flightLoopCv=null,_flightLoopLast=0;
+function _startFlightLoop(){
+  if(flightAnimId)return; // already running
+  const cv=_flightLoopCv;
+  _flightLoopLast=performance.now();
   (function loop(){
     flightAnimId=requestAnimationFrame(loop);
     const now=performance.now();
-    const dt=Math.min((now-last)/1000,0.05);
-    last=now;flightTime+=dt;
+    const dt=Math.min((now-_flightLoopLast)/1000,0.05);
+    _flightLoopLast=now;flightTime+=dt;
 
     // Sync to actual window size each frame (compare CSS size, not buffer size)
     const nW=window.innerWidth;const nH=window.innerHeight;
@@ -2727,17 +2762,22 @@ function preloadSkyboardTemplates(){
   Object.entries(SKYBOARD_TEMPLATES).forEach(([k,url])=>{
     if(_glbCache[url])return;
     L.load(url,gltf=>{
-      // normalize: center + scale so the longest axis ≈ target board length,
-      // orient so the long axis runs along X (nose +X like the procedural board)
+      // Normalize so the board flies correctly:
+      //  • long axis runs along X (the board's forward/aft line)
+      //  • the STAFF end sits at -X (aft) so it points toward the trailing
+      //    camera, and the nose end points +X straight away into the scene
+      //  • centered at origin, scaled to the game board length
       const root=gltf.scene;
       const box=new THREE.Box3().setFromObject(root);
       const size=new THREE.Vector3();box.getSize(size);
       const ctr=new THREE.Vector3();box.getCenter(ctr);
       root.position.sub(ctr); // center at origin
-      // longest axis is Y in these exports → rotate to X
       const wrap=new THREE.Group();wrap.add(root);
-      if(size.y>=size.x&&size.y>=size.z) wrap.rotation.z=-Math.PI/2; // Y→X
-      else if(size.z>=size.x) wrap.rotation.y=Math.PI/2;             // Z→X
+      // The sculpt's long axis is Y, with the staff extending toward +Y.
+      // Rotate +Y → -X so the staff ends up AFT (-X, toward the camera) and the
+      // board lies flat (deck facing up, long axis fore/aft).
+      if(size.y>=size.x&&size.y>=size.z) wrap.rotation.z=Math.PI/2;   // +Y → -X
+      else if(size.z>=size.x&&size.z>=size.y) wrap.rotation.y=-Math.PI/2; // +Z → -X
       const longest=Math.max(size.x,size.y,size.z)||1;
       const target=3.0;                 // game board length in world units
       wrap.scale.setScalar(target/longest);
@@ -4621,7 +4661,7 @@ function applySettings(){
   STATE.settings.shadows=GFX.shadows;STATE.settings.reflections=GFX.envReflections;
   STATE.settings.caustics=GFX.caustics;STATE.settings.gi=GFX.fakeGI;
   saveGfxChoice(); // remember last setting until changed again
-  if(typeof applyRenderSettings==='function')applyRenderSettings();
+  try{ if(typeof applyRenderSettings==='function')applyRenderSettings(); }catch(e){ console.warn('render apply deferred:',e); }
   closeSettings();
   toast(needsRebuild?'✅ Settings applied — re-enter flight for shadows/quality':'✅ Settings applied');
 }
@@ -4996,6 +5036,9 @@ function renderWithPostFX(){
   }
 }
 function applyRenderSettings(){
+  // These rebuild flight-scene objects; skip entirely if flight isn't built yet
+  // (e.g. applying graphics from the main menu before entering the game).
+  if(typeof flightScene==='undefined'||!flightScene)return;
   buildFlightGalaxyBand();
   buildVolumetricDust();
   if(STATE.settings.textures)applyProceduralTextures();
