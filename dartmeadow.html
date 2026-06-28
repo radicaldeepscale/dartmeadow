@@ -804,7 +804,7 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
     <span style="font-size:0.38rem;opacity:0.7">DART</span>
   </button>
   <!-- Assist buttons: horizontal row above the right thumbstick -->
-  <div id="assist-row" style="position:absolute;bottom:calc(178px + var(--safe-bot));right:20px;display:flex;gap:6px;z-index:26;pointer-events:auto;">
+  <div id="assist-row" style="position:absolute;bottom:calc(200px + var(--safe-bot));right:18px;display:flex;gap:6px;z-index:27;pointer-events:auto;">
     <button id="assist-focus" class="assist-btn" onclick="toggleFocus()" title="Lock crosshair on target in view — auto-steers until you steer away">◎ FOCUS</button>
     <button id="assist-idle" class="assist-btn" onclick="toggleIdle()" title="Full stop & hover in place">⏸ IDLE</button>
   </div>
@@ -2762,10 +2762,15 @@ function cycleDartMode(){
 //  ✦ FLIGHT ASSIST — autopilot travel, orbit-lock, focus, idle
 // ══════════════════════════════════════════════════════════════
 const ASSIST = {
-  mode:'manual',        // 'manual' | 'travel' | 'orbit' | 'focus' | 'idle'
+  mode:'manual',        // 'manual' | 'travel' | 'orbit' | 'focus' | 'home' | 'idle'
   target:null,          // celestial body being travelled-to / locked
   arriveDist:0,         // distance at which we switch travel→orbit
   homeBody:null,        // Earth, for HOME button
+  orbitOffset:null,     // fixed offset vector while orbit-tracking
+  homeOffset:null,      // fixed offset vector while home-trailing
+  homeViewDist:0,
+  lockOffset:null,      // fixed offset vector while focus-tracking
+  _homeAfterArrive:false,
 };
 
 // Resolve a destination definition to an actual celestial body in the scene
@@ -2786,6 +2791,7 @@ function beginTravel(body){
   if(!body){toast('⚠ Destination not reachable');return;}
   ASSIST.mode='travel';
   ASSIST.target=body;
+  ASSIST.orbitOffset=null;ASSIST.homeOffset=null;ASSIST.lockOffset=null;
   // arrive when within ~6× the body's radius (or a sane minimum)
   const r=(body.renderMesh||body.mesh)?.geometry?.parameters?.radius||2;
   ASSIST.arriveDist=Math.max(r*6, 8);
@@ -2798,6 +2804,7 @@ function beginTravel(body){
 function disengageAssist(reason){
   if(ASSIST.mode==='manual')return;
   ASSIST.mode='manual';ASSIST.target=null;
+  ASSIST.orbitOffset=null;ASSIST.homeOffset=null;ASSIST.lockOffset=null;ASSIST._homeAfterArrive=false;
   updateAssistButtons();
   if(reason)toast(reason,'',1200);
 }
@@ -2817,8 +2824,13 @@ function toggleFocus(){
   const body=bodyUnderCrosshair();
   if(!body){toast('⚠ No object under crosshair');return;}
   ASSIST.mode='focus';ASSIST.target=body;
+  ASSIST.orbitOffset=null;ASSIST.homeOffset=null;
+  // Capture the CURRENT offset from the body — we hold this offset and let it
+  // travel along with the body. The ship does NOT fly to the body; it tracks
+  // it from wherever it is right now.
+  ASSIST.lockOffset=flightCamera.position.clone().sub(body.mesh.position);
   updateAssistButtons();
-  toast('◎ FOCUS LOCKED: '+body.name.toUpperCase());
+  toast('◎ FOCUS LOCKED: '+body.name.toUpperCase()+' — tracking');
 }
 
 // IDLE button — full stop, hover in place.
@@ -2829,13 +2841,42 @@ function toggleIdle(){
   toast('⏸ IDLE — full stop & hover');
 }
 
-// HOME button (was LOCK) — lock + track Earth as home base.
+// HOME button — track Earth as home base. Travels there if far, then settles
+// into a stable trailing position that keeps Earth AND its moon fully in view.
 function returnHome(){
   const earth=celestialBodies.find(b=>b.name==='Earth');
   if(!earth){toast('⚠ Home base not found');return;}
   ASSIST.homeBody=earth;
-  beginTravel(earth);
-  // travel will auto-transition into orbit-lock on arrival
+  const dist=flightCamera.position.distanceTo(earth.mesh.position);
+  const r=(earth.renderMesh||earth.mesh)?.geometry?.parameters?.radius||1;
+  // Comfortable viewing distance: far enough that Earth + Moon (moon orbits at
+  // ~2.6 radii) both sit in frame. Use a generous standoff.
+  const viewDist=Math.max(r*9, 14);
+  if(dist>viewDist*2.2){
+    // far away → fly there first, then it auto-settles into home-trail
+    beginTravel(earth);
+    ASSIST._homeAfterArrive=true;
+  } else {
+    // already near → go straight into stable home-trail
+    enterHomeTrail(earth, viewDist);
+  }
+}
+function enterHomeTrail(earth, viewDist){
+  ASSIST.mode='home';
+  ASSIST.target=earth;
+  ASSIST.orbitOffset=null;ASSIST.lockOffset=null;
+  const r=(earth.renderMesh||earth.mesh)?.geometry?.parameters?.radius||1;
+  ASSIST.homeViewDist=viewDist||Math.max(r*9,14);
+  // Capture the direction we're currently sitting relative to Earth, then hold
+  // a fixed trailing offset at the view distance along that direction.
+  let dir=flightCamera.position.clone().sub(earth.mesh.position);
+  if(dir.lengthSq()<0.01)dir.set(0,0.3,1);
+  dir.normalize();
+  // bias the offset slightly above the orbital plane so the moon stays visible
+  dir.y=Math.max(dir.y,0.15);dir.normalize();
+  ASSIST.homeOffset=dir.multiplyScalar(ASSIST.homeViewDist);
+  toast('⌂ HOME — tracking Earth & Moon');
+  updateAssistButtons();
 }
 
 // Which body is nearest to the screen-center ray (crosshair)?
@@ -2910,12 +2951,16 @@ function updateAssist(dt){
     sp.vel.lerp(wantVel, Math.min(1, 3*dt));
     sp.energy=clamp(sp.energy-1.2*dt,0,100);
     if(dist<=ASSIST.arriveDist){
-      // arrived → switch to orbit-lock, kill residual velocity
-      ASSIST.mode='orbit';
       sp.vel.multiplyScalar(0.2);
       dartSpeedMode=0;updateDartButton();
-      toast('🛰 ORBIT LOCK: '+tb.name.toUpperCase()+' — matching velocity');
-      updateAssistButtons();
+      if(ASSIST._homeAfterArrive){
+        ASSIST._homeAfterArrive=false;
+        enterHomeTrail(tb);
+      } else {
+        ASSIST.mode='orbit';
+        toast('🛰 ORBIT LOCK: '+tb.name.toUpperCase()+' — matching velocity');
+        updateAssistButtons();
+      }
     }
     return true;
   }
@@ -2924,29 +2969,62 @@ function updateAssist(dt){
     const tb=ASSIST.target;if(!tb||!tb.mesh){disengageAssist();return false;}
     if(manualInput){disengageAssist('Manual control — orbit released');return false;}
     const tp=tb.mesh.position;
-    steerToward(tp,dt,5);                 // keep crosshair on the body
-    // match the body's frame-to-frame motion so we idle alongside it
-    if(tb._lastPos){
-      const bodyVel=tp.clone().sub(tb._lastPos); // units/frame
-      sp.vel.lerp(bodyVel,0.15);
+    // Lock a fixed offset on first orbit frame, then ride it smoothly so the
+    // ship trails the body with no geometry-jitter.
+    if(!ASSIST.orbitOffset){
+      let dir=flightCamera.position.clone().sub(tp);
+      const r=(tb.renderMesh||tb.mesh)?.geometry?.parameters?.radius||2;
+      const want=Math.max(r*5,8);
+      if(dir.lengthSq()<0.01)dir.set(0,0.25,1);
+      dir.normalize();dir.y=Math.max(dir.y,0.12);dir.normalize();
+      ASSIST.orbitOffset=dir.multiplyScalar(want);
     }
-    // hold a comfortable standoff distance
-    const r=(tb.renderMesh||tb.mesh)?.geometry?.parameters?.radius||2;
-    const want=Math.max(r*4,6);
-    const to=flightCamera.position.clone().sub(tp);
-    const d=to.length();
-    if(d>want*1.2){const pull=to.normalize().multiplyScalar(-(d-want)*0.02);sp.vel.add(pull);}
-    else if(d<want*0.7){const push=to.normalize().multiplyScalar((want-d)*0.02);sp.vel.add(push);}
+    const desired=tp.clone().add(ASSIST.orbitOffset);
+    flightCamera.position.lerp(desired, Math.min(1,3.5*dt));
+    sp.vel.copy(tb._frameDelta||new THREE.Vector3());
+    steerToward(tp,dt,5);
+    flightCamera.rotation.order="YXZ";
+    flightCamera.rotation.y=sp.camYaw;flightCamera.rotation.x=sp.camPitch;flightCamera.rotation.z=0;
+    sp.pos.copy(flightCamera.position);sp.speed=sp.vel.length();
+    return true;
+  }
+
+  if(ASSIST.mode==='home'){
+    const tb=ASSIST.target;if(!tb||!tb.mesh){disengageAssist();return false;}
+    if(manualInput){disengageAssist('Manual control — home released');ASSIST.homeOffset=null;return false;}
+    const tp=tb.mesh.position;
+    // Trail behind Earth at the fixed home offset, keeping Earth + Moon in view.
+    if(!ASSIST.homeOffset)enterHomeTrail(tb);
+    const desired=tp.clone().add(ASSIST.homeOffset);
+    flightCamera.position.lerp(desired, Math.min(1,3*dt));   // smooth, no jitter
+    sp.vel.copy(tb._frameDelta||new THREE.Vector3());
+    steerToward(tp,dt,5);                                    // crosshair on Earth
+    flightCamera.rotation.order="YXZ";
+    flightCamera.rotation.y=sp.camYaw;flightCamera.rotation.x=sp.camPitch;flightCamera.rotation.z=0;
+    sp.pos.copy(flightCamera.position);sp.speed=sp.vel.length();
     return true;
   }
 
   if(ASSIST.mode==='focus'){
     const tb=ASSIST.target;if(!tb||!tb.mesh){disengageAssist();return false;}
-    // FOCUS only auto-steers the crosshair; pilot still controls throttle.
-    // Breaking happens when the pilot uses the LOOK stick (left) to steer away.
+    // Break the lock the moment the pilot uses the LOOK stick to steer away.
     if(Math.abs(JOY.Lx)+Math.abs(JOY.Ly)>0.18){disengageAssist('Focus broken — steered away');return false;}
-    steerToward(tb.mesh.position,dt,4);
-    return false; // let manual throttle still apply
+    const tp=tb.mesh.position;
+    // Move WITH the body: hold the captured offset so the ship trails along
+    // from its current position instead of flying over to the body.
+    if(ASSIST.lockOffset){
+      const desired=tp.clone().add(ASSIST.lockOffset);
+      // smoothly settle into the moving anchor (no big jumps)
+      flightCamera.position.lerp(desired, Math.min(1, 4*dt));
+      // velocity = how fast the anchor moves, so motion looks natural
+      sp.vel.copy(tb._frameDelta||new THREE.Vector3());
+    }
+    // keep the crosshair pinned on the body
+    steerToward(tp,dt,6);
+    flightCamera.rotation.order="YXZ";
+    flightCamera.rotation.y=sp.camYaw;flightCamera.rotation.x=sp.camPitch;flightCamera.rotation.z=0;
+    sp.pos.copy(flightCamera.position);sp.speed=sp.vel.length();
+    return true; // assist fully owns the frame
   }
   return false;
 }
@@ -3054,9 +3132,14 @@ function updateFlight(dt){
 function updateBodies(dt){
   celestialBodies.forEach(b=>{
     if(b.orbitR>0){
+      // remember where it was, move it, store the per-frame delta
+      const px=b.mesh.position.x, pz=b.mesh.position.z;
       b.angle+=b.orbitSpd*dt*60;
       b.mesh.position.x=Math.cos(b.angle)*b.orbitR;
       b.mesh.position.z=Math.sin(b.angle)*b.orbitR;
+      b._frameDelta=new THREE.Vector3(b.mesh.position.x-px,0,b.mesh.position.z-pz);
+    } else {
+      b._frameDelta=new THREE.Vector3(0,0,0);
     }
     // Gentle self-rotation
     b.mesh.rotation.y+=.001;
