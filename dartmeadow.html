@@ -3800,31 +3800,52 @@ function buildStellarNeighborhood(group,fid){
   addPoints(group,dp,dc,null,1.4,true);
 }
 
+let gmGalaxyLODs=[]; // progressive-detail records for the intergalactic tier
 function buildIntergalactic(group,fid){
+  gmGalaxyLODs=[];
   // Milky Way shrinks to a disc here; show real named neighbors with their
   // characteristic morphologies, plus deep-field galaxy clusters beyond.
   const neighbors=[
-    {n:'Andromeda (M31)',   x:46000, y:6000,  z:-12000, r:2800, c:0x9fb6ff, tilt:0.45, type:'spiral', arms:2},
-    {n:'Triangulum (M33)',  x:52000, y:-7000, z:18000,  r:1200, c:0xb0c4ff, tilt:0.9,  type:'spiral', arms:3},
-    {n:'Sombrero (M104)',   x:-38000,y:9000,  z:30000,  r:1500, c:0xffe6c0, tilt:1.45, type:'sombrero'},
-    {n:'Whirlpool (M51)',   x:30000, y:14000, z:40000,  r:1100, c:0xbcd0ff, tilt:0.2,  type:'spiral', arms:2},
-    {n:'Pinwheel (M101)',   x:-44000,y:-10000,z:-28000, r:1700, c:0xcfe0ff, tilt:0.15, type:'spiral', arms:5},
-    {n:'Centaurus A',       x:18000, y:-20000,z:-44000, r:1300, c:0xffd0a0, tilt:0.7,  type:'elliptical'},
-    {n:'LMC',               x:-9000, y:-12000,z:6000,   r:520,  c:0xc8d4ff, tilt:0.3,  type:'irregular'},
-    {n:'SMC',               x:-12000,y:-14000,z:9000,   r:340,  c:0xd0dcff, tilt:0.2,  type:'irregular'},
+    {n:'Andromeda (M31)',   x:46000, y:6000,  z:-12000, r:2800, c:0x9fb6ff, tilt:0.45, type:'spiral', arms:2, dist:'2.5M ly'},
+    {n:'Triangulum (M33)',  x:52000, y:-7000, z:18000,  r:1200, c:0xb0c4ff, tilt:0.9,  type:'spiral', arms:3, dist:'2.7M ly'},
+    {n:'Sombrero (M104)',   x:-38000,y:9000,  z:30000,  r:1500, c:0xffe6c0, tilt:1.45, type:'sombrero', dist:'29M ly'},
+    {n:'Whirlpool (M51)',   x:30000, y:14000, z:40000,  r:1100, c:0xbcd0ff, tilt:0.2,  type:'spiral', arms:2, dist:'31M ly'},
+    {n:'Pinwheel (M101)',   x:-44000,y:-10000,z:-28000, r:1700, c:0xcfe0ff, tilt:0.15, type:'spiral', arms:5, dist:'21M ly'},
+    {n:'Centaurus A',       x:18000, y:-20000,z:-44000, r:1300, c:0xffd0a0, tilt:0.7,  type:'elliptical', dist:'13M ly'},
+    {n:'LMC',               x:-9000, y:-12000,z:6000,   r:520,  c:0xc8d4ff, tilt:0.3,  type:'irregular', dist:'160k ly'},
+    {n:'SMC',               x:-12000,y:-14000,z:9000,   r:340,  c:0xd0dcff, tilt:0.2,  type:'irregular', dist:'200k ly'},
   ];
   neighbors.forEach(g=>{
-    buildNamedGalaxy(group,g,fid);
-    const glow=makeGlowSprite('rgba(190,205,255,0.45)',g.r*1.5);glow.position.set(g.x,g.y,g.z);group.add(glow);
+    const gid=g.n.replace(/[^a-z0-9]/gi,'').toLowerCase();
+    const gName=g.n.replace(/\s*\(.+\)/,'');
+    // Per-galaxy container holding all three LOD levels
+    const gx=new THREE.Group();gx.position.set(g.x,g.y,g.z);group.add(gx);
+
+    // FAR LOD: a single cheap glow billboard (what you see from across the void)
+    const far=new THREE.Group();
+    const farGlow=makeGlowSprite('rgba(200,214,255,0.8)',g.r*1.7);far.add(farGlow);
+    far.add(makeGlowSprite('rgba(255,240,220,0.5)',g.r*0.5));
+    gx.add(far);
+
+    // MID LOD: the morphology point cloud (current detail)
+    const mid=new THREE.Group();
+    buildNamedGalaxyInto(mid,g,fid,1.0);
+    mid.visible=false;gx.add(mid);
+
+    // NEAR LOD: high-detail — denser stars, bright core glow, dust; built lazily
+    const near=new THREE.Group();near.visible=false;gx.add(near);
+
     // invisible click target for fast-travel
     const hit=new THREE.Mesh(new THREE.SphereGeometry(g.r*0.9,8,8),new THREE.MeshBasicMaterial({visible:false}));
-    hit.position.set(g.x,g.y,g.z);
-    hit.userData={galaxyId:g.n.replace(/[^a-z0-9]/gi,'').toLowerCase(),galaxyName:g.n.replace(/\s*\(.+\)/,''),dist:g.n.includes('Andromeda')?'2.5M ly':g.n.includes('Triangulum')?'2.7M ly':'millions of ly'};
-    group.add(hit);
+    hit.userData={galaxyId:gid,galaxyName:gName,dist:g.dist};gx.add(hit);
+
+    // label sprite
     const lc=document.createElement('canvas');lc.width=256;lc.height=40;const lctx=lc.getContext('2d');
     lctx.fillStyle='rgba(190,210,255,0.9)';lctx.font='bold 18px Orbitron,monospace';lctx.fillText(g.n,4,26);
     const lt=new THREE.CanvasTexture(lc);const ls=new THREE.Sprite(new THREE.SpriteMaterial({map:lt,transparent:true,depthTest:false}));
-    ls.scale.set(Math.max(g.r*1.0,1400),Math.max(g.r*0.16,220),1);ls.position.set(g.x,g.y+g.r*0.7,g.z);group.add(ls);
+    ls.scale.set(Math.max(g.r*1.0,1400),Math.max(g.r*0.16,220),1);ls.position.set(0,g.r*0.7,0);gx.add(ls);
+
+    gmGalaxyLODs.push({def:g,gid,gName,group:gx,far,mid,near,nearBuilt:false,curLOD:'far',center:new THREE.Vector3(g.x,g.y,g.z),fid});
   });
 
   // ── Deep-field background: thousands of distant galaxies as faint specks,
@@ -3847,9 +3868,49 @@ function buildIntergalactic(group,fid){
   }
 }
 
-// Build a single named galaxy with morphology-appropriate point distribution.
-function buildNamedGalaxy(group,g,fid){
-  const n=Math.round((g.type==='elliptical'?2600:3600)*Math.max(0.5,fid));
+// Progressive LOD: swap each galaxy's detail level by camera proximity. Far =
+// cheap glow billboard; mid = morphology point cloud; near = high-detail spiral
+// with a bright core that streams in only when you get close (built lazily).
+function updateGalaxyLOD(){
+  if(gmCurrentTier!=='intergalactic'||!gmGalaxyLODs.length)return;
+  const cam=gmCamera.position;
+  gmGalaxyLODs.forEach(L=>{
+    const d=cam.distanceTo(L.center);
+    const r=L.def.r;
+    let lod;
+    if(d > r*14) lod='far';
+    else if(d > r*4) lod='mid';
+    else lod='near';
+    if(lod===L.curLOD)return;
+    L.curLOD=lod;
+    if(lod==='near'&&!L.nearBuilt){ buildNearGalaxy(L); L.nearBuilt=true; }
+    L.far.visible=(lod==='far');
+    L.mid.visible=(lod==='mid');
+    L.near.visible=(lod==='near');
+  });
+}
+
+// High-detail galaxy: denser star field + bright core glow + (for spirals) a
+// faint dust lane. Built only when the player first approaches.
+function buildNearGalaxy(L){
+  const g=L.def;
+  buildNamedGalaxyInto(L.near,g,Math.max(L.fid,0.8),2.6); // ~2.6x star density
+  // bright nucleus
+  L.near.add(makeGlowSprite('rgba(255,248,230,0.95)',g.r*0.45));
+  L.near.add(makeGlowSprite('rgba(190,150,255,0.4)',g.r*0.9));
+  // a few HII pink knots in the arms for spirals
+  if(g.type==='spiral'){
+    const kn=Math.round(400*L.fid);const kp=new Float32Array(kn*3),kc=new Float32Array(kn*3);
+    for(let i=0;i<kn;i++){const arms=g.arms||2;const rr=Math.pow(Math.random(),0.6)*g.r;const arm=Math.floor(Math.random()*arms);let a=Math.log(rr/40+1)*2.4+(arm/arms)*Math.PI*2+gaussian()*0.18;let lx=Math.cos(a)*rr,lz=Math.sin(a)*rr,ly=gaussian()*g.r*0.05;const ty=ly*Math.cos(g.tilt)-lz*Math.sin(g.tilt),tz=ly*Math.sin(g.tilt)+lz*Math.cos(g.tilt);kp[i*3]=lx;kp[i*3+1]=ty;kp[i*3+2]=tz;const b=0.6+Math.random()*0.4;kc[i*3]=1.0*b;kc[i*3+1]=0.42*b;kc[i*3+2]=0.55*b;}
+    addPoints(L.near,kp,kc,null,2.4,true);
+  }
+}
+
+// ── helpers ──
+// Build a named galaxy's point cloud in LOCAL space (group already positioned
+// at the galaxy center). densMul scales star count for LOD levels.
+function buildNamedGalaxyInto(group,g,fid,densMul){
+  const n=Math.round((g.type==='elliptical'?2600:3600)*Math.max(0.5,fid)*(densMul||1));
   const p=new Float32Array(n*3),c=new Float32Array(n*3);
   const base=new THREE.Color(g.c);
   for(let i=0;i<n;i++){
@@ -3858,12 +3919,11 @@ function buildNamedGalaxy(group,g,fid){
       const rr=Math.pow(Math.random(),1.6)*g.r;const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
       lx=rr*Math.sin(ph)*Math.cos(th)*1.3;ly=rr*Math.cos(ph)*0.8;lz=rr*Math.sin(ph)*Math.sin(th);
     } else if(g.type==='sombrero'){
-      // bright bulge + thin bright dust ring (edge-on)
       if(Math.random()<0.45){const rr=Math.pow(Math.random(),1.8)*g.r*0.5;const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);lx=rr*Math.sin(ph)*Math.cos(th);ly=rr*Math.cos(ph);lz=rr*Math.sin(ph)*Math.sin(th);}
       else{const rr=g.r*(0.55+Math.random()*0.45);const a=Math.random()*Math.PI*2;lx=Math.cos(a)*rr;lz=Math.sin(a)*rr;ly=gaussian()*g.r*0.03;}
     } else if(g.type==='irregular'){
       lx=gaussian()*g.r*0.7;ly=gaussian()*g.r*0.5;lz=gaussian()*g.r*0.7;
-    } else { // spiral
+    } else {
       const arms=g.arms||2;const inArm=Math.random()<0.78;
       const rr=Math.pow(Math.random(),0.6)*g.r;
       const arm=Math.floor(Math.random()*arms);
@@ -3871,17 +3931,14 @@ function buildNamedGalaxy(group,g,fid){
       if(inArm)a+=gaussian()*(0.1+rr/g.r*0.3);else a=Math.random()*Math.PI*2;
       lx=Math.cos(a)*rr;lz=Math.sin(a)*rr;ly=gaussian()*g.r*0.05;
     }
-    // apply tilt about X axis
     const ty=ly*Math.cos(g.tilt)-lz*Math.sin(g.tilt);
     const tz=ly*Math.sin(g.tilt)+lz*Math.cos(g.tilt);
-    p[i*3]=g.x+lx;p[i*3+1]=g.y+ty;p[i*3+2]=g.z+tz;
+    p[i*3]=lx;p[i*3+1]=ty;p[i*3+2]=tz;
     const b=0.4+Math.random()*0.6;
     c[i*3]=base.r*b;c[i*3+1]=base.g*b;c[i*3+2]=base.b*b;
   }
   addPoints(group,p,c,null,g.type==='elliptical'?1.4:1.6,true);
 }
-
-// ── helpers ──
 function gaussian(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 function addPoints(group,pos,col,siz,size,attenuate){
   const g=new THREE.BufferGeometry();
@@ -3946,11 +4003,16 @@ function onGalaxyMapClick(e){
 // crossfade visibility. This is what keeps real scale from breaking precision.
 function updateGalaxyTier(){
   const d=gmCamera.position.distanceTo(gmControls.target);
+  const dOrigin=gmCamera.position.length(); // distance from Milky Way center
   let tier,label,scale;
-  if(d<650){tier='solar';label='SOLAR SYSTEM';scale='Sol · '+Math.round(d)+' units out';}
+  // Inner tiers use camera-to-target (so zooming in/out works). Outer tiers use
+  // distance from the galactic center, so flying TOWARD a distant galaxy keeps
+  // you in the intergalactic tier (letting its LOD bloom) instead of snapping
+  // back to a closer tier just because your orbit target moved with you.
+  if(dOrigin>38000){tier='intergalactic';label='INTERGALACTIC';scale='~'+(dOrigin/1000*0.05).toFixed(2)+' Mly';}
+  else if(d<650){tier='solar';label='SOLAR SYSTEM';scale='Sol · '+Math.round(d)+' units out';}
   else if(d<5000){tier='stellar';label='STELLAR NEIGHBORHOOD';scale='~'+(d/80).toFixed(1)+' ly across';}
-  else if(d<60000){tier='galaxy';label='MILKY WAY';scale='~'+Math.round(d/1000*50)+' kly from view';}
-  else {tier='intergalactic';label='INTERGALACTIC';scale='~'+(d/1000*0.05).toFixed(2)+' Mly';}
+  else {tier='galaxy';label='MILKY WAY';scale='~'+Math.round(d/1000*50)+' kly from view';}
   if(tier!==gmCurrentTier){
     gmCurrentTier=tier;
     const tEl=$('gm-tier');if(tEl)tEl.textContent=label;
@@ -3989,6 +4051,8 @@ function gmLoop(){
   updateGalaxyTier();
   // rotate the Sgr A* accretion disk for life
   if(gmGalacticCore)gmGalacticCore.rotation.y+=0.004;
+  // progressive galaxy detail streaming (intergalactic tier)
+  updateGalaxyLOD();
   gmRenderer.render(gmScene,gmCamera);
 }
 
