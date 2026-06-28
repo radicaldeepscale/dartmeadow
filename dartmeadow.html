@@ -4099,13 +4099,14 @@ function onGalaxyMapClick(e){
       }
       return;}
   }
-  // Stellar: tap a star system → explore dialog
+  // Stellar: tap a star system → FLY the camera over to it, zoom in, then
+  // offer to explore/fast-travel (two-step drill-in like the galaxy view).
   if(gmCurrentTier==='stellar'){
     const sysMeshes=[];gmTierGroups.stellar&&gmTierGroups.stellar.traverse(o=>{if(o.isMesh&&o.userData.systemRef)sysMeshes.push(o);});
     const sh=gmRaycaster.intersectObjects(sysMeshes);
-    if(sh.length){const sys=sh[0].object.userData.systemRef;openFastTravel('EXPLORE — '+sys.name.toUpperCase(),
-      sys.starType+' star · '+sys.bodies.length+' bodies · '+sys.bodies.filter(b=>b.landable).length+' landable. Fast travel here?',
-      ()=>fastTravelToSystem(sys,GALAXY_DB.current));return;}
+    if(sh.length){const obj=sh[0].object;const sys=obj.userData.systemRef;
+      const wp=new THREE.Vector3();obj.getWorldPosition(wp);
+      flyToStar(wp,sys);return;}
   }
   // Solar tier: tap the sun → fast-travel home; tap a planet → plot course
   if(gmCurrentTier==='solar'){
@@ -4272,6 +4273,30 @@ function zoomIntoGalaxy(L,u){
     else openFastTravel('✦ '+u.galaxyName.toUpperCase(),
       (u.dist||'millions of ly')+' away · charting its star systems. Descend into '+u.galaxyName+' and fast-travel to a system?',
       ()=>fastTravelToGalaxy(u.galaxyId,u.galaxyName));
+  };
+  anim();
+}
+
+// Fly the map camera over to a tapped star, frame its system up close, then
+// offer to explore / fast-travel in (two-step drill-in like the galaxy view).
+function flyToStar(starPos,sys){
+  toast('✦ Plotting course to '+sys.name+'…',1400);
+  const startPos=gmCamera.position.clone(), startTgt=gmControls.target.clone();
+  // approach the star and frame it close (stays in stellar tier so the galaxy
+  // backdrop keeps the surrounding Milky Way lit around it)
+  const endTgt=starPos.clone();
+  const dir=gmCamera.position.clone().sub(starPos).normalize();
+  const endPos=starPos.clone().add(dir.multiplyScalar(700)).add(new THREE.Vector3(0,400,0));
+  let t=0;
+  const anim=()=>{
+    t+=0.02;const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    gmCamera.position.lerpVectors(startPos,endPos,e);
+    gmControls.target.lerpVectors(startTgt,endTgt,e);
+    gmControls.update();updateGalaxyTier();
+    if(t<1)requestAnimationFrame(anim);
+    else openFastTravel('✦ '+sys.name.toUpperCase(),
+      sys.starType+' star · '+sys.bodies.length+' bodies · '+sys.bodies.filter(b=>b.landable).length+' landable. Fast-travel in to explore this system?',
+      ()=>fastTravelToSystem(sys,GALAXY_DB.current));
   };
   anim();
 }
