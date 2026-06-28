@@ -4946,6 +4946,65 @@ let orbitActive=false,orbitRenderer,orbitScene,orbitCamera,orbitAnimId=null;
 let orbitGlobe=null,orbitPin=null,_orbitBody=null,_orbitSite=null;
 let orbitCamDist=3.4,orbitYaw=0,orbitPitch=0,_orbitDrag=null,_orbitPinch=null;
 
+// Builds a high-res "Mantis Radar"-style globe texture for the orbital-approach
+// view: shaded terrain/water from the body palette, PLUS a glowing lat/long
+// graticule grid and bright coastline outlines mapped onto the sphere — the
+// holographic recon look. One per body type/seed, cached.
+const _orbitTexCache={};
+function makeOrbitGlobeTexture(body){
+  const pal=getSurfacePalette(body);
+  const type=body.type||'Rocky';
+  const seed=(body.name?body.name.length*7:5)+3;
+  const key=type+'|'+(body.name||'')+'|'+seed;
+  if(_orbitTexCache[key])return _orbitTexCache[key];
+  const S=512;const cv=document.createElement('canvas');cv.width=S*2;cv.height=S;
+  const cx=cv.getContext('2d');
+  const water=new THREE.Color(pal.water?0x0a3a6a:(pal.atmos?0x10303a:0x101418));
+  const land =new THREE.Color(pal.ground||0x3a6a3a);
+  const land2=new THREE.Color(pal.ground2||0x274d27);
+  const img=cx.createImageData(S*2,S);const d=img.data;
+  // base shaded surface — landmasses vs water via fbm, polar caps
+  for(let y=0;y<S;y++){
+    for(let x=0;x<S*2;x++){
+      const u=x/(S*2)*6, v=y/S*3;
+      const n=_fbm(u,v,seed,5);
+      const pole=Math.abs(y/S-0.5)>0.43;
+      let r,g,b;
+      const isLand = n>0.5;
+      if(pole){r=225;g=235;b=248;}
+      else if(isLand){const e=(n-0.5)*2.2;r=land.r*255*(0.7+e);g=land.g*255*(0.7+e);b=land.b*255*(0.7+e);}
+      else {const e=n*0.8;r=water.r*255*(0.6+e);g=water.g*255*(0.7+e);b=water.b*255*(0.8+e);}
+      const i=(y*S*2+x)*4;
+      d[i]=Math.min(255,r);d[i+1]=Math.min(255,g);d[i+2]=Math.min(255,b);d[i+3]=255;
+    }
+  }
+  cx.putImageData(img,0,0);
+  // ── coastline outlines: trace where land meets water, draw glowing cyan edge
+  cx.strokeStyle='rgba(80,230,255,0.55)';cx.lineWidth=1.4;cx.shadowColor='rgba(0,229,255,0.8)';cx.shadowBlur=3;
+  for(let y=2;y<S-2;y+=1){
+    for(let x=2;x<S*2-2;x+=1){
+      const u=x/(S*2)*6,v=y/S*3;
+      const c=_fbm(u,v,seed,5)>0.5;
+      const rn=_fbm((x+1)/(S*2)*6,v,seed,5)>0.5;
+      const dn=_fbm(u,(y+1)/S*3,seed,5)>0.5;
+      if(c!==rn||c!==dn){cx.fillStyle='rgba(120,240,255,0.5)';cx.fillRect(x,y,1,1);}
+    }
+  }
+  cx.shadowBlur=0;
+  // ── lat/long graticule grid (the radar/hologram mapping) ────────────
+  cx.strokeStyle='rgba(0,229,255,0.22)';cx.lineWidth=1;
+  for(let lon=0;lon<=24;lon++){const gx=lon/24*S*2;cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,S);cx.stroke();}
+  for(let lat=0;lat<=12;lat++){const gy=lat/12*S;cx.beginPath();cx.moveTo(0,gy);cx.lineTo(S*2,gy);cx.stroke();}
+  // brighter equator + prime meridian
+  cx.strokeStyle='rgba(0,245,255,0.5)';cx.lineWidth=1.6;
+  cx.beginPath();cx.moveTo(0,S/2);cx.lineTo(S*2,S/2);cx.stroke();
+  cx.beginPath();cx.moveTo(S,0);cx.lineTo(S,S);cx.stroke();
+  const tex=new THREE.CanvasTexture(cv);
+  tex.wrapS=THREE.RepeatWrapping;
+  if(GFX.aniso>1&&orbitRenderer){try{tex.anisotropy=Math.min(GFX.aniso,orbitRenderer.capabilities.getMaxAnisotropy());}catch(e){}}
+  _orbitTexCache[key]=tex;return tex;
+}
+
 function openOrbitApproach(body){
   if(orbitActive)return;
   _orbitBody=body;orbitActive=true;_orbitSite=null;
@@ -4969,16 +5028,18 @@ function openOrbitApproach(body){
   for(let i=0;i<sn;i++){const ph=Math.acos(2*Math.random()-1),th=Math.random()*6.28,r=40;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=r*Math.cos(ph);sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
   const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
   orbitScene.add(new THREE.Points(sg,new THREE.PointsMaterial({size:0.08,color:0xffffff})));
-  // lighting
-  const sun=new THREE.DirectionalLight(0xfff4e2,2.2);sun.position.set(5,3,4);orbitScene.add(sun);
-  orbitScene.add(new THREE.AmbientLight(0x334455,0.5));
-  // the globe — use the body's procedural texture if available
+  // lighting — bright enough that the mapped globe reads clearly
+  const sun=new THREE.DirectionalLight(0xfff4e2,2.6);sun.position.set(5,3,4);orbitScene.add(sun);
+  orbitScene.add(new THREE.AmbientLight(0x445566,0.9));
+  orbitScene.add(new THREE.HemisphereLight(0x88bbff,0x223344,0.5));
+  // the globe — high-res Mantis-Radar-style mapped texture (graticule grid +
+  // glowing coastlines over shaded terrain/water from the body palette)
   const pal=getSurfacePalette(body);
   let tex=null;
-  try{ if(typeof makePlanetTexture==='function') tex=makePlanetTexture(body.type||'Rocky',body.name); }catch(e){}
-  const mat=tex?new THREE.MeshStandardMaterial({map:tex,roughness:0.95,metalness:0.0})
-               :new THREE.MeshStandardMaterial({color:body.color||pal.ground,roughness:0.95,metalness:0.0});
-  orbitGlobe=new THREE.Mesh(new THREE.SphereGeometry(1,64,48),mat);
+  try{ tex=makeOrbitGlobeTexture(body); }catch(e){}
+  const mat=tex?new THREE.MeshStandardMaterial({map:tex,roughness:0.85,metalness:0.1,emissive:0x06141c,emissiveMap:tex,emissiveIntensity:0.35})
+               :new THREE.MeshStandardMaterial({color:body.color||pal.ground,roughness:0.9});
+  orbitGlobe=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),mat);
   orbitScene.add(orbitGlobe);
   // atmosphere glow for atmospheric worlds
   if(pal.atmos){
