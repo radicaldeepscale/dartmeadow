@@ -83,8 +83,20 @@ THREE.OrbitControls=function(camera,domElement){
   function pan(dx,dy){
     var el=scope.domElement===document?scope.domElement.body:scope.domElement;
     var ps=scope.panSpeed||1.0;
-    _panLeft(2*dx*ps*scope.camera.position.distanceTo(scope.target)/el.clientHeight,scope.camera.matrix);
-    _panUp(2*dy*ps*scope.camera.position.distanceTo(scope.target)/el.clientHeight,scope.camera.matrix);
+    var cam=scope.camera;
+    if(cam.isPerspectiveCamera){
+      // True 1:1 screen-to-world pan at the target depth: the visible world
+      // height at distance d is 2*d*tan(fov/2). One screen pixel therefore maps
+      // to (that height / clientHeight) world units — independent of how far
+      // out we are zoomed, so the view tracks the finger at every tier.
+      var d=cam.position.distanceTo(scope.target);
+      var worldPerPixel=2*d*Math.tan((cam.fov*0.5)*Math.PI/180)/el.clientHeight;
+      _panLeft(dx*ps*worldPerPixel,cam.matrix);
+      _panUp(dy*ps*worldPerPixel,cam.matrix);
+    } else {
+      _panLeft(dx*ps*(cam.right-cam.left)/cam.zoom/el.clientWidth,cam.matrix);
+      _panUp(dy*ps*(cam.top-cam.bottom)/cam.zoom/el.clientHeight,cam.matrix);
+    }
   }
 
   this.update=(function(){
@@ -3437,7 +3449,7 @@ function initGalaxyMapScene(){
   gmCamera.position.set(80,160,360);
   gmControls=new THREE.OrbitControls(gmCamera,cv);
   gmControls.enableDamping=true;gmControls.dampingFactor=0.09;gmControls.rotateSpeed=0.5;
-  gmControls.zoomSpeed=0.9;gmControls.panSpeed=0.25;gmControls.target.set(0,0,0);
+  gmControls.zoomSpeed=0.9;gmControls.panSpeed=1.0;gmControls.target.set(0,0,0);
   gmControls.minDistance=8;gmControls.maxDistance=260000;
   // Two-finger drag to zoom (in addition to pinch) — map touch to dolly
   gmControls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
