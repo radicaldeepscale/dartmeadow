@@ -3186,7 +3186,10 @@ function updateBodies(dt){
       // Proximity approach — show landing prompt when very close
       if(dist<checkMesh.geometry.parameters.radius*2.5&&b.name!=='Sun'){
         const ld=$('land-prompt');
-        const landable=['Habitable','Rocky'].includes(b.type)||['Mars','Moon','Earth','Mercury','Venus'].includes(b.name);
+        // Honor explicit procedural .landable flag; else fall back to type/name.
+        const landable = (b.landable!==undefined)
+          ? b.landable
+          : (['Habitable','Rocky','Ocean','Desert','Ice','Volcanic','Barren Moon'].includes(b.type)||['Mars','Moon','Earth','Mercury','Venus'].includes(b.name));
         if(ld){
           ld.style.display='block';
           ld.style.pointerEvents='auto';
@@ -4469,7 +4472,20 @@ function getSurfacePalette(body){
     Mercury:{ground:0x999088,ground2:0x77706a,rock:0xaaa098,sky:[0x000000,0x000000],fog:0x000000,grav:0.38,atmos:false},
     Venus:{ground:0xb08a3a,ground2:0x806220,rock:0xc09a4a,sky:[0xe0b050,0xa07820],fog:0xc89840,grav:0.9,atmos:true},
   };
-  return P[body.name]||{ground:0x556644,ground2:0x445533,rock:0x778866,sky:[0x223344,0x112233],fog:0x334455,grav:0.6,atmos:Math.random()>0.4};
+  if(P[body.name])return P[body.name];
+  // Procedural worlds → palette by type, using the body's real gravity if set.
+  const g=(body.gravity!==undefined)?body.gravity:0.6;
+  const byType={
+    Habitable:{ground:0x3a7d34,ground2:0x2a5d24,rock:0x6b5d4f,sky:[0x88bbff,0x3a6ea5],fog:0x9ec4e8,water:true,atmos:true},
+    Ocean:    {ground:0x2a6a8a,ground2:0x1d4d66,rock:0x4a6a7a,sky:[0x7ab0e0,0x336a9a],fog:0x8ec0e0,water:true,atmos:true},
+    Desert:   {ground:0xcaa050,ground2:0xa07c34,rock:0xd9b46a,sky:[0xe8c48a,0xc09850],fog:0xe0c080,atmos:true},
+    Ice:      {ground:0xcfe0ea,ground2:0xa8c4d4,rock:0xbcd0dd,sky:[0xbcd8ee,0x88aacc],fog:0xd8eaf4,atmos:true},
+    Volcanic: {ground:0x3a221a,ground2:0x221008,rock:0x5a2a1a,sky:[0x70302a,0x401815],fog:0x802a20,glow:0xff5522,atmos:true},
+    Rocky:    {ground:0x9c7a5a,ground2:0x77603f,rock:0xaa8866,sky:[0x000000,0x000000],fog:0x000000,atmos:false},
+    'Barren Moon':{ground:0x888888,ground2:0x666666,rock:0x999999,sky:[0x000000,0x000000],fog:0x000000,atmos:false},
+  };
+  const base=byType[body.type]||{ground:0x556644,ground2:0x445533,rock:0x778866,sky:[0x223344,0x112233],fog:0x334455,atmos:true};
+  return Object.assign({grav:g},base);
 }
 function enterSurface(body){
   if(surfaceActive)return;
