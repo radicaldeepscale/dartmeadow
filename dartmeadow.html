@@ -834,7 +834,7 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
     <button id="assist-focus" class="assist-btn" onclick="toggleFocus()" title="Lock crosshair on target in view — auto-steers until you steer away">◎ FOCUS</button>
     <button id="assist-idle" class="assist-btn" onclick="toggleIdle()" title="Full stop & hover in place">⏸ IDLE</button>
   </div>
-  <div id="land-prompt" onclick="if(_landTargetBody)enterSurface(_landTargetBody);" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,245,255,.12);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.15em;padding:.5rem 1.2rem;border-radius:3px;pointer-events:none;z-index:30;text-align:center;"></div>
+  <div id="land-prompt" onclick="if(_landTargetBody)openOrbitApproach(_landTargetBody);" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,245,255,.12);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.15em;padding:.5rem 1.2rem;border-radius:3px;pointer-events:none;z-index:30;text-align:center;"></div>
   <div id="ar-bottom">
     <div id="ar-dest-title">⟶ DESTINATION</div>
     <div id="dest-scroll"></div>
@@ -847,7 +847,10 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
   <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px calc(10px);background:rgba(0,3,8,.55);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,245,255,.15);pointer-events:none;">
     <span id="surface-title" style="font-family:var(--font-hud);font-size:.62rem;letter-spacing:.15em;color:var(--cyan);">SURFACE</span>
     <span id="surface-grav" style="font-family:var(--font-mono);font-size:.55rem;color:rgba(0,245,255,.7);">GRAV 1.00g</span>
-    <button id="liftoff-btn" onclick="exitSurface()" style="pointer-events:auto;padding:5px 14px;background:rgba(245,196,0,.12);border:1px solid var(--gold);color:var(--gold);font-family:var(--font-hud);font-size:.52rem;letter-spacing:.12em;cursor:pointer;border-radius:2px;">🚀 LIFTOFF</button>
+    <div style="display:flex;gap:8px;">
+      <button id="surf-fly-btn" onclick="surfRemountSkyboard()" style="pointer-events:auto;padding:5px 12px;background:rgba(0,245,255,.1);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.5rem;letter-spacing:.1em;cursor:pointer;border-radius:2px;">🛹 FLY</button>
+      <button id="liftoff-btn" onclick="exitSurface()" style="pointer-events:auto;padding:5px 14px;background:rgba(245,196,0,.12);border:1px solid var(--gold);color:var(--gold);font-family:var(--font-hud);font-size:.52rem;letter-spacing:.12em;cursor:pointer;border-radius:2px;">🚀 LIFTOFF</button>
+    </div>
   </div>
   <!-- surface dual joysticks -->
   <div style="position:absolute;bottom:calc(30px + var(--safe-bot));left:24px;width:100px;height:100px;pointer-events:auto;" id="surf-move-zone">
@@ -862,7 +865,67 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
   </div>
 </div>
 
-<!-- EXIT MODAL -->
+<!-- ✦ ORBITAL APPROACH (Google-Earth-style body view + landing-site plotting) -->
+<div id="orbit-overlay" style="display:none;position:fixed;inset:0;z-index:3400;background:#000;">
+  <canvas id="orbit-canvas" style="position:absolute;inset:0;display:block;touch-action:none;"></canvas>
+  <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:rgba(0,3,8,.55);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,245,255,.15);pointer-events:none;">
+    <span id="orbit-title" style="font-family:var(--font-hud);font-size:.62rem;letter-spacing:.15em;color:var(--cyan);">ORBITAL APPROACH</span>
+    <span id="orbit-sub" style="font-family:var(--font-mono);font-size:.5rem;color:rgba(0,245,255,.7);"></span>
+    <button onclick="closeOrbitApproach()" style="pointer-events:auto;padding:5px 14px;background:rgba(0,245,255,.08);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.52rem;letter-spacing:.12em;cursor:pointer;border-radius:2px;">CLOSE ✕</button>
+  </div>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 16px calc(16px + var(--safe-bot));background:linear-gradient(to top,rgba(0,3,8,.85),transparent);text-align:center;pointer-events:none;">
+    <div id="orbit-hint" style="font-family:var(--font-hud);font-size:.5rem;letter-spacing:.12em;color:rgba(0,245,255,.6);margin-bottom:10px;">DRAG TO ROTATE THE BODY · PINCH TO ZOOM · TAP THE SURFACE TO PLOT A LANDING SITE</div>
+    <div id="orbit-site" style="font-family:var(--font-mono);font-size:.55rem;color:var(--gold);margin-bottom:10px;min-height:14px;"></div>
+    <button id="orbit-descend" onclick="descendToSite()" style="display:none;pointer-events:auto;padding:9px 26px;background:rgba(245,196,0,.16);border:1px solid var(--gold);color:var(--gold);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.15em;cursor:pointer;border-radius:3px;box-shadow:0 0 18px rgba(245,196,0,.3);">⬇ DESCEND TO SITE</button>
+  </div>
+</div>
+
+<!-- ✦ DESCENT CHOICE (after reaching 150ft: skyboard-fly or land & walk) -->
+<div id="descent-choice" style="display:none;position:fixed;inset:0;z-index:3600;background:rgba(0,3,8,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
+  <div style="max-width:420px;margin:auto;padding:28px 26px;border:1px solid rgba(0,245,255,.3);border-radius:8px;background:rgba(0,8,16,.9);box-shadow:0 0 40px rgba(0,245,255,.15);text-align:center;">
+    <div style="font-family:var(--font-hud);font-size:.7rem;letter-spacing:.18em;color:var(--cyan);margin-bottom:6px;">⬇ 150 FT ABOVE SURFACE</div>
+    <div id="descent-body" style="font-family:var(--font-mono);font-size:.58rem;color:rgba(0,245,255,.65);margin-bottom:22px;">Hovering over the landing site.</div>
+    <button onclick="chooseSkyboard()" style="display:block;width:100%;margin-bottom:12px;padding:12px;background:rgba(0,245,255,.12);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.14em;cursor:pointer;border-radius:4px;">🛹 FLY THE SKYBOARD</button>
+    <button onclick="chooseLandWalk()" style="display:block;width:100%;padding:12px;background:rgba(245,196,0,.12);border:1px solid var(--gold);color:var(--gold);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.14em;cursor:pointer;border-radius:4px;">🚶 LAND & WALK AROUND</button>
+  </div>
+</div>
+
+<!-- ✦ ATMOSPHERIC FLIGHT (skyboard flight within a planet's atmosphere) -->
+<div id="atmo-overlay" style="display:none;position:fixed;inset:0;z-index:3450;background:#000;">
+  <canvas id="atmo-canvas" style="position:absolute;inset:0;display:block;touch-action:none;"></canvas>
+  <div style="position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:rgba(0,3,8,.5);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,245,255,.15);pointer-events:none;">
+    <span id="atmo-title" style="font-family:var(--font-hud);font-size:.6rem;letter-spacing:.14em;color:var(--cyan);">ATMOSPHERIC FLIGHT</span>
+    <span id="atmo-speed" style="font-family:var(--font-mono);font-size:.6rem;color:var(--gold);">MACH 0.00</span>
+    <div style="display:flex;gap:8px;">
+      <button id="atmo-land-btn" onclick="atmoLandHere()" style="pointer-events:auto;padding:5px 12px;background:rgba(245,196,0,.12);border:1px solid var(--gold);color:var(--gold);font-family:var(--font-hud);font-size:.5rem;letter-spacing:.1em;cursor:pointer;border-radius:2px;">🚶 LAND</button>
+      <button onclick="atmoExitToSpace()" style="pointer-events:auto;padding:5px 12px;background:rgba(0,245,255,.08);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.5rem;letter-spacing:.1em;cursor:pointer;border-radius:2px;">🚀 TO SPACE</button>
+    </div>
+  </div>
+  <!-- altitude + mach preset selector (left) -->
+  <div style="position:absolute;top:64px;left:16px;pointer-events:none;font-family:var(--font-mono);font-size:.52rem;color:rgba(0,245,255,.8);line-height:1.6;">
+    <div>ALT <span id="atmo-alt">150</span> ft</div>
+    <div>THR <span id="atmo-thr">0</span>%</div>
+  </div>
+  <!-- Mach preset buttons (right side) -->
+  <div id="atmo-presets" style="position:absolute;top:64px;right:16px;display:flex;flex-direction:column;gap:5px;pointer-events:auto;"></div>
+  <!-- throttle slider (bottom center) -->
+  <div style="position:absolute;bottom:calc(28px + var(--safe-bot));left:50%;transform:translateX(-50%);width:min(60%,420px);pointer-events:auto;text-align:center;">
+    <div style="font-family:var(--font-hud);font-size:.46rem;letter-spacing:.1em;color:rgba(0,245,255,.5);margin-bottom:4px;">THROTTLE</div>
+    <input id="atmo-throttle" type="range" min="0" max="100" value="0" style="width:100%;accent-color:#00f5ff;">
+  </div>
+  <!-- left joystick: steer (pitch/yaw) -->
+  <div style="position:absolute;bottom:calc(96px + var(--safe-bot));left:24px;width:100px;height:100px;pointer-events:auto;" id="atmo-steer-zone">
+    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">STEER</div>
+    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,3,8,.6);border:1px solid rgba(0,245,255,.25);backdrop-filter:blur(8px);"></div>
+    <div id="atmo-steer-knob" style="position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(0,245,255,.18);border:1px solid rgba(0,245,255,.5);left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(0,245,255,.3);"></div>
+  </div>
+  <!-- right joystick: roll/altitude -->
+  <div style="position:absolute;bottom:calc(96px + var(--safe-bot));right:24px;width:100px;height:100px;pointer-events:auto;" id="atmo-climb-zone">
+    <div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--font-hud);font-size:.44rem;color:rgba(0,245,255,.4);letter-spacing:.08em;">CLIMB/DIVE</div>
+    <div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,3,8,.6);border:1px solid rgba(0,245,255,.25);backdrop-filter:blur(8px);"></div>
+    <div id="atmo-climb-knob" style="position:absolute;width:38px;height:38px;border-radius:50%;background:rgba(0,245,255,.18);border:1px solid rgba(0,245,255,.5);left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(0,245,255,.3);"></div>
+  </div>
+</div>
 <div id="exit-modal">
   <div class="exit-box">
     <div class="exit-title">⚠ EXIT DART MEADOW?</div>
@@ -3206,11 +3269,11 @@ function updateBodies(dt){
         if(ld){
           ld.style.display='block';
           ld.style.pointerEvents='auto';
-          ld.style.cursor=landable?'pointer':'default';
+          ld.style.cursor='pointer';
           ld.innerHTML=landable
-            ? '⬇ TAP TO LAND ON '+b.name.toUpperCase()
-            : '⬇ APPROACH '+b.name.toUpperCase()+' — ENTER ATMOSPHERE';
-          _landTargetBody=landable?b:null;
+            ? '🛰 TAP TO APPROACH '+b.name.toUpperCase()
+            : '🛰 APPROACH '+b.name.toUpperCase();
+          _landTargetBody=b; // any body can be orbit-approached; landability gates walking
         }
       }
     }
@@ -4710,7 +4773,7 @@ function updateVolumetricDust(dt){
 // ── 5. PROCEDURAL SURFACE WALK MODE ──────────────────────────────
 let surfaceActive=false,surfRenderer,surfScene,surfCamera,surfAnimId=null;
 let surfPlayer,surfKeys={},surfJoyMove={x:0,y:0},surfLookJoy={x:0,y:0};
-let _surfBody=null;
+let _surfBody=null,_surfSite=null;
 function getSurfacePalette(body){
   const P={
     Earth:{ground:0x3a7d34,ground2:0x2a5d24,rock:0x6b5d4f,sky:[0x88bbff,0x3a6ea5],fog:0x9ec4e8,water:true,grav:1.0,atmos:true},
@@ -4734,10 +4797,380 @@ function getSurfacePalette(body){
   const base=byType[body.type]||{ground:0x556644,ground2:0x445533,rock:0x778866,sky:[0x223344,0x112233],fog:0x334455,atmos:true};
   return Object.assign({grav:g},base);
 }
-function enterSurface(body){
+// ════════════════════════════════════════════════════════════════════
+//  ✦ ORBITAL APPROACH  — Google-Earth-style body view + landing-site plot
+// ────────────────────────────────────────────────────────────────────
+//  Tapping a body opens this: a rotating 3D globe of the target world that
+//  you can spin and zoom. Tap the surface to drop a landing pin, then DESCEND
+//  takes you to ~150 ft above that exact spot, where you choose to fly the
+//  skyboard or land and walk.
+// ════════════════════════════════════════════════════════════════════
+let orbitActive=false,orbitRenderer,orbitScene,orbitCamera,orbitAnimId=null;
+let orbitGlobe=null,orbitPin=null,_orbitBody=null,_orbitSite=null;
+let orbitCamDist=3.4,orbitYaw=0,orbitPitch=0,_orbitDrag=null,_orbitPinch=null;
+
+function openOrbitApproach(body){
+  if(orbitActive)return;
+  _orbitBody=body;orbitActive=true;_orbitSite=null;
+  // pause flight loop while orbiting
+  if(flightAnimId){cancelAnimationFrame(flightAnimId);flightAnimId=null;}
+  const ov=$('orbit-overlay');ov.style.display='block';
+  $('orbit-title').textContent='ORBITAL APPROACH — '+body.name.toUpperCase();
+  const landable=isBodyLandable(body);
+  $('orbit-sub').textContent=(body.type||'World')+(landable?' · landable':' · gas/hostile — flyover only');
+  $('orbit-site').textContent='';
+  $('orbit-descend').style.display='none';
+  const cv=$('orbit-canvas');const W=window.innerWidth,H=window.innerHeight;cv.width=W;cv.height=H;
+  orbitRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:!GFX.isMobile});
+  orbitRenderer.setPixelRatio(effectivePixelRatio());orbitRenderer.setSize(W,H);
+  orbitRenderer.outputEncoding=THREE.sRGBEncoding;
+  orbitScene=new THREE.Scene();
+  orbitCamera=new THREE.PerspectiveCamera(50,W/H,0.01,100);
+  orbitCamDist=3.4;orbitYaw=0;orbitPitch=0.2;
+  // starfield backdrop
+  const sn=1500,sp=new Float32Array(sn*3);
+  for(let i=0;i<sn;i++){const ph=Math.acos(2*Math.random()-1),th=Math.random()*6.28,r=40;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=r*Math.cos(ph);sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
+  const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  orbitScene.add(new THREE.Points(sg,new THREE.PointsMaterial({size:0.08,color:0xffffff})));
+  // lighting
+  const sun=new THREE.DirectionalLight(0xfff4e2,2.2);sun.position.set(5,3,4);orbitScene.add(sun);
+  orbitScene.add(new THREE.AmbientLight(0x334455,0.5));
+  // the globe — use the body's procedural texture if available
+  const pal=getSurfacePalette(body);
+  let tex=null;
+  try{ if(typeof makePlanetTexture==='function') tex=makePlanetTexture(body.type||'Rocky',body.name); }catch(e){}
+  const mat=tex?new THREE.MeshStandardMaterial({map:tex,roughness:0.95,metalness:0.0})
+               :new THREE.MeshStandardMaterial({color:body.color||pal.ground,roughness:0.95,metalness:0.0});
+  orbitGlobe=new THREE.Mesh(new THREE.SphereGeometry(1,64,48),mat);
+  orbitScene.add(orbitGlobe);
+  // atmosphere glow for atmospheric worlds
+  if(pal.atmos){
+    const atm=new THREE.Mesh(new THREE.SphereGeometry(1.06,48,32),new THREE.MeshBasicMaterial({color:pal.sky?pal.sky[0]:0x88bbff,transparent:true,opacity:0.16,side:THREE.BackSide,blending:THREE.AdditiveBlending}));
+    orbitScene.add(atm);
+  }
+  // landing pin (hidden until placed)
+  orbitPin=new THREE.Group();
+  const pinHead=new THREE.Mesh(new THREE.SphereGeometry(0.03,12,12),new THREE.MeshBasicMaterial({color:0xf5c400}));
+  pinHead.position.y=0.06;orbitPin.add(pinHead);
+  const pinStem=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.12,6),new THREE.MeshBasicMaterial({color:0xf5c400}));
+  pinStem.position.y=0.0;orbitPin.add(pinStem);
+  orbitPin.visible=false;orbitGlobe.add(orbitPin);
+  // input
+  setupOrbitInput(cv);
+  // loop
+  (function oloop(){
+    orbitAnimId=requestAnimationFrame(oloop);
+    if(!_orbitDrag)orbitGlobe.rotation.y+=0.0015; // gentle auto-spin when idle
+    const cy=Math.cos(orbitYaw),sy=Math.sin(orbitYaw),cp=Math.cos(orbitPitch),spp=Math.sin(orbitPitch);
+    orbitCamera.position.set(sy*cp*orbitCamDist,spp*orbitCamDist,cy*cp*orbitCamDist);
+    orbitCamera.lookAt(0,0,0);
+    orbitRenderer.render(orbitScene,orbitCamera);
+  })();
+}
+
+function isBodyLandable(b){
+  return (b.landable!==undefined)?b.landable
+    :(['Habitable','Rocky','Ocean','Desert','Ice','Volcanic','Barren Moon'].includes(b.type)||['Mars','Moon','Earth','Mercury','Venus'].includes(b.name));
+}
+
+function setupOrbitInput(cv){
+  const ray=new THREE.Raycaster();
+  const placePin=(cx,cy)=>{
+    const rect=cv.getBoundingClientRect();
+    const mx=(cx-rect.left)/rect.width*2-1, my=-((cy-rect.top)/rect.height)*2+1;
+    ray.setFromCamera(new THREE.Vector2(mx,my),orbitCamera);
+    const hit=ray.intersectObject(orbitGlobe,false);
+    if(hit.length){
+      // convert hit point (world) into globe-local lat/lon for the pin + site
+      const local=orbitGlobe.worldToLocal(hit[0].point.clone()).normalize();
+      orbitPin.position.copy(local.clone().multiplyScalar(1.0));
+      // orient pin to stand up from surface
+      orbitPin.up=new THREE.Vector3(0,1,0);
+      const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),local);
+      orbitPin.quaternion.copy(q);
+      orbitPin.visible=true;
+      const lat=(Math.asin(local.y)*180/Math.PI), lon=(Math.atan2(local.z,local.x)*180/Math.PI);
+      _orbitSite={lat,lon,local:local.clone()};
+      $('orbit-site').textContent='📍 SITE: '+lat.toFixed(1)+'°, '+lon.toFixed(1)+'°';
+      $('orbit-descend').style.display='inline-block';
+    }
+  };
+  let moved=false,downX=0,downY=0;
+  const down=(x,y)=>{_orbitDrag={x,y};moved=false;downX=x;downY=y;};
+  const move=(x,y)=>{if(!_orbitDrag)return;const dx=x-_orbitDrag.x,dy=y-_orbitDrag.y;if(Math.abs(x-downX)+Math.abs(y-downY)>6)moved=true;orbitYaw-=dx*0.006;orbitPitch=Math.max(-1.4,Math.min(1.4,orbitPitch+dy*0.006));_orbitDrag={x,y};};
+  const up=(x,y)=>{if(_orbitDrag&&!moved)placePin(x,y);_orbitDrag=null;};
+  cv.addEventListener('mousedown',e=>down(e.clientX,e.clientY));
+  window.addEventListener('mousemove',e=>move(e.clientX,e.clientY));
+  window.addEventListener('mouseup',e=>up(e.clientX,e.clientY));
+  cv.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1)down(e.touches[0].clientX,e.touches[0].clientY);else if(e.touches.length===2)_orbitPinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);},{passive:false});
+  cv.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1)move(e.touches[0].clientX,e.touches[0].clientY);else if(e.touches.length===2&&_orbitPinch){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);orbitCamDist=Math.max(1.6,Math.min(8,orbitCamDist*(_orbitPinch/d)));_orbitPinch=d;}},{passive:false});
+  cv.addEventListener('touchend',e=>{if(e.touches.length===0){if(_orbitDrag&&!moved){const t=e.changedTouches[0];up(t.clientX,t.clientY);}else _orbitDrag=null;_orbitPinch=null;}});
+  cv.addEventListener('wheel',e=>{e.preventDefault();orbitCamDist=Math.max(1.6,Math.min(8,orbitCamDist*(1+Math.sign(e.deltaY)*0.08)));},{passive:false});
+}
+
+function closeOrbitApproach(){
+  if(!orbitActive)return;orbitActive=false;
+  if(orbitAnimId){cancelAnimationFrame(orbitAnimId);orbitAnimId=null;}
+  $('orbit-overlay').style.display='none';
+  if(orbitRenderer)orbitRenderer.dispose();
+  orbitScene=null;orbitGlobe=null;orbitPin=null;
+  // resume flight
+  resumeFlightLoop();
+}
+
+// DESCEND: take the player to ~150 ft above the chosen site, then offer the
+// skyboard-or-walk choice.
+function descendToSite(){
+  if(!_orbitSite||!_orbitBody)return;
+  const body=_orbitBody;
+  // close orbit view with a brief descent toast
+  toast('⬇ Descending to '+_orbitSite.lat.toFixed(1)+'°, '+_orbitSite.lon.toFixed(1)+'°…',1800);
+  if(orbitAnimId){cancelAnimationFrame(orbitAnimId);orbitAnimId=null;}
+  orbitActive=false;
+  $('orbit-overlay').style.display='none';
+  if(orbitRenderer)orbitRenderer.dispose();
+  orbitScene=null;orbitGlobe=null;orbitPin=null;
+  // present the choice dialog (150 ft hover)
+  const dc=$('descent-choice');dc.style.display='flex';
+  $('descent-body').textContent='Hovering 150 ft over '+body.name+' at '+_orbitSite.lat.toFixed(1)+'°, '+_orbitSite.lon.toFixed(1)+'°.';
+}
+
+// Player chose to FLY the skyboard in the atmosphere from the hover point.
+function chooseSkyboard(){
+  $('descent-choice').style.display='none';
+  enterAtmosphericFlight(_orbitBody,_orbitSite);
+}
+// Player chose to LAND and walk around.
+function chooseLandWalk(){
+  $('descent-choice').style.display='none';
+  enterSurface(_orbitBody,_orbitSite);
+}
+
+function resumeFlightLoop(){
+  if(flightAnimId)return;
+  let last=performance.now();
+  (function loop(){
+    flightAnimId=requestAnimationFrame(loop);
+    const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;flightTime+=dt;
+    try{updateFlight(dt);}catch(e){}
+    try{updateBodies(dt);}catch(e){}
+    try{updateDistantSystems(dt);}catch(e){}
+    try{updateVolumetricDust(dt);}catch(e){}
+    try{updateHUD();}catch(e){}
+    try{drawMinimap();}catch(e){}
+    try{renderWithPostFX();}catch(e){}
+  })();
+}
+
+
+// ════════════════════════════════════════════════════════════════════
+//  ✦ ATMOSPHERIC FLIGHT  — skyboard flight inside a planet's atmosphere
+// ────────────────────────────────────────────────────────────────────
+//  Throttle-driven flight with Mach speed presets. The lowest preset gauges
+//  idle → Mach 0.5; higher presets cap at Mach 1..7 (top cruising Mach 7).
+//  Exiting the atmosphere (climbing past the ceiling, or TO SPACE) returns to
+//  the normal space-flight game mode.
+// ════════════════════════════════════════════════════════════════════
+const MACH_PRESETS=[
+  {name:'SUBSONIC',max:0.5},{name:'MACH 1',max:1},{name:'MACH 2',max:2},
+  {name:'MACH 3',max:3},{name:'MACH 4',max:4},{name:'MACH 5',max:5},
+  {name:'MACH 6',max:6},{name:'MACH 7',max:7}
+];
+const MACH_UNITS=70; // scene units/sec per Mach 1 (tuned for feel)
+const ATMO_CEILING=2600; // climb past this → exit atmosphere to space
+let atmoActive=false,atmoRenderer,atmoScene,atmoCamera,atmoAnimId=null;
+let atmoBoard=null,_atmoBody=null,_atmoSite=null,_atmoHeight=null;
+let atmoPreset=0,atmoThrottle=0,atmoMach=0;
+let atmoSteer={x:0,y:0},atmoClimb={x:0,y:0};
+let atmoState=null;
+
+function enterAtmosphericFlight(body,site){
+  if(atmoActive)return;
+  _atmoBody=body;_atmoSite=site||null;atmoActive=true;
+  atmoPreset=0;atmoThrottle=0;atmoMach=0;
+  if(flightAnimId){cancelAnimationFrame(flightAnimId);flightAnimId=null;}
+  const pal=getSurfacePalette(body);
+  const ov=$('atmo-overlay');ov.style.display='block';
+  $('atmo-title').textContent='ATMOSPHERIC FLIGHT — '+body.name.toUpperCase();
+  const cv=$('atmo-canvas');const W=window.innerWidth,H=window.innerHeight;cv.width=W;cv.height=H;
+  atmoRenderer=new THREE.WebGLRenderer({canvas:cv,antialias:!GFX.isMobile});
+  atmoRenderer.setPixelRatio(effectivePixelRatio());atmoRenderer.setSize(W,H);
+  atmoRenderer.outputEncoding=THREE.sRGBEncoding;
+  atmoScene=new THREE.Scene();
+  atmoScene.background=new THREE.Color(pal.sky?pal.sky[1]:0x223344);
+  if(pal.atmos)atmoScene.fog=new THREE.Fog(pal.fog||0x334455,300,2400);
+  atmoCamera=new THREE.PerspectiveCamera(74,W/H,0.5,6000);
+  // lighting
+  const sun=new THREE.DirectionalLight(0xfff2e0,2.2);sun.position.set(200,300,120);atmoScene.add(sun);
+  atmoScene.add(new THREE.AmbientLight(pal.atmos?0x88aacc:0x223344,0.6));
+  if(GFX.fakeGI)atmoScene.add(new THREE.HemisphereLight(pal.sky?pal.sky[0]:0x88bbff,pal.ground||0x556644,0.7));
+  // sky dome
+  if(pal.atmos){
+    const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:{top:{value:new THREE.Color(pal.sky[1])},bot:{value:new THREE.Color(pal.sky[0])}},
+      vertexShader:'varying vec3 vp;void main(){vp=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader:'varying vec3 vp;uniform vec3 top;uniform vec3 bot;void main(){float h=normalize(vp).y*0.5+0.5;gl_FragColor=vec4(mix(bot,top,h),1.0);}'});
+    atmoScene.add(new THREE.Mesh(new THREE.SphereGeometry(4000,24,24),skyMat));
+  } else {
+    const sn=2500,sp=new Float32Array(sn*3);
+    for(let i=0;i<sn;i++){const ph=Math.acos(2*Math.random()-1),th=Math.random()*6.28,r=3000;sp[i*3]=r*Math.sin(ph)*Math.cos(th);sp[i*3+1]=Math.abs(r*Math.cos(ph));sp[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
+    const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+    atmoScene.add(new THREE.Points(sg,new THREE.PointsMaterial({size:2,sizeAttenuation:false,color:0xffffff})));
+  }
+  // terrain below — reuse the LOD terrain system in this scene
+  atmoBuildTerrain(pal);
+  // the skyboard the player rides (visible, 3rd-person chase)
+  const board=new THREE.Group();
+  const deckMat=new THREE.MeshStandardMaterial({color:0x0a2530,emissive:0x00343f,emissiveIntensity:0.6,metalness:0.85,roughness:0.18});
+  board.add(new THREE.Mesh(new THREE.BoxGeometry(3.4,0.22,1.1),deckMat));
+  const noseMat=new THREE.MeshStandardMaterial({color:0x00f5ff,emissive:0x00b5cf,emissiveIntensity:0.8,metalness:0.7,roughness:0.15});
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.5,1.5,4),noseMat);nose.rotation.z=-Math.PI/2;nose.position.set(2.1,0,0);board.add(nose);
+  // engine glow
+  const glow=makeGlowSprite?makeGlowSprite('rgba(0,229,255,0.7)',3):null;if(glow){glow.position.set(-1.8,0,0);board.add(glow);}
+  atmoScene.add(board);atmoBoard=board;
+  // flight state — start at 150 ft (~46m) above terrain at the site
+  const startH=(_atmoHeight?_atmoHeight(0,0):0);
+  atmoState={pos:new THREE.Vector3(0,startH+46,0),vel:new THREE.Vector3(),yaw:0,pitch:0,roll:0};
+  board.position.copy(atmoState.pos);
+  // build Mach preset buttons
+  buildMachPresets();
+  // throttle slider
+  const thr=$('atmo-throttle');thr.value=0;atmoThrottle=0;
+  thr.oninput=()=>{atmoThrottle=parseInt(thr.value)/100;};
+  // joysticks
+  setupAtmoJoysticks();
+  toast('🛹 Skyboard airborne over '+body.name+' — throttle up!',2600);
+  let last=performance.now();
+  (function aloop(){
+    atmoAnimId=requestAnimationFrame(aloop);
+    const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;
+    updateAtmoFlight(dt);
+    atmoRenderer.render(atmoScene,atmoCamera);
+  })();
+}
+
+// Build terrain for the atmospheric scene (reuses the CLOD terrain system).
+function atmoBuildTerrain(pal){
+  const seed=(_atmoBody?_atmoBody.name.length:5)*13+1;
+  function H(x,z){
+    let h=_fbm(x*0.012+100,z*0.012+100,seed,5)*22;
+    h+=_fbm(x*0.04,z*0.04,seed+3,3)*5;
+    const m=_fbm(x*0.005,z*0.005,seed+7,4);
+    if(m>0.6)h+=(m-0.6)*120;
+    return h;
+  }
+  _atmoHeight=H;
+  // a wide static heightmesh (atmospheric flight ranges far, so a big coarse
+  // mesh reads better than streaming tiny tiles at speed)
+  const SZ=5000,SEG=120;
+  const geo=new THREE.PlaneGeometry(SZ,SZ,SEG,SEG);geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position;const col=[];
+  const c1=new THREE.Color(pal.ground),c2=new THREE.Color(pal.ground2),cr=new THREE.Color(pal.rock);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i);const h=H(x,z);pos.setY(i,h);
+    let c;const t=Math.min(1,Math.max(0,h/60));
+    if(h>55)c=new THREE.Color(0xffffff).lerp(cr,0.3);
+    else if(h>22)c=cr.clone();else c=c1.clone().lerp(c2,t*0.4+0.15);
+    col.push(c.r,c.g,c.b);
+  }
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));geo.computeVertexNormals();
+  atmoScene.add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95})));
+  if(pal.water){
+    const wm=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ),new THREE.MeshStandardMaterial({color:0x1a4a7a,transparent:true,opacity:0.8,roughness:0.2,metalness:0.4}));
+    wm.rotation.x=-Math.PI/2;wm.position.y=2;atmoScene.add(wm);
+  }
+}
+
+function buildMachPresets(){
+  const box=$('atmo-presets');box.innerHTML='';
+  MACH_PRESETS.forEach((p,i)=>{
+    const b=document.createElement('button');
+    b.textContent=p.name;
+    b.style.cssText='pointer-events:auto;padding:5px 10px;background:'+(i===atmoPreset?'rgba(245,196,0,.2)':'rgba(0,245,255,.06)')+';border:1px solid '+(i===atmoPreset?'var(--gold)':'rgba(0,245,255,.3)')+';color:'+(i===atmoPreset?'var(--gold)':'var(--cyan)')+';font-family:var(--font-hud);font-size:.46rem;letter-spacing:.08em;cursor:pointer;border-radius:2px;min-width:78px;';
+    b.onclick=()=>{atmoPreset=i;buildMachPresets();toast('⚙ '+p.name+' — cap '+(p.max>=1?('Mach '+p.max):'Mach 0.5'),1400);};
+    box.appendChild(b);
+  });
+}
+
+function updateAtmoFlight(dt){
+  const s=atmoState;if(!s)return;
+  // steering: left joy = yaw + pitch
+  s.yaw-=atmoSteer.x*1.4*dt;
+  s.pitch=Math.max(-0.8,Math.min(0.8,s.pitch-atmoSteer.y*0.9*dt));
+  // climb/dive from right joy (y) + bank roll from its x
+  const climb=-atmoClimb.y; const bank=atmoClimb.x;
+  s.roll=THREE.MathUtils.lerp(s.roll,-bank*0.5,0.1);
+  // speed from throttle, capped by the selected Mach preset
+  const cap=MACH_PRESETS[atmoPreset].max;
+  atmoMach=THREE.MathUtils.lerp(atmoMach,atmoThrottle*cap,0.04);
+  const speed=atmoMach*MACH_UNITS;
+  // forward vector from yaw/pitch
+  const fx=-Math.sin(s.yaw)*Math.cos(s.pitch);
+  const fy=Math.sin(s.pitch)+climb*0.5;
+  const fz=-Math.cos(s.yaw)*Math.cos(s.pitch);
+  s.pos.x+=fx*speed*dt;
+  s.pos.y+=fy*speed*dt + climb*40*dt;
+  s.pos.z+=fz*speed*dt;
+  // terrain floor
+  const groundH=_atmoHeight?_atmoHeight(s.pos.x,s.pos.z):0;
+  if(s.pos.y<groundH+4){s.pos.y=groundH+4;}
+  // exit to space if climbing past the atmosphere ceiling
+  if(s.pos.y>ATMO_CEILING){ atmoExitToSpace(); return; }
+  // update board transform
+  atmoBoard.position.copy(s.pos);
+  atmoBoard.rotation.set(0,s.yaw,0);
+  atmoBoard.rotateZ(s.roll);
+  atmoBoard.rotateX(s.pitch*0.5);
+  // chase camera behind + above the board
+  const back=new THREE.Vector3(Math.sin(s.yaw)*9,3.4,Math.cos(s.yaw)*9);
+  atmoCamera.position.copy(s.pos).add(back);
+  atmoCamera.lookAt(s.pos.x,s.pos.y+1,s.pos.z);
+  // HUD
+  const altFt=Math.round((s.pos.y-groundH)*3.28);
+  $('atmo-speed').textContent='MACH '+atmoMach.toFixed(2);
+  $('atmo-alt').textContent=altFt;
+  $('atmo-thr').textContent=Math.round(atmoThrottle*100);
+}
+
+function setupAtmoJoysticks(){
+  const mk=(zoneId,knobId,out)=>{
+    const zone=$(zoneId),knob=$(knobId);if(!zone)return;
+    let active=false,tid=null,ox=0,oy=0;const R=50;
+    const start=(x,y)=>{active=true;const r=zone.getBoundingClientRect();ox=r.left+r.width/2;oy=r.top+r.height/2;mv(x,y);};
+    const mv=(x,y)=>{if(!active)return;let dx=clamp(x-ox,-R,R),dy=clamp(y-oy,-R,R);knob.style.left=(50+dx/R*42)+'%';knob.style.top=(50+dy/R*42)+'%';out.x=dx/R;out.y=dy/R;};
+    const end=()=>{active=false;tid=null;knob.style.left='50%';knob.style.top='50%';out.x=0;out.y=0;};
+    zone.addEventListener('touchstart',e=>{e.preventDefault();if(active)return;const t=e.changedTouches[0];tid=t.identifier;start(t.clientX,t.clientY);},{passive:false});
+    window.addEventListener('touchmove',e=>{if(!active||tid===null)return;for(const t of e.changedTouches)if(t.identifier===tid){mv(t.clientX,t.clientY);break;}},{passive:true});
+    window.addEventListener('touchend',e=>{if(!active||tid===null)return;for(const t of e.changedTouches)if(t.identifier===tid){end();break;}});
+    zone.addEventListener('mousedown',e=>{start(e.clientX,e.clientY);const m=ev=>mv(ev.clientX,ev.clientY),u=()=>{end();document.removeEventListener('mousemove',m);document.removeEventListener('mouseup',u);};document.addEventListener('mousemove',m);document.addEventListener('mouseup',u);});
+  };
+  mk('atmo-steer-zone','atmo-steer-knob',atmoSteer);
+  mk('atmo-climb-zone','atmo-climb-knob',atmoClimb);
+}
+
+// Land from atmospheric flight → walk mode at the current spot.
+function atmoLandHere(){
+  const body=_atmoBody;
+  _atmoCleanup();
+  enterSurface(body,_atmoSite);
+}
+// Exit atmosphere → back to normal space flight.
+function atmoExitToSpace(){
+  const body=_atmoBody;
+  _atmoCleanup();
+  toast('🚀 Left '+(body?body.name:'the')+' atmosphere — back in open space',2600);
+  resumeFlightLoop();
+}
+function _atmoCleanup(){
+  if(!atmoActive)return;atmoActive=false;
+  if(atmoAnimId){cancelAnimationFrame(atmoAnimId);atmoAnimId=null;}
+  $('atmo-overlay').style.display='none';
+  if(atmoRenderer)atmoRenderer.dispose();
+  atmoScene=null;atmoBoard=null;atmoState=null;
+}
+
+function enterSurface(body,site){
   if(surfaceActive)return;
-  _surfBody=body;surfaceActive=true;
-  // pause flight loop visuals (keep flight scene but stop rendering it)
+  _surfBody=body;_surfSite=site||null;surfaceActive=true;
   if(flightAnimId){cancelAnimationFrame(flightAnimId);flightAnimId=null;}
   const pal=getSurfacePalette(body);
   const ov=$('surface-overlay');ov.style.display='block';
@@ -5063,6 +5496,21 @@ function setupSurfaceJoysticks(){
   mk('surf-move-zone','surf-move-knob',surfLookJoy,false);   // LEFT zone → LOOK
   mk('surf-look-zone','surf-look-knob',surfJoyMove,false);   // RIGHT zone → MOVE
 }
+// From walk mode: get back on the skyboard and fly in the atmosphere.
+function surfRemountSkyboard(){
+  if(!surfaceActive)return;
+  const body=_surfBody,site=_surfSite;
+  surfaceActive=false;
+  if(surfAnimId){cancelAnimationFrame(surfAnimId);surfAnimId=null;}
+  window.removeEventListener('keydown',_surfKeyDown);
+  window.removeEventListener('keyup',_surfKeyUp);
+  $('surface-overlay').style.display='none';
+  if(surfRenderer)surfRenderer.dispose();
+  surfScene=null;surfPlayer=null;surfBoard=null;surfTerrainMesh=null;
+  TERRAIN.tiles.clear();TERRAIN.group=null;
+  enterAtmosphericFlight(body,site);
+}
+
 function exitSurface(){
   if(!surfaceActive)return;surfaceActive=false;
   if(surfAnimId){cancelAnimationFrame(surfAnimId);surfAnimId=null;}
