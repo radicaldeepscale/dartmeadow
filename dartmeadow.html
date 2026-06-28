@@ -790,7 +790,7 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
     </div>
     <div class="ar-panel">
       <div class="ar-panel-title">Flight</div>
-      <div class="ar-row"><span class="ar-label">MODE</span><span class="ar-val" id="hud-mode">CRUISE</span></div>
+      <div class="ar-row"><span class="ar-label">MODE</span><span class="ar-val" id="hud-mode">MANEUVER</span></div>
       <div class="ar-row"><span class="ar-label">DART</span><span class="ar-val" id="hud-dart">OFF</span></div>
       <div class="ar-row"><span class="ar-label">GRAV</span><span class="ar-val" id="hud-grav">0.0 g</span></div>
     </div>
@@ -884,6 +884,7 @@ html.immersive #app,html.immersive #loading-screen{height:100dvh;}
 <div id="descent-choice" style="display:none;position:fixed;inset:0;z-index:3600;background:rgba(0,3,8,.82);backdrop-filter:blur(6px);align-items:center;justify-content:center;">
   <div style="max-width:420px;margin:auto;padding:28px 26px;border:1px solid rgba(0,245,255,.3);border-radius:8px;background:rgba(0,8,16,.9);box-shadow:0 0 40px rgba(0,245,255,.15);text-align:center;">
     <div style="font-family:var(--font-hud);font-size:.7rem;letter-spacing:.18em;color:var(--cyan);margin-bottom:6px;">⬇ 150 FT ABOVE SURFACE</div>
+    <canvas id="descent-globe" width="160" height="160" style="display:block;margin:0 auto 14px;border-radius:50%;box-shadow:0 0 22px rgba(0,245,255,.25);"></canvas>
     <div id="descent-body" style="font-family:var(--font-mono);font-size:.58rem;color:rgba(0,245,255,.65);margin-bottom:22px;">Hovering over the landing site.</div>
     <button onclick="chooseSkyboard()" style="display:block;width:100%;margin-bottom:12px;padding:12px;background:rgba(0,245,255,.12);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.14em;cursor:pointer;border-radius:4px;">🛹 FLY THE SKYBOARD</button>
     <button onclick="chooseLandWalk()" style="display:block;width:100%;padding:12px;background:rgba(245,196,0,.12);border:1px solid var(--gold);color:var(--gold);font-family:var(--font-hud);font-size:.6rem;letter-spacing:.14em;cursor:pointer;border-radius:4px;">🚶 LAND & WALK AROUND</button>
@@ -2855,7 +2856,7 @@ function _applyCamOffset(){
 // OFF → YELLOW (33% c³) → BLUE (70% c³) → WHITE (400% c³) → OFF
 let dartSpeedMode=0; // 0=off 1=yellow 2=blue 3=white
 const DART_MODES=[
-  {label:'⬡',       color:'rgba(0,245,255,0.15)', border:'rgba(0,245,255,0.3)',  multiplier:1,    name:'CRUISE'},
+  {label:'⬡',       color:'rgba(0,245,255,0.15)', border:'rgba(0,245,255,0.3)',  multiplier:1,    name:'MANEUVER'},
   {label:'⚡',       color:'rgba(245,196,0,0.22)', border:'rgba(245,196,0,0.8)', multiplier:8,    name:'DART⅓'},
   {label:'⚡',       color:'rgba(80,140,255,0.28)',border:'rgba(100,160,255,0.9)',multiplier:18,   name:'DART⅔'},
   {label:'⚡',       color:'rgba(255,255,255,0.25)',border:'rgba(255,255,255,0.95)',multiplier:45, name:'DART∞'},
@@ -2870,7 +2871,7 @@ function cycleDartMode(){
     btn.style.color=dartSpeedMode===0?'rgba(0,245,255,0.5)':dartSpeedMode===1?'#f5c400':dartSpeedMode===2?'#6699ff':'#ffffff';
     btn.textContent=dartSpeedMode===0?'—':['','⅓c³','⅔c³','∞c³'][dartSpeedMode];
   }
-  toast(['CRUISE — joystick only','⚡ DART ⅓c³ — YELLOW','⚡ DART ⅔c³ — BLUE','⚡ DART ∞c³ — WHITE'][dartSpeedMode],1600);
+  toast(['🛸 MANEUVER — gentle steady speed for close-by','⚡ DART ⅓c³ — YELLOW','⚡ DART ⅔c³ — BLUE','⚡ DART ∞c³ — WHITE'][dartSpeedMode],1600);
   // Update HUD
   $('hud-mode').textContent=m.name;
   if(dartSpeedMode>0){$('hud-dart').textContent='ACTIVE';}else{$('hud-dart').textContent='OFF';}
@@ -5141,6 +5142,38 @@ function descendToSite(){
   // present the choice dialog (150 ft hover)
   const dc=$('descent-choice');dc.style.display='flex';
   $('descent-body').textContent='Hovering 150 ft over '+body.name+' at '+_orbitSite.lat.toFixed(1)+'°, '+_orbitSite.lon.toFixed(1)+'°.';
+  // draw a Mantis-style globe preview centered on the landing site
+  try{
+    const gc=$('descent-globe');if(gc){
+      const tex=makeOrbitGlobeTexture(body);const src=tex&&tex.image;
+      const ctx=gc.getContext('2d');ctx.clearRect(0,0,gc.width,gc.height);
+      // circular clip
+      ctx.save();ctx.beginPath();ctx.arc(80,80,78,0,Math.PI*2);ctx.clip();
+      if(src){
+        // map the landing lon to a horizontal crop of the equirectangular texture
+        const lon=_orbitSite.lon; // -180..180
+        const u=((lon+180)/360); // 0..1
+        const cropW=src.width*0.5, cropH=src.height*0.9;
+        let sx=u*src.width-cropW/2; if(sx<0)sx+=src.width;
+        // draw (with horizontal wrap)
+        if(sx+cropW<=src.width){
+          ctx.drawImage(src,sx,(src.height-cropH)/2,cropW,cropH,0,0,160,160);
+        } else {
+          const w1=src.width-sx;
+          ctx.drawImage(src,sx,(src.height-cropH)/2,w1,cropH,0,0,160*(w1/cropW),160);
+          ctx.drawImage(src,0,(src.height-cropH)/2,cropW-w1,cropH,160*(w1/cropW),0,160*((cropW-w1)/cropW),160);
+        }
+      } else { ctx.fillStyle='#0a2030';ctx.fillRect(0,0,160,160); }
+      // rim shading for a spherical look
+      const rg=ctx.createRadialGradient(80,80,30,80,80,80);
+      rg.addColorStop(0,'rgba(0,0,0,0)');rg.addColorStop(1,'rgba(0,0,0,0.55)');
+      ctx.fillStyle=rg;ctx.fillRect(0,0,160,160);
+      ctx.restore();
+      // landing pin marker at center
+      ctx.fillStyle='#f5c400';ctx.beginPath();ctx.arc(80,80,4,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(245,196,0,0.7)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(80,80,9,0,Math.PI*2);ctx.stroke();
+    }
+  }catch(e){}
 }
 
 // Player chose to FLY the skyboard in the atmosphere from the hover point.
