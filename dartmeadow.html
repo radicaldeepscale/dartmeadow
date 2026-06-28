@@ -4751,62 +4751,72 @@ function enterSurface(body){
   })();
 }
 let surfBoard=null,surfTerrainMesh=null,_surfHeight=null;
+
+// ════════════════════════════════════════════════════════════════════
+//  ✦ VIRTUAL LOD TERRAIN  (continuous level-of-detail, Nanite-inspired)
+// ────────────────────────────────────────────────────────────────────
+//  A quadtree of terrain tiles centred on the player. Tiles close to the
+//  camera subdivide to high triangle density; distant tiles stay coarse —
+//  so detail is concentrated underfoot and the horizon stays cheap. This is
+//  the chunked-LOD / geometry-clipmap technique real open-world engines use;
+//  it is the practical web-WebGL analogue of UE5 Nanite's continuous LOD for
+//  procedural heightfield terrain (full Nanite meshlet virtualization needs
+//  WebGPU compute shaders, unavailable in this r128 WebGL build).
+//
+//  Technique references (credit):
+//   • UE5 Nanite — continuous LOD concept (Epic Games)
+//   • "Chunked LOD" — Thatcher Ulrich (tulrich.com/geekstuff/chunklod.html)
+//   • Geometry Clipmaps — Losasso & Hoppe, Microsoft Research (2004)
+//   • three-nanite (AIFanatic, github.com/AIFanatic/three-nanite) — meshlet LOD reference
+// ════════════════════════════════════════════════════════════════════
+const TERRAIN={
+  rootSize:2400,      // full terrain span (world units) — far horizon
+  maxDepth:6,         // quadtree depth → smallest tile = rootSize/2^6
+  tileSeg:16,         // grid segments per tile (constant; density comes from depth)
+  splitFactor:2.2,    // subdivide when camera closer than tileSize*splitFactor
+  tiles:new Map(),    // key -> {mesh, depth, cx, cz, size}
+  group:null,
+  pal:null, H:null, seed:0,
+  lastRebuildX:1e9, lastRebuildZ:1e9
+};
+
 function buildSurfaceTerrain(pal){
-  const SZ=600,SEG=140;
-  const geo=new THREE.PlaneGeometry(SZ,SZ,SEG,SEG);
-  geo.rotateX(-Math.PI/2);
-  const pos=geo.attributes.position;
   const seed=(_surfBody?_surfBody.name.length:5)*13+1;
-  // store height function for player collision
+  // height function (kept from the original, drives collision + tiles)
   function H(x,z){
     let h=_fbm(x*0.012+100,z*0.012+100,seed,5)*22;
     h+=_fbm(x*0.04,z*0.04,seed+3,3)*5;
-    // mountains
     const m=_fbm(x*0.005,z*0.005,seed+7,4);
     if(m>0.6)h+=(m-0.6)*120;
     return h;
   }
   _surfHeight=H;
-  const col=[];const c1=new THREE.Color(pal.ground),c2=new THREE.Color(pal.ground2),cr=new THREE.Color(pal.rock);
-  for(let i=0;i<pos.count;i++){
-    const x=pos.getX(i),z=pos.getZ(i);
-    const h=H(x,z);pos.setY(i,h);
-    // color by height + slope
-    let c;const t=Math.min(1,Math.max(0,h/60));
-    if(h>55)c=new THREE.Color(0xffffff).lerp(cr,0.3); // snow caps
-    else if(h>22)c=cr.clone();
-    else c=c1.clone().lerp(c2,Math.random()*0.5+t*0.3);
-    col.push(c.r,c.g,c.b);
-  }
-  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
-  geo.computeVertexNormals();
-  const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95,metalness:0.0,flatShading:false});
-  surfTerrainMesh=new THREE.Mesh(geo,mat);
-  if(GFX.shadows)surfTerrainMesh.receiveShadow=true;
-  surfScene.add(surfTerrainMesh);
-  // water plane for habitable — with animated caustics (browser-real fake)
+  TERRAIN.pal=pal;TERRAIN.H=H;TERRAIN.seed=seed;
+  TERRAIN.tiles.clear();TERRAIN.lastRebuildX=1e9;TERRAIN.lastRebuildZ=1e9;
+  TERRAIN.group=new THREE.Group();surfScene.add(TERRAIN.group);
+  surfTerrainMesh=TERRAIN.group; // for collision/exit references
+  // initial build around origin (player spawn)
+  rebuildTerrainLOD(0,0);
+
+  // water + caustics (unchanged) — sized to the full terrain span
+  const SZ=TERRAIN.rootSize;
   if(pal.water){
     const waterMat=new THREE.MeshStandardMaterial({color:0x1a4a7a,transparent:true,opacity:0.82,roughness:0.15,metalness:0.4});
     if(GFX.envReflections&&_envMap)waterMat.envMap=_envMap;
     const wm=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ,1,1),waterMat);
     wm.rotation.x=-Math.PI/2;wm.position.y=2.0;
     if(GFX.shadows)wm.receiveShadow=true;
-    surfScene.add(wm);
-    surfWater=wm;
-    // Caustics: animated light pattern projected onto water + lakebed.
-    // Implemented as a scrolling procedural texture — runs on every browser.
+    surfScene.add(wm);surfWater=wm;
     if(GFX.caustics){
       const cz=256,cc=document.createElement('canvas');cc.width=cz;cc.height=cz;
       surfCausticCanvas=cc;surfCausticCtx=cc.getContext('2d');
-      const ctex=new THREE.CanvasTexture(cc);
-      ctex.wrapS=ctex.wrapT=THREE.RepeatWrapping;ctex.repeat.set(8,8);
-      surfCausticTex=ctex;
+      const ctex=new THREE.CanvasTexture(cc);ctex.wrapS=ctex.wrapT=THREE.RepeatWrapping;ctex.repeat.set(8,8);surfCausticTex=ctex;
       const causticMat=new THREE.MeshBasicMaterial({map:ctex,transparent:true,opacity:0.22,blending:THREE.AdditiveBlending,depthWrite:false});
       const cm=new THREE.Mesh(new THREE.PlaneGeometry(SZ,SZ),causticMat);
       cm.rotation.x=-Math.PI/2;cm.position.y=2.05;surfScene.add(cm);
     }
   }
-  // scatter rocks / vegetation billboards
+  // scatter rocks / vegetation near spawn (unchanged behaviour)
   const rockGeo=new THREE.DodecahedronGeometry(1,0);
   const rockMat=new THREE.MeshStandardMaterial({color:pal.rock,roughness:1});
   const inst=Math.min(300,({low:60,med:140,high:240,ultra:300})[STATE.settings.particles]||140);
@@ -4818,14 +4828,85 @@ function buildSurfaceTerrain(pal){
     rk.position.set(x,h+s*0.3,z);rk.rotation.set(rnd(0,6),rnd(0,6),rnd(0,6));
     if(GFX.shadows){rk.castShadow=true;rk.receiveShadow=true;}
     surfScene.add(rk);
-    // simple "tree"/spire for habitable
     if(pal.ground===0x3a7d34&&Math.random()>0.6&&h>3&&h<40){
       const tr=new THREE.Mesh(new THREE.ConeGeometry(rnd(1,2.5),rnd(4,9),6),new THREE.MeshStandardMaterial({color:0x1f5520,roughness:1}));
       tr.position.set(x+rnd(-3,3),h+3,z+rnd(-3,3));
-      if(GFX.shadows)tr.castShadow=true;
-      surfScene.add(tr);
+      if(GFX.shadows)tr.castShadow=true;surfScene.add(tr);
     }
   }
+}
+
+// Build one terrain tile (a heightfield patch) at depth d covering [cx,cz]±size/2.
+function buildTerrainTile(cx,cz,size,depth){
+  const seg=TERRAIN.tileSeg;
+  const geo=new THREE.PlaneGeometry(size,size,seg,seg);
+  geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position;
+  const H=TERRAIN.H,pal=TERRAIN.pal;
+  const c1=new THREE.Color(pal.ground),c2=new THREE.Color(pal.ground2),cr=new THREE.Color(pal.rock);
+  const col=[];
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i)+cx, z=pos.getZ(i)+cz;
+    const h=H(x,z);pos.setY(i,h);
+    let c;const t=Math.min(1,Math.max(0,h/60));
+    if(h>55)c=new THREE.Color(0xffffff).lerp(cr,0.3);
+    else if(h>22)c=cr.clone();
+    else c=c1.clone().lerp(c2,t*0.4+0.15);
+    col.push(c.r,c.g,c.b);
+  }
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.computeVertexNormals();
+  const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95,metalness:0.0});
+  const m=new THREE.Mesh(geo,mat);
+  m.position.set(cx,0,cz);
+  if(GFX.shadows)m.receiveShadow=true;
+  return m;
+}
+
+// Recursively decide tile subdivision around a focus point (the player).
+function _terrainQuad(cx,cz,size,depth,focusX,focusZ,wanted){
+  const dist=Math.hypot(cx-focusX,cz-focusZ);
+  // subdivide if close enough AND not yet at max depth
+  if(depth<TERRAIN.maxDepth && dist < size*TERRAIN.splitFactor){
+    const h=size/2,q=size/4;
+    _terrainQuad(cx-q,cz-q,h,depth+1,focusX,focusZ,wanted);
+    _terrainQuad(cx+q,cz-q,h,depth+1,focusX,focusZ,wanted);
+    _terrainQuad(cx-q,cz+q,h,depth+1,focusX,focusZ,wanted);
+    _terrainQuad(cx+q,cz+q,h,depth+1,focusX,focusZ,wanted);
+  } else {
+    wanted.set(cx.toFixed(1)+'_'+cz.toFixed(1)+'_'+depth,{cx,cz,size,depth});
+  }
+}
+
+// Rebuild the visible tile set centred on (px,pz). Adds new tiles, removes
+// stale ones, reusing existing tiles so only changed LODs are regenerated.
+function rebuildTerrainLOD(px,pz){
+  if(!TERRAIN.group)return;
+  const wanted=new Map();
+  _terrainQuad(0,0,TERRAIN.rootSize,0,px,pz,wanted);
+  // remove tiles no longer wanted
+  for(const [key,t] of TERRAIN.tiles){
+    if(!wanted.has(key)){ TERRAIN.group.remove(t.mesh); t.mesh.geometry.dispose(); t.mesh.material.dispose(); TERRAIN.tiles.delete(key); }
+  }
+  // add newly wanted tiles
+  for(const [key,w] of wanted){
+    if(!TERRAIN.tiles.has(key)){
+      const mesh=buildTerrainTile(w.cx,w.cz,w.size,w.depth);
+      TERRAIN.group.add(mesh);
+      TERRAIN.tiles.set(key,{mesh,...w});
+    }
+  }
+  TERRAIN.lastRebuildX=px;TERRAIN.lastRebuildZ=pz;
+}
+
+// Called each frame from updateSurface — rebuilds LOD when the player has
+// moved enough that the tile layout should change (throttled to avoid churn).
+function updateTerrainLOD(px,pz){
+  if(!TERRAIN.group)return;
+  const moved=Math.hypot(px-TERRAIN.lastRebuildX,pz-TERRAIN.lastRebuildZ);
+  // smallest tile size sets the rebuild cadence
+  const smallest=TERRAIN.rootSize/Math.pow(2,TERRAIN.maxDepth);
+  if(moved>smallest*0.5) rebuildTerrainLOD(px,pz);
 }
 // Animated caustic pattern — interfering sine ripples drawn each frame
 let surfWater=null,surfCausticCanvas=null,surfCausticCtx=null,surfCausticTex=null,_causticT=0;
@@ -4875,6 +4956,8 @@ function updateSurface(dt){
   const eye=groundH+3.0;
   if(p.pos.y<=eye){p.pos.y=eye;p.vel.y=0;p.onGround=true;}else p.onGround=false;
   if((surfKeys['Space'])&&p.onGround){p.vel.y=6*Math.sqrt(p.grav);} // jump
+  // stream terrain LOD around the player (subdivide nearby, coarsen far)
+  updateTerrainLOD(p.pos.x,p.pos.z);
   // apply to camera
   surfCamera.position.copy(p.pos);
   surfCamera.rotation.y=p.yaw;surfCamera.rotation.x=p.pitch;
@@ -4904,6 +4987,7 @@ function exitSurface(){
   // dispose surface scene
   if(surfRenderer){surfRenderer.dispose();}
   surfScene=null;surfPlayer=null;surfBoard=null;surfTerrainMesh=null;
+  TERRAIN.tiles.clear();TERRAIN.group=null;
   // resume flight loop
   if(!flightAnimId){
     let last=performance.now();
