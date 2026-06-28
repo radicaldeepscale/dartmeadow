@@ -4215,7 +4215,7 @@ function applySettings(){
   STATE.settings.textures=$('set-textures')?$('set-textures').checked:true;
   STATE.settings.galaxyband=$('set-galaxyband')?$('set-galaxyband').checked:true;
   STATE.settings.particles=$('set-particles').value;STATE.settings.fov=parseInt($('set-fov').value);STATE.settings.dartSpeed=parseInt($('set-dart-speed').value);
-  if(flightCamera)flightCamera.far=STATE.settings.fov;
+  if(flightCamera){flightCamera.far=Math.max(STATE.settings.fov,50000);flightCamera.updateProjectionMatrix();}
   // ── Graphics quality / lighting effects ──
   let needsRebuild=false;
   if($('set-quality')){const q=$('set-quality').value;if(GFX.preset!==q){GFX.preset=q;if(q!=='custom')applyPreset(q);needsRebuild=true;}}
@@ -4364,53 +4364,108 @@ function applyProceduralTextures(){
 }
 
 // ── 2. IN-FLIGHT MILKY WAY BAND (point cloud, scaled, colorful) ──
-let flightGalaxyBand=null;
+let flightGalaxyBand=null,flightGalaxyCore=null,flightNebulae=[];
 function buildFlightGalaxyBand(){
   if(flightGalaxyBand){flightScene.remove(flightGalaxyBand);flightGalaxyBand=null;}
+  if(flightGalaxyCore){flightScene.remove(flightGalaxyCore);flightGalaxyCore=null;}
+  flightNebulae.forEach(n=>flightScene.remove(n));flightNebulae=[];
   if(!STATE.settings.galaxyband)return;
   const density=({low:0.4,med:1,high:2,ultra:3.5})[STATE.settings.particles]||1;
-  const N_ARMS=5, perArm=Math.round(5000*density);
-  const armCols=[[.5,.7,1],[1,.8,.45],[.7,.45,1],[.45,1,.7],[1,.5,.45]];
+  // Keep the whole galaxy INSIDE the draw distance so it never clips out.
+  const RG=42000; // galaxy radius in scene units (fits under the 50k far plane)
+  // ── 2 major + 2 minor spiral arms (matches the real Milky Way morphology) ──
+  const arms=[{base:0,wind:2.4,major:true},{base:Math.PI,wind:2.4,major:true},
+              {base:Math.PI*0.5,wind:2.3,major:false},{base:Math.PI*1.5,wind:2.3,major:false}];
   const pts=[],cols=[];
-  // The band sits FAR out — a ring wrapping the sky, scaled so it reads as the galaxy
-  const RG=120000; // galaxy radius in scene units (way past draw distance of planets)
-  for(let a=0;a<N_ARMS;a++){
-    const base=(a/N_ARMS)*Math.PI*2;const col=armCols[a];
-    for(let j=0;j<perArm;j++){
+  const armBlue=[0.55,0.72,1.0],midWhite=[0.95,0.96,1.0],hii=[1.0,0.42,0.6];
+  arms.forEach(arm=>{
+    const per=Math.round((arm.major?7000:4000)*density);
+    for(let j=0;j<per;j++){
       const t=Math.pow(Math.random(),0.6);
-      const ang=t*Math.PI*3.2+base+(Math.random()-.5)*0.35;
-      const d=t*RG;
-      const scatter=d*0.05+200;
-      const px=Math.cos(ang)*d+(Math.random()-.5)*scatter;
-      const pz=Math.sin(ang)*d+(Math.random()-.5)*scatter;
-      const py=(Math.random()-.5)*d*0.025+(Math.random()-.5)*400;
+      const r=t*RG;
+      const ang=Math.log(r/600+1)*arm.wind+arm.base+gaussian()*(0.12+t*0.4);
+      const scatter=r*0.04+300;
+      const px=Math.cos(ang)*r+(Math.random()-.5)*scatter;
+      const pz=Math.sin(ang)*r+(Math.random()-.5)*scatter;
+      const py=gaussian()*(900*(1-t*0.5));
       pts.push(px,py,pz);
-      const b=0.25+t*0.6+Math.random()*0.2;
-      cols.push(col[0]*b,col[1]*b,col[2]*b);
+      let c;const tt=t;
+      if(Math.random()<0.05){c=hii;} // pink star-forming knots
+      else c=[lerp(armBlue[0],midWhite[0],tt),lerp(armBlue[1],midWhite[1],tt),lerp(armBlue[2],midWhite[2],tt)];
+      const b=0.5+Math.random()*0.5;
+      cols.push(c[0]*b,c[1]*b,c[2]*b);
     }
-  }
-  // bright core bulge
-  const coreN=Math.round(4000*density);
-  for(let i=0;i<coreN;i++){
-    const r=Math.pow(Math.random(),2)*RG*0.12;
-    const phi=Math.random()*Math.PI*2,th=Math.acos(2*Math.random()-1);
-    pts.push(r*Math.sin(th)*Math.cos(phi),r*Math.cos(th)*0.4,r*Math.sin(th)*Math.sin(phi));
-    const b=0.6+Math.random()*0.4;cols.push(b,b*0.92,b*0.72);
+  });
+  // inter-arm field stars (warm, fainter)
+  const fieldN=Math.round(8000*density);
+  for(let i=0;i<fieldN;i++){
+    const t=Math.pow(Math.random(),0.7),r=t*RG,ang=Math.random()*Math.PI*2;
+    pts.push(Math.cos(ang)*r,gaussian()*700,Math.sin(ang)*r);
+    const b=0.2+Math.random()*0.25;cols.push(0.95*b,0.85*b,0.65*b);
   }
   const g=new THREE.BufferGeometry();
   g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));
   g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(cols),3));
   const tex=makeCircleTex(16,'rgb(255,255,255)',1);
   flightGalaxyBand=new THREE.Points(g,new THREE.PointsMaterial({
-    size:2.4,sizeAttenuation:true,vertexColors:true,map:tex,
-    alphaTest:0.02,transparent:true,opacity:0.95,depthWrite:false,
-    blending:THREE.AdditiveBlending
+    size:80,sizeAttenuation:true,vertexColors:true,map:tex,
+    alphaTest:0.02,transparent:true,opacity:0.95,depthWrite:false,blending:THREE.AdditiveBlending
   }));
-  // Tilt the galactic plane so our solar system sits within an arm, not dead center
-  flightGalaxyBand.rotation.set(0.5,0.3,0.1);
-  // Offset so the solar system is ~2/3 out on the Orion arm
-  flightGalaxyBand.position.set(-RG*0.22,-3000,RG*0.12);
-  flightScene.add(flightGalaxyBand);
+  // galactic plane tilt so Sol sits within an arm, looking toward the core
+  const galGroup=new THREE.Group();
+  galGroup.add(flightGalaxyBand);
+
+  // ── Brilliant glowing CORE BULGE — dense globular swarm of stars ──
+  const coreN=Math.round(9000*density);const cp=[],cc=[];
+  for(let i=0;i<coreN;i++){
+    const r=Math.pow(Math.random(),2.2)*RG*0.13;
+    const phi=Math.random()*Math.PI*2,th=Math.acos(2*Math.random()-1);
+    cp.push(r*Math.sin(th)*Math.cos(phi)*1.4,r*Math.cos(th)*0.5,r*Math.sin(th)*Math.sin(phi));
+    const b=0.6+Math.random()*0.4;cc.push(1.0*b,0.88*b,0.62*b);
+  }
+  const cg=new THREE.BufferGeometry();
+  cg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(cp),3));
+  cg.setAttribute('color',new THREE.BufferAttribute(new Float32Array(cc),3));
+  galGroup.add(new THREE.Points(cg,new THREE.PointsMaterial({size:120,sizeAttenuation:true,vertexColors:true,map:tex,transparent:true,opacity:0.95,depthWrite:false,blending:THREE.AdditiveBlending})));
+
+  // layered core glow + Sgr A* accretion blaze at the very center
+  galGroup.add(makeGlowSprite('rgba(255,246,225,0.95)',RG*0.16));
+  galGroup.add(makeGlowSprite('rgba(255,210,150,0.7)',RG*0.32));
+  galGroup.add(makeGlowSprite('rgba(180,130,255,0.35)',RG*0.5)); // violet relativistic halo
+  // Sgr A* accretion disk (hot blue-white inner → orange outer)
+  const dn=Math.round(2500*density);const dp=[],dc=[];
+  for(let i=0;i<dn;i++){
+    const rr=RG*0.02+Math.pow(Math.random(),0.7)*RG*0.09;const a=Math.random()*Math.PI*2;
+    const warm=1-(rr/(RG*0.11));
+    dp.push(Math.cos(a)*rr,gaussian()*RG*0.004,Math.sin(a)*rr);
+    const b=0.7+Math.random()*0.5;dc.push(1.0*b,lerp(0.5,0.95,warm)*b,lerp(0.2,1.0,warm)*b);
+  }
+  const dg=new THREE.BufferGeometry();
+  dg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dp),3));
+  dg.setAttribute('color',new THREE.BufferAttribute(new Float32Array(dc),3));
+  galGroup.add(new THREE.Points(dg,new THREE.PointsMaterial({size:90,sizeAttenuation:true,vertexColors:true,map:tex,transparent:true,opacity:0.95,depthWrite:false,blending:THREE.AdditiveBlending})));
+
+  // ── Colorful NEBULA DUST CLOUDS scattered through the arms ──
+  const nebColors=['rgba(255,90,140,','rgba(90,150,255,','rgba(160,90,255,','rgba(90,255,180,','rgba(255,160,80,'];
+  const nebCount=Math.round(7*density);
+  for(let i=0;i<nebCount;i++){
+    const t=0.25+Math.random()*0.7,r=t*RG,ang=Math.random()*Math.PI*2;
+    const nx=Math.cos(ang)*r,nz=Math.sin(ang)*r,ny=gaussian()*600;
+    const col=nebColors[i%nebColors.length];
+    const neb=makeGlowSprite(col+'0.5)',RG*(0.04+Math.random()*0.06));
+    neb.position.set(nx,ny,nz);galGroup.add(neb);
+  }
+  // A nearby bright cloud (Orion-nebula-like) close to Sol's position
+  const orion=makeGlowSprite('rgba(255,120,160,0.6)',RG*0.05);
+  orion.position.set(RG*0.5,200,RG*0.18);galGroup.add(orion);
+  galGroup.add(makeGlowSprite('rgba(120,170,255,0.4)',RG*0.04)).position.set(RG*0.46,-150,RG*0.22);
+
+  galGroup.rotation.set(0.5,0.3,0.1);
+  // place Sol ~62% out on the Orion arm: shift the whole galaxy so the core is
+  // off in the distance toward the galactic center, visible from the system
+  galGroup.position.set(-RG*0.5,-2600,-RG*0.16);
+  flightGalaxyCore=galGroup;
+  flightScene.add(galGroup);
 }
 
 // ── 3. MULTI-STAR DISTANT SYSTEMS (visible as systems you can fly to) ─
