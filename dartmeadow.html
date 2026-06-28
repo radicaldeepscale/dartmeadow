@@ -4286,11 +4286,18 @@ function openFastTravel(title,sub,onGo){
 function closeFastTravel(){const d=$('ft-dialog');if(d)d.style.display='none';}
 
 function zoomToSolarSystem(){
-  toast('☉ Zooming into the Solar System…',1400);
+  toast('☉ Flying to the Solar System…',1400);
   const startPos=gmCamera.position.clone(), startTgt=gmControls.target.clone();
-  // pull back to ~420 units at a 3/4 overhead angle so the whole orbiting
-  // system (out to Neptune at ~178u) is comfortably in frame
-  const endTgt=new THREE.Vector3(0,0,0), endPos=new THREE.Vector3(150,300,420);
+  // The solar system sits where the Sun actually is — out on the Orion Spur —
+  // not at the origin. Move the orbiting solar-tier content to the Sun's galaxy
+  // position so it's revealed sitting right there amongst the star particles,
+  // then fly the camera OVER to it (rather than recentering to origin).
+  const sunPos=(GAL&&GAL.sunPos)?GAL.sunPos.clone():new THREE.Vector3(0,0,0);
+  if(gmTierGroups.solar)gmTierGroups.solar.position.copy(sunPos);
+  // approach from a 3/4 overhead angle, ~420u out, so the whole system (Neptune
+  // at ~178u) is comfortably framed while sitting in the surrounding galaxy
+  const endTgt=sunPos.clone();
+  const endPos=sunPos.clone().add(new THREE.Vector3(150,300,420));
   let t=0;
   const anim=()=>{
     t+=0.02;const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
