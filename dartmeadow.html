@@ -3966,13 +3966,18 @@ function onGalaxyMapClick(e){
     const sunMeshes=[];gmSunMarker&&gmSunMarker.traverse(o=>{if(o.isMesh)sunMeshes.push(o);});
     if(gmRaycaster.intersectObjects(sunMeshes).length){ zoomToSolarSystem(); return; }
   }
-  // Intergalactic: tap a galaxy → fast-travel dialog
+  // Intergalactic: tap a galaxy → fly INTO it for a full galaxy-tier view
+  // (its arms bloom to fill the screen), then offer to descend into its systems.
   if(gmCurrentTier==='intergalactic'){
     const galMeshes=[];gmTierGroups.intergalactic&&gmTierGroups.intergalactic.traverse(o=>{if(o.isMesh&&o.userData.galaxyId)galMeshes.push(o);});
     const gh=gmRaycaster.intersectObjects(galMeshes);
-    if(gh.length){const u=gh[0].object.userData;openFastTravel('FAST TRAVEL — '+u.galaxyName.toUpperCase(),
-      'Travel '+(u.dist||'millions of ly')+' to '+u.galaxyName+'? You can chart its systems on arrival.',
-      ()=>fastTravelToGalaxy(u.galaxyId,u.galaxyName));return;}
+    if(gh.length){const u=gh[0].object.userData;
+      // find the LOD record so we can fly to its center and bloom its detail
+      const L=gmGalaxyLODs.find(x=>x.gid===u.galaxyId);
+      if(L){ zoomIntoGalaxy(L,u); } else {
+        openFastTravel('FAST TRAVEL — '+u.galaxyName.toUpperCase(),'Travel '+(u.dist||'millions of ly')+' to '+u.galaxyName+'?',()=>fastTravelToGalaxy(u.galaxyId,u.galaxyName));
+      }
+      return;}
   }
   // Stellar: tap a star system → explore dialog
   if(gmCurrentTier==='stellar'){
@@ -4118,6 +4123,31 @@ function zoomToSolarSystem(){
     gmControls.update();updateGalaxyTier();
     if(t<1)requestAnimationFrame(anim);
     else openFastTravel('SOL SYSTEM — HOME','Your home system. Tap a planet to plot a course, or fast-travel to the home position now.',()=>fastTravelToSystem(null));
+  };
+  anim();
+}
+
+// Fly the map camera INTO a destination galaxy so its arms bloom to fill the
+// screen (its near-LOD streams in), then offer to descend into its charted
+// systems — the same drill-down the home Milky Way has, for any galaxy.
+function zoomIntoGalaxy(L,u){
+  toast('✦ Approaching '+u.galaxyName+'…',1600);
+  const g=L.def, c=L.center.clone();
+  const startPos=gmCamera.position.clone(), startTgt=gmControls.target.clone();
+  // frame the galaxy: pull up to a 3/4 view at ~2.6× its radius so the whole
+  // disc and arms fill the view (this distance puts it into near-LOD)
+  const endTgt=c.clone();
+  const endPos=c.clone().add(new THREE.Vector3(g.r*2.2,g.r*1.4,g.r*2.2));
+  let t=0;
+  const anim=()=>{
+    t+=0.018;const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    gmCamera.position.lerpVectors(startPos,endPos,e);
+    gmControls.target.lerpVectors(startTgt,endTgt,e);
+    gmControls.update();updateGalaxyTier();updateGalaxyLOD();
+    if(t<1)requestAnimationFrame(anim);
+    else openFastTravel('✦ '+u.galaxyName.toUpperCase(),
+      (u.dist||'millions of ly')+' away · charting its star systems. Descend into '+u.galaxyName+' and fast-travel to a system?',
+      ()=>fastTravelToGalaxy(u.galaxyId,u.galaxyName));
   };
   anim();
 }
