@@ -2640,21 +2640,23 @@ function addProceduralPlanetDetails(){
 
 
 
-function buildFlightBoard(){
-  boardFlight=new THREE.Group();
+// Builds the skyboard mesh (the same craft used everywhere — space flight AND
+// atmospheric flight). Nose points +X. Returns a THREE.Group.
+function buildBoardMesh(){
+  const grp=new THREE.Group();
   const c=STATE.boardConfig;
   const col=new THREE.Color(c.col1),emit=new THREE.Color(c.emit);
   const hW=c.width/2,hL=c.length/2,T=c.thick;
   // Main board body
-  boardFlight.add(new THREE.Mesh(new THREE.BoxGeometry(c.length,T,c.width),new THREE.MeshStandardMaterial({color:col,emissive:emit,emissiveIntensity:c.glow*.3,metalness:c.metal,roughness:.3})));
+  grp.add(new THREE.Mesh(new THREE.BoxGeometry(c.length,T,c.width),new THREE.MeshStandardMaterial({color:col,emissive:emit,emissiveIntensity:c.glow*.3,metalness:c.metal,roughness:.3})));
   const em=new THREE.MeshStandardMaterial({color:emit,emissive:emit,emissiveIntensity:1.8,metalness:.9,roughness:.1});
   // Nose tip
-  const nt=new THREE.Mesh(new THREE.ConeGeometry(c.nosetip*2,.2,5),em.clone());nt.rotation.z=-Math.PI/2;nt.position.set(hL+c.nose+.06,0,0);boardFlight.add(nt);
+  const nt=new THREE.Mesh(new THREE.ConeGeometry(c.nosetip*2,.2,5),em.clone());nt.rotation.z=-Math.PI/2;nt.position.set(hL+c.nose+.06,0,0);grp.add(nt);
   // Tail shard
-  if(c.shard>.02){const ang=c.shardang*Math.PI/180;const sh=new THREE.Mesh(new THREE.ConeGeometry(c.shardw,c.shard,4),em.clone());sh.position.set(-hL,c.shard*.42+T*.5,hW+.05);sh.rotation.z=-(Math.PI*.5-ang);boardFlight.add(sh);}
+  if(c.shard>.02){const ang=c.shardang*Math.PI/180;const sh=new THREE.Mesh(new THREE.ConeGeometry(c.shardw,c.shard,4),em.clone());sh.position.set(-hL,c.shard*.42+T*.5,hW+.05);sh.rotation.z=-(Math.PI*.5-ang);grp.add(sh);}
   // Edge strips
-  [-hW,hW].forEach(z=>{const s=new THREE.Mesh(new THREE.BoxGeometry(c.length*.88,.006,.006),em.clone());s.position.set(0,T/2+.002,z);boardFlight.add(s);});
-  // DART energy ring devices (simplified for flight performance)
+  [-hW,hW].forEach(z=>{const s=new THREE.Mesh(new THREE.BoxGeometry(c.length*.88,.006,.006),em.clone());s.position.set(0,T/2+.002,z);grp.add(s);});
+  // DART energy ring devices
   [{x:hL*.50},{x:-hL*.50}].forEach(rp=>{
     const rg=new THREE.Group();rg.position.set(rp.x,0,0);
     const outerR=hW*.6;
@@ -2663,10 +2665,15 @@ function buildFlightBoard(){
     const r2=new THREE.Mesh(new THREE.TorusGeometry(outerR*.6,.012,4,22),ringMat.clone());r2.rotation.x=Math.PI/2;rg.add(r2);
     const node=new THREE.Mesh(new THREE.SphereGeometry(T*.18,8,8),new THREE.MeshStandardMaterial({color:0xffffff,emissive:emit,emissiveIntensity:4.5,metalness:1,roughness:.01}));rg.add(node);
     const pl=new THREE.PointLight(new THREE.Color(emit),c.glow*2.5,outerR*3.5);rg.add(pl);
-    boardFlight.add(rg);
+    grp.add(rg);
   });
   // Engine light
-  {const el2=new THREE.PointLight(new THREE.Color(c.emit),c.glow*2,5);el2.position.set(-hL*.7,-T/2-.04,0);boardFlight.add(el2);}
+  {const el2=new THREE.PointLight(new THREE.Color(c.emit),c.glow*2,5);el2.position.set(-hL*.7,-T/2-.04,0);grp.add(el2);}
+  return grp;
+}
+
+function buildFlightBoard(){
+  boardFlight=buildBoardMesh();
   // ── FOLLOW-CAM MODEL: the board is a WORLD entity that flies through space;
   // the camera trails behind and above it (drone/follow style) so you actually
   // SEE the board out in front of you — the whole point of the game. The board
@@ -3198,9 +3205,16 @@ function updateFlight(dt){
     sp.vel.addScaledVector(fwd,   tf*targetSpd*accel);
     sp.vel.addScaledVector(right, ts*targetSpd*accel*.55);
   }
-  // Damping — DART modes hold speed better
-  const drag=dartSpeedMode>0?0.994:0.88;
+  // Damping. While actively throttling, DART modes hold speed (low drag) for a
+  // smooth cruise; the MOMENT you let off the throttle, real drag kicks in so
+  // the ship coasts to a stop instead of being stuck at speed until you toggle.
+  const throttling=(Math.abs(tf)>0.02||Math.abs(ts)>0.02);
+  let drag;
+  if(throttling) drag=dartSpeedMode>0?0.985:0.90;
+  else           drag=dartSpeedMode>0?0.90:0.82; // release → noticeable slow-down
   sp.vel.multiplyScalar(drag);
+  // clamp tiny residual so it fully settles to idle rather than micro-drifting
+  if(!throttling&&sp.vel.length()<0.002)sp.vel.set(0,0,0);
   // The BOARD is what moves through the world now.
   sp.pos.addScaledVector(sp.vel,1);
 
@@ -5092,7 +5106,7 @@ const MACH_PRESETS=[
 const MACH_UNITS=70; // scene units/sec per Mach 1 (tuned for feel)
 const ATMO_CEILING=2600; // climb past this → exit atmosphere to space
 let atmoActive=false,atmoRenderer,atmoScene,atmoCamera,atmoAnimId=null;
-let atmoBoard=null,_atmoBody=null,_atmoSite=null,_atmoHeight=null;
+let atmoBoard=null,_atmoBody=null,_atmoSite=null,_atmoHeight=null,_atmoCamInit=false;
 let atmoPreset=0,atmoThrottle=0,atmoMach=0;
 let atmoSteer={x:0,y:0},atmoClimb={x:0,y:0};
 let atmoState=null;
@@ -5131,15 +5145,12 @@ function enterAtmosphericFlight(body,site){
   }
   // terrain below — reuse the LOD terrain system in this scene
   atmoBuildTerrain(pal);
-  // the skyboard the player rides (visible, 3rd-person chase)
-  const board=new THREE.Group();
-  const deckMat=new THREE.MeshStandardMaterial({color:0x0a2530,emissive:0x00343f,emissiveIntensity:0.6,metalness:0.85,roughness:0.18});
-  board.add(new THREE.Mesh(new THREE.BoxGeometry(3.4,0.22,1.1),deckMat));
-  const noseMat=new THREE.MeshStandardMaterial({color:0x00f5ff,emissive:0x00b5cf,emissiveIntensity:0.8,metalness:0.7,roughness:0.15});
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.5,1.5,4),noseMat);nose.rotation.z=-Math.PI/2;nose.position.set(2.1,0,0);board.add(nose);
-  // engine glow
-  const glow=makeGlowSprite?makeGlowSprite('rgba(0,229,255,0.7)',3):null;if(glow){glow.position.set(-1.8,0,0);board.add(glow);}
+  // the skyboard the player rides — the SAME board model as space flight,
+  // scaled up so it reads well against the larger atmospheric terrain
+  const board=buildBoardMesh();
+  board.scale.setScalar(2.4);
   atmoScene.add(board);atmoBoard=board;
+  _atmoCamInit=false;
   // flight state — start at 150 ft (~46m) above terrain at the site
   const startH=(_atmoHeight?_atmoHeight(0,0):0);
   atmoState={pos:new THREE.Vector3(0,startH+46,0),vel:new THREE.Vector3(),yaw:0,pitch:0,roll:0};
@@ -5228,15 +5239,24 @@ function updateAtmoFlight(dt){
   if(s.pos.y<groundH+4){s.pos.y=groundH+4;}
   // exit to space if climbing past the atmosphere ceiling
   if(s.pos.y>ATMO_CEILING){ atmoExitToSpace(); return; }
-  // update board transform
+  // ── Orient & place the board the SAME way as space flight ───────────────
+  // The board model's nose points +X, so yaw maps with a -90° base offset
+  // (identical to updateBoardTransform). This fixes the sideways look.
   atmoBoard.position.copy(s.pos);
-  atmoBoard.rotation.set(0,s.yaw,0);
-  atmoBoard.rotateZ(s.roll);
-  atmoBoard.rotateX(s.pitch*0.5);
-  // chase camera behind + above the board
-  const back=new THREE.Vector3(Math.sin(s.yaw)*9,3.4,Math.cos(s.yaw)*9);
-  atmoCamera.position.copy(s.pos).add(back);
-  atmoCamera.lookAt(s.pos.x,s.pos.y+1,s.pos.z);
+  atmoBoard.position.y+=Math.sin(flightTime*.9)*.05; // hover bob
+  atmoBoard.rotation.order='YXZ';
+  atmoBoard.rotation.y=s.yaw-Math.PI/2;
+  atmoBoard.rotation.x=THREE.MathUtils.lerp(atmoBoard.rotation.x||0, -s.pitch, 0.12);
+  atmoBoard.rotation.z=THREE.MathUtils.lerp(atmoBoard.rotation.z||0, s.roll, 0.10);
+  // ── Follow camera: behind & above along the heading, looking over the board
+  //    (same trailing feel as the space follow-cam) ────────────────────────
+  const o=CAM_OFFSETS[camMode]||CAM_OFFSETS[0];
+  const back=o.back*1.4, up=o.up*1.4, look=o.look*1.4; // scaled up for atmo speed
+  const fwd=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(s.pitch*0.5,s.yaw,0,'YXZ'));
+  const desired=s.pos.clone().addScaledVector(fwd,-back).add(new THREE.Vector3(0,up,0));
+  if(!_atmoCamInit){atmoCamera.position.copy(desired);_atmoCamInit=true;}
+  else atmoCamera.position.lerp(desired,Math.min(1,dt*6));
+  atmoCamera.lookAt(s.pos.clone().addScaledVector(fwd,look).add(new THREE.Vector3(0,0.6,0)));
   // HUD
   const altFt=Math.round((s.pos.y-groundH)*3.28);
   $('atmo-speed').textContent='MACH '+atmoMach.toFixed(2);
