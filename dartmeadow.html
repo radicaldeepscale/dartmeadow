@@ -3664,6 +3664,59 @@ function buildGalaxyTiers(fid){
   const sn=new THREE.Group();gmTierGroups.stellar=sn;gmScene.add(sn);
   buildStellarNeighborhood(sn,fid);
   gmTierGroups.intergalactic.visible=false;
+  // Persistent backdrop: a dim, always-visible shell of the surrounding galaxy
+  // so that when you zoom into the solar system you still see the Milky Way's
+  // stars and glow all around you (you're inside the galaxy, after all). It is
+  // never hidden by tier separation — it's the universe behind every tier.
+  buildGalaxyBackdrop(fid);
+}
+
+// A large, dim star shell representing the surrounding Milky Way as seen from
+// within. Always visible — the cosmic backdrop behind the solar/stellar tiers.
+let gmBackdrop=null;
+function buildGalaxyBackdrop(fid){
+  const grp=new THREE.Group();gmScene.add(grp);gmBackdrop=grp;
+  const R=GAL.discR;
+  // 1) a dim disc of stars projected far out (the galaxy seen from inside)
+  const N=Math.round(60000*Math.max(0.5,fid));
+  const pos=new Float32Array(N*3),col=new Float32Array(N*3);
+  const SCALE=18; // push the backdrop far out so it sits behind everything
+  for(let i=0;i<N;i++){
+    const inArm=Math.random()<0.7;
+    let r=Math.pow(Math.random(),0.6)*R;
+    let ang;
+    if(inArm){const arm=GAL.arms[Math.floor(Math.random()*GAL.arms.length)];ang=Math.log(r/28+1)*arm.wind+arm.base+gaussian()*(0.14+r/R*0.4);}
+    else ang=Math.random()*Math.PI*2;
+    let x=Math.cos(ang)*r, z=Math.sin(ang)*r, y=gaussian()*GAL.thickness*1.2;
+    // tilt the backdrop plane a little so it reads as a band across the sky
+    const tilt=0.5;
+    const ty=y*Math.cos(tilt)-z*Math.sin(tilt), tz=y*Math.sin(tilt)+z*Math.cos(tilt);
+    pos[i*3]=x*SCALE; pos[i*3+1]=ty*SCALE; pos[i*3+2]=tz*SCALE;
+    // dim bluish-white, brighter toward the core
+    const coreNear=1-Math.min(1,r/R);
+    const b=0.18+coreNear*0.4+Math.random()*0.12;
+    col[i*3]=b*0.85; col[i*3+1]=b*0.9; col[i*3+2]=b*1.0;
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const tex=makeCircleTex(16,'rgb(255,255,255)',1);
+  const stars=new THREE.Points(geo,new THREE.PointsMaterial({size:200,sizeAttenuation:true,vertexColors:true,map:tex,transparent:true,opacity:0.8,depthWrite:false,blending:THREE.AdditiveBlending}));
+  grp.add(stars);
+  // 2) a soft glowing core bulge far off toward the galactic center
+  const coreGlow=makeGlowSprite('rgba(255,244,220,0.5)',R*SCALE*0.18);
+  coreGlow.position.set(0,-GAL.sunR*SCALE*0.5*Math.sin(0.5),-GAL.sunR*SCALE);
+  grp.add(coreGlow);
+  grp.add(makeGlowSprite('rgba(180,150,255,0.22)',R*SCALE*0.3)).position.copy(coreGlow.position);
+  // 3) a faint full-sphere field of distant stars so every direction has depth
+  const fn=Math.round(4000*fid);const fp=new Float32Array(fn*3),fc=new Float32Array(fn*3);
+  for(let i=0;i<fn;i++){
+    const ph=Math.acos(2*Math.random()-1),th=Math.random()*6.28,rr=R*SCALE*1.6;
+    fp[i*3]=rr*Math.sin(ph)*Math.cos(th);fp[i*3+1]=rr*Math.cos(ph);fp[i*3+2]=rr*Math.sin(ph)*Math.sin(th);
+    const b=0.1+Math.random()*0.2;fc[i*3]=b;fc[i*3+1]=b;fc[i*3+2]=b*1.1;
+  }
+  const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.BufferAttribute(fp,3));fg.setAttribute('color',new THREE.BufferAttribute(fc,3));
+  grp.add(new THREE.Points(fg,new THREE.PointsMaterial({size:140,sizeAttenuation:true,vertexColors:true,map:tex,transparent:true,opacity:0.6,depthWrite:false,blending:THREE.AdditiveBlending})));
 }
 
 function buildMilkyWay(group,fid){
@@ -4090,12 +4143,16 @@ function updateGalaxyTier(){
     const tEl=$('gm-tier');if(tEl)tEl.textContent=label;
     onTierChanged(tier);
   }
-  // STRICT separation enforced EVERY frame — only the active tier's content is
-  // ever visible, so solar-system markers can never leak over the star field.
+  // STRICT separation for the DETAILED tier content (so markers never leak)...
   if(gmDestGroup)gmDestGroup.visible=(tier==='solar');
   if(gmTierGroups.stellar)gmTierGroups.stellar.visible=(tier==='stellar');
   if(gmTierGroups.galaxy)gmTierGroups.galaxy.visible=(tier==='galaxy');
   if(gmTierGroups.intergalactic)gmTierGroups.intergalactic.visible=(tier==='intergalactic');
+  // ...BUT the dim galaxy backdrop stays lit at the inner tiers, so when you
+  // zoom into the solar system you still see the Milky Way's stars all around
+  // (you're inside the galaxy). Hidden at galaxy/intergalactic where the real
+  // detailed galaxy is shown instead, to avoid double-rendering.
+  if(gmBackdrop)gmBackdrop.visible=(tier==='solar'||tier==='stellar');
   const sEl=$('gm-scale');if(sEl)sEl.textContent='scale: '+scale;
   // animate the compact solar system when it's the active tier
   updateGmSolarTier();
