@@ -82,8 +82,9 @@ THREE.OrbitControls=function(camera,domElement){
 
   function pan(dx,dy){
     var el=scope.domElement===document?scope.domElement.body:scope.domElement;
-    _panLeft(2*dx*scope.camera.position.distanceTo(scope.target)/el.clientHeight,scope.camera.matrix);
-    _panUp(2*dy*scope.camera.position.distanceTo(scope.target)/el.clientHeight,scope.camera.matrix);
+    var ps=scope.panSpeed||1.0;
+    _panLeft(2*dx*ps*scope.camera.position.distanceTo(scope.target)/el.clientHeight,scope.camera.matrix);
+    _panUp(2*dy*ps*scope.camera.position.distanceTo(scope.target)/el.clientHeight,scope.camera.matrix);
   }
 
   this.update=(function(){
@@ -3436,7 +3437,7 @@ function initGalaxyMapScene(){
   gmCamera.position.set(80,160,360);
   gmControls=new THREE.OrbitControls(gmCamera,cv);
   gmControls.enableDamping=true;gmControls.dampingFactor=0.09;gmControls.rotateSpeed=0.5;
-  gmControls.zoomSpeed=0.9;gmControls.panSpeed=0.6;gmControls.target.set(0,0,0);
+  gmControls.zoomSpeed=0.9;gmControls.panSpeed=0.25;gmControls.target.set(0,0,0);
   gmControls.minDistance=8;gmControls.maxDistance=260000;
   // Two-finger drag to zoom (in addition to pinch) — map touch to dolly
   gmControls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN};
@@ -3451,7 +3452,7 @@ function initGalaxyMapScene(){
   // Destination markers (solar-system tier only — shown/hidden by tier)
   gmDestPositions=[];
   if(DESTINATIONS.length===0)buildDestinations();
-  gmDestGroup=new THREE.Group();gmScene.add(gmDestGroup);
+  gmDestGroup=new THREE.Group();gmDestGroup.visible=false;gmScene.add(gmDestGroup);
   const SCALE=1.4;
   DESTINATIONS.forEach((d,i)=>{
     if(/proxima|andromeda|centauri/i.test(d.name))return; // those live in higher tiers
@@ -3854,15 +3855,15 @@ function updateGalaxyTier(){
   else {tier='intergalactic';label='INTERGALACTIC';scale='~'+(d/1000*0.05).toFixed(2)+' Mly';}
   if(tier!==gmCurrentTier){
     gmCurrentTier=tier;
-    // STRICT separation — only one tier's content shows at a time (no overlap),
-    // so the solar-system markers never appear smeared across the galaxy.
-    if(gmDestGroup)gmDestGroup.visible=(tier==='solar');
-    if(gmTierGroups.stellar)gmTierGroups.stellar.visible=(tier==='stellar');
-    if(gmTierGroups.galaxy)gmTierGroups.galaxy.visible=(tier==='galaxy');
-    if(gmTierGroups.intergalactic)gmTierGroups.intergalactic.visible=(tier==='intergalactic');
     const tEl=$('gm-tier');if(tEl)tEl.textContent=label;
     onTierChanged(tier);
   }
+  // STRICT separation enforced EVERY frame — only the active tier's content is
+  // ever visible, so solar-system markers can never leak over the star field.
+  if(gmDestGroup)gmDestGroup.visible=(tier==='solar');
+  if(gmTierGroups.stellar)gmTierGroups.stellar.visible=(tier==='stellar');
+  if(gmTierGroups.galaxy)gmTierGroups.galaxy.visible=(tier==='galaxy');
+  if(gmTierGroups.intergalactic)gmTierGroups.intergalactic.visible=(tier==='intergalactic');
   const sEl=$('gm-scale');if(sEl)sEl.textContent='scale: '+scale;
   // pulse the sun marker
   if(gmSunMarker&&gmSunMarker.userData.ring){const s=1+Math.sin(performance.now()*0.003)*0.12;gmSunMarker.userData.ring.scale.set(s,s,s);}
