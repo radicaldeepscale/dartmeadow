@@ -4916,7 +4916,7 @@ function updateVolumetricDust(dt){
 
 // ── 5. PROCEDURAL SURFACE WALK MODE ──────────────────────────────
 let surfaceActive=false,surfRenderer,surfScene,surfCamera,surfAnimId=null;
-let surfPlayer,surfKeys={},surfJoyMove={x:0,y:0},surfLookJoy={x:0,y:0};
+let surfPlayer,surfKeys={},surfJoyMove={x:0,y:0},surfLookJoy={x:0,y:0},surfTime=0;
 let _surfBody=null,_surfSite=null;
 function getSurfacePalette(body){
   const P={
@@ -5438,18 +5438,12 @@ function enterSurface(body,site){
     vertexShader:'varying vec3 vp;void main(){vp=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
     fragmentShader:'varying vec3 vp;uniform vec3 top;uniform vec3 bot;void main(){float h=normalize(vp).y*0.5+0.5;gl_FragColor=vec4(mix(bot,top,h),1.0);}'});
   if(pal.atmos)surfScene.add(new THREE.Mesh(skyGeo,skyMat));
-  // the skyboard (parked craft) the player stepped off of
-  const board=new THREE.Group();
-  const deckMat=new THREE.MeshStandardMaterial({color:0x0a2530,emissive:0x00343f,emissiveIntensity:0.5,metalness:0.85,roughness:0.18});
-  const deck=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.25,1.1),deckMat);
-  if(GFX.shadows){deck.castShadow=true;deck.receiveShadow=true;}
-  board.add(deck);
-  const noseMat=new THREE.MeshStandardMaterial({color:0x00f5ff,emissive:0x00b5cf,emissiveIntensity:0.7,metalness:0.7,roughness:0.15});
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(0.55,1.4,4),noseMat);
-  nose.rotation.z=-Math.PI/2;nose.position.set(2.0,0,0);
-  if(GFX.shadows)nose.castShadow=true;
-  board.add(nose);
-  board.position.set(5,0.6,4);surfScene.add(board);
+  // the skyboard — the SAME detailed craft, now a hovering companion that
+  // follows the player around (rises over obstacles, trails beside them)
+  const board=buildBoardMesh();
+  board.scale.setScalar(1.0);
+  if(GFX.shadows)board.traverse(o=>{if(o.isMesh){o.castShadow=true;}});
+  board.position.set(3,0.6,8);surfScene.add(board);
   surfBoard=board;
   // Env reflections on the metallic board (browser-real stand-in for RT reflections)
   if(GFX.envReflections){
@@ -5458,8 +5452,7 @@ function enterSurface(body,site){
       const cubeCam=new THREE.CubeCamera(0.5,1500,cubeRT);
       cubeCam.position.set(5,3,4);surfScene.add(cubeCam);
       cubeCam.update(surfRenderer,surfScene);
-      deckMat.envMap=cubeRT.texture;deckMat.envMapIntensity=1.1;deckMat.needsUpdate=true;
-      noseMat.envMap=cubeRT.texture;noseMat.envMapIntensity=1.0;noseMat.needsUpdate=true;
+      board.traverse(o=>{if(o.isMesh&&o.material&&'envMap' in o.material){o.material.envMap=cubeRT.texture;o.material.envMapIntensity=1.0;o.material.needsUpdate=true;}});
     }catch(e){console.warn('surf env:',e);}
   }
   // player proxy (first person — invisible; camera is the eyes)
@@ -5473,7 +5466,7 @@ function enterSurface(body,site){
   let last=performance.now();
   (function sloop(){
     surfAnimId=requestAnimationFrame(sloop);
-    const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;
+    const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;surfTime+=dt;
     updateSurface(dt);
     try{updateCaustics(dt);}catch(e){}
     surfRenderer.render(surfScene,surfCamera);
@@ -5687,6 +5680,32 @@ function updateSurface(dt){
   if((surfKeys['Space'])&&p.onGround){p.vel.y=6*Math.sqrt(p.grav);} // jump
   // stream terrain LOD around the player (subdivide nearby, coarsen far)
   updateTerrainLOD(p.pos.x,p.pos.z);
+  // ── Hovering companion board: trails beside & slightly behind the player,
+  //    hovering a few feet off the ground. It rises over obstacles/walls (its
+  //    hover height tracks the terrain beneath IT) and when the player jumps or
+  //    climbs, the board lifts to stay with them. ─────────────────────────────
+  if(surfBoard){
+    // desired spot: to the player's right and a bit behind, in player-facing space
+    const rx=Math.cos(p.yaw),rz=-Math.sin(p.yaw);          // right vector
+    const fx=-Math.sin(p.yaw),fz=-Math.cos(p.yaw);          // forward vector
+    const offR=2.6, offB=1.4;
+    const tx=p.pos.x + rx*offR - fx*offB;
+    const tz=p.pos.z + rz*offR - fz*offB;
+    // hover height = max(terrain under the board, player's feet) + hover gap,
+    // so it rises over walls and lifts when the player jumps/climbs
+    const boardGroundH=_surfHeight?_surfHeight(tx,tz):0;
+    const playerFeet=(p.pos.y-3.0); // eye is feet+3
+    const hover=Math.max(boardGroundH, playerFeet) + 1.6 + Math.sin(surfTime*1.6)*0.12;
+    // smooth follow
+    surfBoard.position.x += (tx-surfBoard.position.x)*Math.min(1,dt*4);
+    surfBoard.position.z += (tz-surfBoard.position.z)*Math.min(1,dt*4);
+    surfBoard.position.y += (hover-surfBoard.position.y)*Math.min(1,dt*5);
+    // face the same way the player faces (nose +X → yaw-PI/2), with a slight
+    // bank toward the player when repositioning
+    surfBoard.rotation.order='YXZ';
+    surfBoard.rotation.y += ((p.yaw-Math.PI/2)-surfBoard.rotation.y)*Math.min(1,dt*4);
+    surfBoard.rotation.z = Math.sin(surfTime*1.2)*0.04; // gentle idle tilt
+  }
   // apply to camera
   surfCamera.position.copy(p.pos);
   surfCamera.rotation.y=p.yaw;surfCamera.rotation.x=p.pitch;
