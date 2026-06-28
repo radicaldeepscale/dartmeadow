@@ -2220,6 +2220,7 @@ function buildEnvMap(renderer,scene){
 let flightRenderer,flightScene,flightCamera,boardFlight,flightInited=false;
 let _landTargetBody=null;
 let flightAnimId,flightTime=0,celestialBodies=[],sunMesh,earthMesh;
+let _followInit=false;
 let dartActive=false,dartTimer=0;
 const DESTINATIONS=[];
 // Joystick state
@@ -2666,9 +2667,12 @@ function buildFlightBoard(){
   });
   // Engine light
   {const el2=new THREE.PointLight(new THREE.Color(c.emit),c.glow*2,5);el2.position.set(-hL*.7,-T/2-.04,0);boardFlight.add(el2);}
-  // ── Parent board to camera — fixed child, never detaches ────
-  // _applyCamOffset() sets position/rotation to CAM 1 defaults
-  flightCamera.add(boardFlight);
+  // ── FOLLOW-CAM MODEL: the board is a WORLD entity that flies through space;
+  // the camera trails behind and above it (drone/follow style) so you actually
+  // SEE the board out in front of you — the whole point of the game. The board
+  // holds the player position & heading; updateFollowCam() places the camera.
+  flightScene.add(boardFlight);
+  boardFlight.rotation.set(0,0,0);
   _applyCamOffset();
 
   // Camera starts in Low Earth Orbit — 1 AU from Sun, drifting with Earth
@@ -2681,6 +2685,8 @@ function buildFlightBoard(){
   STATE.flight.pos.set(AU*1.0+2, 2, 3);
   STATE.flight.camYaw=0;
   STATE.flight.camPitch=0;
+  if(boardFlight)boardFlight.position.copy(STATE.flight.pos);
+  _followInit=false; // camera snaps to follow position on first frame
 }
 
 // ── Device Orientation (tilt controls) ───────────────────────
@@ -2814,28 +2820,28 @@ function activateDart(){
 //
 // CAM 3 — Pure first person: camera at eye level, board fully hidden behind/below
 
+// Follow-cam presets: how the camera trails the board. `back` = distance behind
+// the board along its heading, `up` = height above it, `look` = how far ahead of
+// the board the camera aims. This is the ArcLake-style drone/follow method —
+// the board flies out in front of you and you steer it.
 const CAM_OFFSETS=[
-  // CAM 1 — rider eye view: board below-forward, nose clearly sticking out in lower view
-  // pz negative = in front of camera. Board length ~2.8, half = 1.4.
-  // We put board center at z=-0.4 so the nose (~z=-1.8) is well into view, low in frame.
-  {px:0, py:-0.18, pz:-0.38, rx:0.18, ry:-Math.PI/2, rz:0},
-  // CAM 2 — chase/overview: board behind-below, full length visible, looking forward
-  {px:0, py: 0.12, pz: 0.55, rx:0.42, ry:-Math.PI/2, rz:0},
-  // CAM 3 — pure FP: board fully below/behind eye, nothing visible
-  {px:0, py:-0.55, pz: 0.2,  rx:0.04, ry:-Math.PI/2, rz:0},
+  // CAM 1 — FOLLOW (default): behind, high, looking over the board
+  {back:7.0,  up:2.8,  look:3.0,  fov:62},
+  // CAM 2 — CHASE: closer & lower, more speed feel
+  {back:4.5,  up:1.4,  look:2.5,  fov:70},
+  // CAM 3 — FAR DRONE: pulled way back & up, cinematic
+  {back:12.0, up:5.0,  look:2.0,  fov:55},
 ];
 let camMode=0;
 function cycleCamMode(){
   camMode=(camMode+1)%3;
   _applyCamOffset();
   const btn=$('cam-btn');if(btn)btn.textContent='CAM '+(camMode+1);
-  toast(['👤 Rider View','🎮 Chase View','👁 First Person'][camMode],1400);
+  toast(['🛹 Follow Cam','🎮 Chase Cam','🚁 Drone Cam'][camMode],1400);
 }
 function _applyCamOffset(){
-  if(!boardFlight)return;
   const o=CAM_OFFSETS[camMode];
-  boardFlight.position.set(o.px,o.py,o.pz);
-  boardFlight.rotation.set(o.rx,o.ry,o.rz);
+  if(flightCamera&&o.fov){flightCamera.fov=o.fov;flightCamera.updateProjectionMatrix();}
 }
 
 // ── DART Speed Mode (multi-tap button near right joystick) ───────────
@@ -3085,12 +3091,10 @@ function updateAssist(dt){
       ASSIST.orbitOffset=dir.multiplyScalar(want);
     }
     const desired=tp.clone().add(ASSIST.orbitOffset);
-    flightCamera.position.lerp(desired, Math.min(1,3.5*dt));
+    sp.pos.lerp(desired, Math.min(1,3.5*dt));
     sp.vel.copy(tb._frameDelta||new THREE.Vector3());
     steerToward(tp,dt,5);
-    flightCamera.rotation.order="YXZ";
-    flightCamera.rotation.y=sp.camYaw;flightCamera.rotation.x=sp.camPitch;flightCamera.rotation.z=0;
-    sp.pos.copy(flightCamera.position);sp.speed=sp.vel.length();
+    sp.speed=sp.vel.length();
     return true;
   }
 
@@ -3101,12 +3105,10 @@ function updateAssist(dt){
     // Trail behind Earth at the fixed home offset, keeping Earth + Moon in view.
     if(!ASSIST.homeOffset)enterHomeTrail(tb);
     const desired=tp.clone().add(ASSIST.homeOffset);
-    flightCamera.position.lerp(desired, Math.min(1,3*dt));   // smooth, no jitter
+    sp.pos.lerp(desired, Math.min(1,3*dt));   // smooth, no jitter
     sp.vel.copy(tb._frameDelta||new THREE.Vector3());
     steerToward(tp,dt,5);                                    // crosshair on Earth
-    flightCamera.rotation.order="YXZ";
-    flightCamera.rotation.y=sp.camYaw;flightCamera.rotation.x=sp.camPitch;flightCamera.rotation.z=0;
-    sp.pos.copy(flightCamera.position);sp.speed=sp.vel.length();
+    sp.speed=sp.vel.length();
     return true;
   }
 
@@ -3120,15 +3122,13 @@ function updateAssist(dt){
     if(ASSIST.lockOffset){
       const desired=tp.clone().add(ASSIST.lockOffset);
       // smoothly settle into the moving anchor (no big jumps)
-      flightCamera.position.lerp(desired, Math.min(1, 4*dt));
+      sp.pos.lerp(desired, Math.min(1, 4*dt));
       // velocity = how fast the anchor moves, so motion looks natural
       sp.vel.copy(tb._frameDelta||new THREE.Vector3());
     }
     // keep the crosshair pinned on the body
     steerToward(tp,dt,6);
-    flightCamera.rotation.order="YXZ";
-    flightCamera.rotation.y=sp.camYaw;flightCamera.rotation.x=sp.camPitch;flightCamera.rotation.z=0;
-    sp.pos.copy(flightCamera.position);sp.speed=sp.vel.length();
+    sp.speed=sp.vel.length();
     return true; // assist fully owns the frame
   }
   return false;
@@ -3153,14 +3153,11 @@ function updateFlight(dt){
   // ── Flight assist (autopilot/orbit/focus/idle) runs first ──
   const assistConsumed=updateAssist(dt);
   if(assistConsumed){
-    flightCamera.rotation.order="YXZ";
-    flightCamera.rotation.y=sp.camYaw;
-    flightCamera.rotation.x=sp.camPitch;
-    flightCamera.rotation.z=0;
-    flightCamera.position.addScaledVector(sp.vel,1);
-    sp.pos.copy(flightCamera.position);
+    // assist drives sp.vel; move the BOARD and let the camera follow it
+    sp.pos.addScaledVector(sp.vel,1);
     sp.speed=sp.vel.length();
-    boardFlight.position.y=(CAM_OFFSETS[camMode].py)+Math.sin(flightTime*.9)*.007;
+    updateBoardTransform(0,0);
+    updateFollowCam(dt);
     recordBodyPositions();
     return;
   }
@@ -3179,9 +3176,6 @@ function updateFlight(dt){
   if(KEYS["ArrowDown"]) sp.camPitch=clamp(sp.camPitch-0.9*dt,-Math.PI*.42,Math.PI*.32);
 
   flightCamera.rotation.order="YXZ";
-  flightCamera.rotation.y=sp.camYaw;
-  flightCamera.rotation.x=sp.camPitch;
-  flightCamera.rotation.z=0;
 
   // ── Thrust: right joystick gradual acceleration + DART speed mode ──
   // Joystick pushes a target speed; velocity lerps toward it over time.
@@ -3207,8 +3201,8 @@ function updateFlight(dt){
   // Damping — DART modes hold speed better
   const drag=dartSpeedMode>0?0.994:0.88;
   sp.vel.multiplyScalar(drag);
-  flightCamera.position.addScaledVector(sp.vel,1);
-  sp.pos.copy(flightCamera.position);
+  // The BOARD is what moves through the world now.
+  sp.pos.addScaledVector(sp.vel,1);
 
   // Animate DART rings faster in higher modes
   const ringSpd=1+dartSpeedMode*1.5;
@@ -3221,17 +3215,50 @@ function updateFlight(dt){
     }
   });
 
-  // Board lean
-  const o=CAM_OFFSETS[camMode];
-  boardFlight.rotation.z=lerp(boardFlight.rotation.z, o.rz+ts*-.06, 0.10);
-  boardFlight.rotation.x=lerp(boardFlight.rotation.x, o.rx+tf*-.03, 0.10);
-  boardFlight.position.y=o.py+Math.sin(flightTime*.9)*.007;
+  // ── Place the board in the world at sp.pos, oriented to its heading, with a
+  //    little banking lean into turns and a gentle hover bob ───────────────
+  updateBoardTransform(tf,ts);
+  // ── Trail the camera behind+above the board, looking over it (follow cam) ─
+  updateFollowCam(dt);
 
   // Energy drain in DART modes
   if(dartSpeedMode>0) sp.energy=clamp(sp.energy-dartSpeedMode*2*dt,0,100);
   else sp.energy=clamp(sp.energy+0.6*dt,0,100);
   sp.speed=sp.vel.length();
   recordBodyPositions();
+}
+
+// Orient & place the board model at the player position, banking into turns.
+function updateBoardTransform(tf,ts){
+  const sp=STATE.flight;
+  boardFlight.position.copy(sp.pos);
+  boardFlight.position.y+=Math.sin(flightTime*.9)*.03; // hover bob
+  // Build the board orientation from heading (yaw/pitch). The board model's
+  // nose points +X, so yaw maps with a -90° base offset.
+  boardFlight.rotation.order='YXZ';
+  boardFlight.rotation.y=sp.camYaw-Math.PI/2;
+  boardFlight.rotation.x=lerp(boardFlight.rotation.x||0, -sp.camPitch + (tf*-0.04), 0.12);
+  // bank roll into lateral turns
+  boardFlight.rotation.z=lerp(boardFlight.rotation.z||0, ts*-0.35, 0.10);
+}
+
+// Follow camera: sit behind & above the board along its heading, look over it.
+// Smoothly lerps so it trails naturally (ArcLake-style drone/follow method).
+function updateFollowCam(dt){
+  const sp=STATE.flight;const o=CAM_OFFSETS[camMode];
+  // heading basis (level — we trail behind in the horizontal heading, with a
+  // little of the pitch so climbs/dives feel right)
+  const yaw=sp.camYaw, pitch=sp.camPitch*0.5;
+  const fwd=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(pitch,yaw,0,'YXZ'));
+  const desired=sp.pos.clone()
+    .addScaledVector(fwd,-o.back)     // behind the board
+    .add(new THREE.Vector3(0,o.up,0));// above it
+  // smooth follow
+  if(!_followInit){flightCamera.position.copy(desired);_followInit=true;}
+  else flightCamera.position.lerp(desired,Math.min(1,dt*6));
+  // aim a bit ahead of the board so it sits in the lower-center of frame
+  const lookAt=sp.pos.clone().addScaledVector(fwd,o.look).add(new THREE.Vector3(0,0.4,0));
+  flightCamera.lookAt(lookAt);
 }
 
 function updateBodies(dt){
