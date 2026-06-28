@@ -2812,16 +2812,18 @@ function preloadSkyboardTemplates(){
       const ctr=new THREE.Vector3();box.getCenter(ctr);
 
       // Step 3: determine which source axis to map to +X.
-      // The sculpt's long axis is Y (board lies along Y, staff extends +Y).
-      // We want: source +Y → game +X (so nose points +X for the flight cam).
-      // Build a rotation matrix and bake it into every mesh geometry.
+      // The sculpt's long axis is Y. Staff extends toward +Y (aft end).
+      // We want: source -Y → game +X so the NOSE (far end from staff) points
+      // +X → after flight rotation.y=-PI/2 that becomes -Z (away from camera).
+      // Staff (+Y) → -X → +Z (toward camera = aft, behind the follow-cam). ✓
+      // makeRotationZ(+PI/2) maps +Y→-X and -Y→+X, achieving this.
       let bakeRot=new THREE.Matrix4();
       if(size.y>=size.x&&size.y>=size.z){
-        // +Y → +X: rotate -90° around Z (rotation.z = -PI/2 in euler terms)
-        bakeRot.makeRotationZ(-Math.PI/2);
+        // -Y → +X (nose forward), +Y → -X (staff aft toward camera)
+        bakeRot.makeRotationZ(Math.PI/2);
       } else if(size.z>=size.x){
-        // +Z → +X: rotate +90° around Y
-        bakeRot.makeRotationY(Math.PI/2);
+        // +Z → -X: rotate -90° around Y (flip to put correct end forward)
+        bakeRot.makeRotationY(-Math.PI/2);
       }
       // also center at origin
       const centerMat=new THREE.Matrix4().makeTranslation(-ctr.x,-ctr.y,-ctr.z);
