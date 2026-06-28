@@ -1223,9 +1223,19 @@ function showFloatingMusic(){
 }
 function launchFlight(){
   goScreen('flight');
-  // Already in a game? just resume — restart the render loop and re-show HUD,
-  // keeping the existing scene/state intact (instant resume from main menu).
+  // Already in a game? just resume — restart the render loop, but ALSO
+  // rebuild the board if the template OR zone colors changed in the editor.
   if(typeof flightInited!=='undefined'&&flightInited){
+    const tmpl=STATE.boardConfig.template||'procedural';
+    const colorSig=tmpl+'|'+(STATE.boardConfig.zoneDeck||'')+'|'+(STATE.boardConfig.zoneDart||'')+'|'+(STATE.boardConfig.zoneOrn||'')+'|'+(STATE.boardConfig.col1||'')+'|'+(STATE.boardConfig.emit||'');
+    if(colorSig!==_builtBoardTemplate){
+      try{
+        if(boardFlight&&flightScene)flightScene.remove(boardFlight);
+        boardFlight=buildBoardMesh();
+        _builtBoardTemplate=colorSig;
+        if(flightScene)flightScene.add(boardFlight);
+      }catch(e){console.warn('board rebuild:',e);}
+    }
     try{_startFlightLoop();}catch(e){}
     return;
   }
@@ -2346,6 +2356,7 @@ function buildEnvMap(renderer,scene){
 //  FLIGHT SCENE
 // ══════════════════════════════════════════════════════════════
 let flightRenderer,flightScene,flightCamera,boardFlight,flightInited=false;
+let _builtBoardTemplate=null; // last template key that was built into boardFlight
 let _landTargetBody=null,_approachBestDist=Infinity,_approachBestBody=null;
 let flightAnimId,flightTime=0,celestialBodies=[],sunMesh,earthMesh;
 let _followInit=false;
@@ -2920,6 +2931,8 @@ function buildBoardMesh(){
 
 function buildFlightBoard(){
   boardFlight=buildBoardMesh();
+  const c=STATE.boardConfig;
+  _builtBoardTemplate=(c.template||'procedural')+'|'+(c.zoneDeck||'')+'|'+(c.zoneDart||'')+'|'+(c.zoneOrn||'')+'|'+(c.col1||'')+'|'+(c.emit||'');
   // ── FOLLOW-CAM MODEL: the board is a WORLD entity that flies through space;
   // the camera trails behind and above it (drone/follow style) so you actually
   // SEE the board out in front of you — the whole point of the game. The board
