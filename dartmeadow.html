@@ -79,9 +79,17 @@
   window.addEventListener('load',function(){
     const m=document.getElementById('pwa-manifest');
     if(!m)return;
-    const data={name:'DART Meadow',short_name:'DART',start_url:'.',display:'fullscreen',
+    const data={name:'DART Meadow',short_name:'DART',
+      description:'Speed of Light³ · Interstellar Zero-G Skyboard Flight',
+      start_url:'/dartmeadow.html',scope:'/',display:'fullscreen',
+      orientation:'any',
       background_color:'#000308',theme_color:'#000308',
-      icons:[{src:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" fill="%23000308"/><text y="140" font-size="140" font-family="monospace">🛸</text></svg>',sizes:'192x192',type:'image/svg+xml'}]};
+      categories:['games','entertainment'],
+      icons:[
+        {src:'/static/favicon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'},
+        {src:'/static/favicon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'},
+        {src:'/static/favicon.svg',sizes:'any',type:'image/svg+xml'}
+      ]};
     m.href='data:application/json,'+encodeURIComponent(JSON.stringify(data));
   });
 })();</script>
