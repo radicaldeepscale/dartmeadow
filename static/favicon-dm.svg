@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Deep space background gradient -->
+    <radialGradient id="bg" cx="50%" cy="48%" r="52%">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="60%" stop-color="#030a14"/>
+      <stop offset="100%" stop-color="#000308"/>
+    </radialGradient>
+    <!-- DART energy ring glow — cyan core -->
+    <radialGradient id="ringGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00eeff" stop-opacity="0.9"/>
+      <stop offset="45%" stop-color="#0099cc" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#003366" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Board hull gradient — metallic dark -->
+    <linearGradient id="hull" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a2a3a"/>
+      <stop offset="40%" stop-color="#0d1a28"/>
+      <stop offset="100%" stop-color="#050e18"/>
+    </linearGradient>
+    <!-- Forward DART ring gradient -->
+    <linearGradient id="ringFwd" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00ccff" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#00eeff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#00ccff" stop-opacity="0.3"/>
+    </linearGradient>
+    <!-- Aft DART ring gradient -->
+    <linearGradient id="ringAft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6633ff" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#9955ff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#6633ff" stop-opacity="0.3"/>
+    </linearGradient>
+    <!-- Speed trail gradient -->
+    <linearGradient id="trail" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#00eeff" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#00ccff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.85"/>
+    </linearGradient>
+    <!-- Emissive deck stripe -->
+    <linearGradient id="deckStripe" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00eeff" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#00ddff" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="70%" stop-color="#00ddff" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#00eeff" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Star shimmer filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="ringBlur" x="-10%" y="-50%" width="120%" height="200%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+  </defs>
+
+  <!-- ── BACKGROUND ─────────────────────────────── -->
+  <rect width="512" height="512" rx="88" fill="url(#bg)"/>
+
+  <!-- Subtle vignette ring -->
+  <circle cx="256" cy="256" r="240" fill="none" stroke="#0055aa" stroke-width="1" opacity="0.15"/>
+
+  <!-- ── STAR FIELD ──────────────────────────────── -->
+  <!-- Scattered stars — various sizes/opacities -->
+  <g fill="white">
+    <circle cx="62"  cy="44"  r="1.2" opacity="0.7"/>
+    <circle cx="140" cy="28"  r="0.8" opacity="0.5"/>
+    <circle cx="210" cy="55"  r="1.5" opacity="0.85"/>
+    <circle cx="310" cy="32"  r="0.9" opacity="0.6"/>
+    <circle cx="388" cy="70"  r="1.1" opacity="0.7"/>
+    <circle cx="450" cy="38"  r="0.7" opacity="0.45"/>
+    <circle cx="490" cy="110" r="1.0" opacity="0.6"/>
+    <circle cx="30"  cy="130" r="0.9" opacity="0.5"/>
+    <circle cx="80"  cy="195" r="1.3" opacity="0.75"/>
+    <circle cx="470" cy="175" r="1.1" opacity="0.65"/>
+    <circle cx="44"  cy="320" r="0.8" opacity="0.45"/>
+    <circle cx="490" cy="290" r="1.0" opacity="0.6"/>
+    <circle cx="38"  cy="430" r="1.2" opacity="0.55"/>
+    <circle cx="110" cy="465" r="0.9" opacity="0.5"/>
+    <circle cx="420" cy="458" r="1.1" opacity="0.65"/>
+    <circle cx="475" cy="395" r="0.8" opacity="0.45"/>
+    <circle cx="180" cy="485" r="1.0" opacity="0.55"/>
+    <circle cx="345" cy="490" r="1.3" opacity="0.7"/>
+    <!-- Brighter accent stars -->
+    <circle cx="95"  cy="78"  r="2.0" opacity="0.9" filter="url(#glow)"/>
+    <circle cx="420" cy="95"  r="1.8" opacity="0.85" filter="url(#glow)"/>
+    <circle cx="55"  cy="390" r="1.6" opacity="0.8"  filter="url(#glow)"/>
+    <circle cx="460" cy="430" r="1.9" opacity="0.85" filter="url(#glow)"/>
+  </g>
+
+  <!-- ── ORBIT RINGS (distant planetary orbits) ─── -->
+  <ellipse cx="256" cy="265" rx="195" ry="42" fill="none"
+    stroke="#0044aa" stroke-width="0.8" opacity="0.18"
+    stroke-dasharray="6 4"/>
+  <ellipse cx="256" cy="265" rx="155" ry="32" fill="none"
+    stroke="#003388" stroke-width="0.6" opacity="0.14"
+    stroke-dasharray="4 6"/>
+
+  <!-- ── SPEED MOTION TRAILS ─────────────────────── -->
+  <!-- Long trailing streaks behind the board -->
+  <rect x="18"  y="248" width="162" height="1.8" rx="0.9" fill="url(#trail)" opacity="0.55"/>
+  <rect x="28"  y="255" width="142" height="1.0" rx="0.5" fill="url(#trail)" opacity="0.35"/>
+  <rect x="18"  y="262" width="152" height="1.5" rx="0.75" fill="url(#trail)" opacity="0.45"/>
+  <!-- Thin accent trails -->
+  <rect x="38"  y="244" width="110" height="0.8" rx="0.4" fill="url(#trail)" opacity="0.25"/>
+  <rect x="50"  y="268" width="100" height="0.7" rx="0.35" fill="url(#trail)" opacity="0.22"/>
+
+  <!-- ── BOARD HULL — main body ─────────────────── -->
+  <!-- Shadow / depth layer -->
+  <path d="M174 285 L178 277 L342 268 L348 272 L346 280 L338 288 L182 292 Z"
+    fill="#000510" opacity="0.6"/>
+  <!-- Primary hull form — elongated skyboard -->
+  <path d="M180 282 L184 272 L336 263 L344 268 L342 276 L334 285 L186 289 Z"
+    fill="url(#hull)" stroke="#1a3a55" stroke-width="0.8"/>
+  <!-- Hull top highlight edge -->
+  <path d="M184 272 L336 263 L344 268" fill="none" stroke="#2a5a7a" stroke-width="0.8" opacity="0.6"/>
+  <!-- Deck surface emissive stripe -->
+  <rect x="184" y="272" width="160" height="2.5" rx="1.2" fill="url(#deckStripe)" opacity="0.8"/>
+
+  <!-- ── NOSE SHARD — forward tip ───────────────── -->
+  <path d="M340 268 L344 268 L370 271 L365 275 L344 276 Z"
+    fill="#0d2035" stroke="#1e4060" stroke-width="0.6"/>
+  <!-- Nose tip glow -->
+  <path d="M365 273 L370 271 L368 274 Z" fill="#00ccff" opacity="0.7" filter="url(#glow)"/>
+
+  <!-- ── TAIL SHARD ──────────────────────────────── -->
+  <path d="M184 272 L180 282 L175 280 L168 275 L174 270 Z"
+    fill="#0a1c2e" stroke="#1a3a55" stroke-width="0.6"/>
+  <path d="M168 275 L162 272 L169 270 L174 270 Z"
+    fill="#0d2035" stroke="#1e4060" stroke-width="0.5" opacity="0.8"/>
+
+  <!-- ── FORWARD DART RING (FWD) ─────────────────── -->
+  <!-- Glow halo behind ring -->
+  <ellipse cx="308" cy="275" rx="24" ry="8" fill="url(#ringGlow)" opacity="0.5" filter="url(#ringBlur)"/>
+  <!-- Outer ring structure -->
+  <ellipse cx="308" cy="275" rx="22" ry="7.5" fill="none"
+    stroke="url(#ringFwd)" stroke-width="2.5"/>
+  <!-- Inner concentric resonance coil -->
+  <ellipse cx="308" cy="275" rx="16" ry="5.5" fill="none"
+    stroke="#00bbdd" stroke-width="1.2" opacity="0.65"/>
+  <!-- Ring center spark -->
+  <ellipse cx="308" cy="275" rx="4" ry="1.5" fill="#00eeff" opacity="0.85" filter="url(#glow)"/>
+  <!-- Ring cross spokes -->
+  <line x1="308" y1="267" x2="308" y2="274" stroke="#00ccff" stroke-width="0.8" opacity="0.5"/>
+  <line x1="300" y1="275" x2="307" y2="275" stroke="#00ccff" stroke-width="0.8" opacity="0.5"/>
+  <line x1="309" y1="275" x2="316" y2="275" stroke="#00ccff" stroke-width="0.8" opacity="0.5"/>
+  <line x1="308" y1="276" x2="308" y2="283" stroke="#00ccff" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- ── AFT DART RING ──────────────────────────── -->
+  <ellipse cx="220" cy="279" rx="20" ry="7" fill="url(#ringGlow)" opacity="0.4" filter="url(#ringBlur)"/>
+  <ellipse cx="220" cy="279" rx="18" ry="6.5" fill="none"
+    stroke="url(#ringAft)" stroke-width="2.2"/>
+  <ellipse cx="220" cy="279" rx="13" ry="4.5" fill="none"
+    stroke="#8844ee" stroke-width="1.0" opacity="0.6"/>
+  <ellipse cx="220" cy="279" rx="3.5" ry="1.2" fill="#aa66ff" opacity="0.8" filter="url(#glow)"/>
+  <line x1="220" y1="272" x2="220" y2="278" stroke="#9955ff" stroke-width="0.8" opacity="0.45"/>
+  <line x1="213" y1="279" x2="219" y2="279" stroke="#9955ff" stroke-width="0.8" opacity="0.45"/>
+  <line x1="221" y1="279" x2="227" y2="279" stroke="#9955ff" stroke-width="0.8" opacity="0.45"/>
+  <line x1="220" y1="280" x2="220" y2="286" stroke="#9955ff" stroke-width="0.8" opacity="0.45"/>
+
+  <!-- ── RING ENERGY EXHAUST ─────────────────────── -->
+  <!-- FWD ring exhaust plume (forward thrust) -->
+  <path d="M329 273 Q345 271 375 270 Q360 274 345 277 Q338 277 329 277 Z"
+    fill="#00ccff" opacity="0.18"/>
+  <path d="M329 274 Q350 272 378 271" fill="none" stroke="#00eeff" stroke-width="0.8" opacity="0.35"/>
+  <!-- AFT ring exhaust (aft glow) -->
+  <path d="M201 277 Q192 276 180 278 Q186 281 195 281 Q198 280 201 279 Z"
+    fill="#7744cc" opacity="0.2"/>
+
+  <!-- ── STAFF / POLE ────────────────────────────── -->
+  <!-- Vertical staff mounted aft-center, angled -->
+  <line x1="255" y1="268" x2="258" y2="218" stroke="#1e4a6a" stroke-width="2.2"/>
+  <line x1="255" y1="268" x2="258" y2="218" stroke="#00ccff" stroke-width="0.8" opacity="0.35"/>
+  <!-- Staff top ornament knob -->
+  <circle cx="258" cy="216" r="3.5" fill="#0d2035" stroke="#00aabb" stroke-width="1.2"/>
+  <circle cx="258" cy="216" r="1.5" fill="#00ccff" opacity="0.8" filter="url(#glow)"/>
+
+  <!-- ── D·A·R·T WORDMARK ───────────────────────── -->
+  <!-- Positioned upper-center, Orbitron-style rendered as path shapes -->
+  <!-- Using text element with fallback — fully embedded, no external font needed for favicon -->
+  <text x="256" y="192" text-anchor="middle" font-family="'Orbitron', 'Share Tech Mono', monospace"
+    font-size="52" font-weight="900" letter-spacing="10"
+    fill="none" stroke="#00ccff" stroke-width="1.2" opacity="0.9">DART</text>
+  <text x="256" y="192" text-anchor="middle" font-family="'Orbitron', 'Share Tech Mono', monospace"
+    font-size="52" font-weight="900" letter-spacing="10"
+    fill="#c8e8ff" opacity="0.85">DART</text>
+
+  <!-- Underline accent -->
+  <rect x="178" y="198" width="160" height="1.5" rx="0.75" fill="url(#deckStripe)" opacity="0.7"/>
+
+  <!-- ── SUBTITLE ────────────────────────────────── -->
+  <text x="256" y="226" text-anchor="middle" font-family="'Share Tech Mono', 'Courier New', monospace"
+    font-size="15" letter-spacing="5" fill="#0099bb" opacity="0.75">MEADOW</text>
+
+  <!-- ── TAGLINE BAR ─────────────────────────────── -->
+  <rect x="100" y="336" width="312" height="28" rx="6" fill="#03080f" stroke="#0a2a44" stroke-width="0.8" opacity="0.85"/>
+  <text x="256" y="354" text-anchor="middle" font-family="'Share Tech Mono', monospace"
+    font-size="12" letter-spacing="3" fill="#005577" opacity="0.8">ZERO-G SKYBOARD</text>
+  <!-- Speed line inside bar -->
+  <rect x="110" y="349" width="58" height="0.8" rx="0.4" fill="#0088aa" opacity="0.4"/>
+  <rect x="344" y="349" width="58" height="0.8" rx="0.4" fill="#0088aa" opacity="0.4"/>
+
+  <!-- ── BOTTOM CORNER MARKS — reticle / HUD feel  -->
+  <!-- Bottom-left reticle corner -->
+  <path d="M64 424 L64 448 L88 448" fill="none" stroke="#003355" stroke-width="1.5" opacity="0.55"/>
+  <!-- Bottom-right reticle corner -->
+  <path d="M448 424 L448 448 L424 448" fill="none" stroke="#003355" stroke-width="1.5" opacity="0.55"/>
+  <!-- Top-left -->
+  <path d="M64 88 L64 64 L88 64" fill="none" stroke="#003355" stroke-width="1.5" opacity="0.55"/>
+  <!-- Top-right -->
+  <path d="M448 88 L448 64 L424 64" fill="none" stroke="#003355" stroke-width="1.5" opacity="0.55"/>
+
+  <!-- ── ALTITUDE READOUT ─────────────────────────── -->
+  <text x="256" y="400" text-anchor="middle" font-family="'Share Tech Mono', monospace"
+    font-size="11" letter-spacing="2.5" fill="#004466" opacity="0.6">ALT  400 KM  ·  c³</text>
+
+  <!-- ── OUTER FRAME BORDER ──────────────────────── -->
+  <rect x="3" y="3" width="506" height="506" rx="86" fill="none"
+    stroke="#0a2a44" stroke-width="2" opacity="0.4"/>
+
+</svg>
