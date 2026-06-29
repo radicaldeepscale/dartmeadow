@@ -1,15 +1,35 @@
 {
   "name": "DART Meadow",
   "short_name": "DART Meadow",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "description": "Speed of Light\u00b3 \u00b7 Interstellar Zero-G Skyboard Flight",
+  "start_url": "/dartmeadow.html",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#000308",
+  "theme_color": "#000308",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
   "icons": [
     {
-      "src": "/static/dm512.png",
-      "sizes": "192x192 512x512",
-      "type": "image/png"
+      "src": "/static/favicon-dm-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/favicon-dm-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/favicon-dm.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }
