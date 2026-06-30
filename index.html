@@ -492,31 +492,44 @@
     #userLoginToggle, #ashCanvas, #btnleatr, #btnleav, #btnltrproto, #btnide, #btnmn, #dartmeadow {
       /* All styling is now handled by the #userMenuDropdown button rule */
     }
-/* Add this inside your <style> tag */
+/* =================================================================
+   MERCHANDISE BUTTON
+   ================================================================= */
 #merchandiseBtn {
-    display: flex; /* Use flexbox for centering */
-    flex-direction: column;
-    align-items: center; /* Vertically align items */
-    justify-content: center; /* Horizontally align items */
-    text-align: center; /* Ensure text is centered if it wraps */
-    padding: 10px 0; /* Adjust padding as needed */
-    height: auto; /* Allow height to adjust to the image + padding */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 8px !important;
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    box-sizing: border-box !important;
+    gap: 6px !important;
+    height: auto !important;
+    overflow: hidden !important;
 }
 
 #merchandiseBtn img {
-    /* Keep the user's requested size */
-    width: 100px;
-    height: 100px;
-    /* Keep margin-right to separate from text */
-    margin-right: 8px;
-    /* Remove vertical-align as flexbox handles alignment */
-    vertical-align: initial; /* or just remove the line */
+    width: 58% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+    flex: 0 1 auto !important;
+    min-height: 0 !important;
 }
 
 #merchandiseBtn span {
-    /* Basic styling for the text */
-    display: block; /* Ensure text is on its own line if needed, though flex will put it next to image */
-    flex-shrink: 0; /* Prevent text from shrinking */
+    display: block !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    flex-shrink: 0 !important;
+    max-width: 100% !important;
+}
+
+#merchandiseBtn:hover {
+    transform: none !important;
 }
     .speaker-button {
       padding-top: 25px; background-color: transparent;
