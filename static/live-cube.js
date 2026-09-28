@@ -28,6 +28,7 @@
   var POLL_MS = 5000;
   var SPIN = 0.12; // rad/s turntable
   var WALK_SPEED = 28; // path steps/s, same as the Session Cube's play
+  var CUBE_SCALE_BACKOFF = 1.33; // camera pulled back so the cube reads ~25% smaller
   var COLORS = {
     corridor: "#ff5446",
     shell: "#d23c32",
@@ -389,7 +390,7 @@
       if (dims === lastDims) return;
       lastDims = dims;
       var span = Math.max(model.width, model.height, model.depth);
-      baseCam.set(0, span * 1.1, span * 2.9);
+      baseCam.set(0, span * 1.1, span * 2.9).multiplyScalar(CUBE_SCALE_BACKOFF);
       placeCamera();
     }
 
