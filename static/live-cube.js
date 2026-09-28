@@ -9,6 +9,8 @@
  *   data-href="https://cube.leatr.xyz" where the SESSION CUBE label goes
  *   data-target="_blank"               link target (default _blank)
  *   data-log="3"                       event log lines shown (0 hides it)
+ *   data-link2-href / data-link2-label optional second label link under
+ *                                      SESSION CUBE
  *
  * Reads the same live table the Session Cube polls (config.json, then the
  * active maze's latest-export.json) and draws it the way the Session Cube's
@@ -236,19 +238,27 @@
     label.textContent = "SESSION CUBE";
     badge.appendChild(dot);
     badge.appendChild(label);
-    var link = document.createElement("a");
-    link.href = href;
-    link.target = target;
-    if (target === "_blank") link.rel = "noopener";
-    link.textContent = "SESSION CUBE \u2197";
-    link.title = "Open the LEATR Session Cube";
-    link.style.cssText =
-      "display:inline-block;margin-top:4px;padding:3px 9px;border:1px solid rgba(58,168,255,.7);border-radius:4px;" +
-      "background:rgba(7,16,20,.55);color:#e6f6ff;text-decoration:none;font-weight:700;letter-spacing:.12em;" +
-      "pointer-events:auto;cursor:pointer";
+    function makeLink(url, text, title) {
+      var a = document.createElement("a");
+      a.href = url;
+      a.target = target;
+      if (target === "_blank") a.rel = "noopener";
+      a.textContent = text + " \u2197";
+      a.title = title;
+      a.style.cssText =
+        "display:table;margin-top:4px;padding:3px 9px;border:1px solid rgba(58,168,255,.7);border-radius:4px;" +
+        "background:rgba(7,16,20,.55);color:#e6f6ff;text-decoration:none;font-weight:700;letter-spacing:.12em;" +
+        "pointer-events:auto;cursor:pointer";
+      return a;
+    }
     hud.appendChild(log);
     hud.appendChild(badge);
-    hud.appendChild(link);
+    hud.appendChild(makeLink(href, "SESSION CUBE", "Open the LEATR Session Cube"));
+    var extraHref = el.getAttribute("data-link2-href");
+    if (extraHref) {
+      var extraText = el.getAttribute("data-link2-label") || "MORE";
+      hud.appendChild(makeLink(extraHref, extraText, extraText));
+    }
     el.appendChild(hud);
 
     var scene = new THREE.Scene();
