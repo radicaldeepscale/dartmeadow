@@ -6,7 +6,7 @@
  *   <script src="live-cube.js" defer></script>
  *
  * Optional attributes on the element:
- *   data-href="https://cube.leatr.xyz" where a click goes
+ *   data-href="https://cube.leatr.xyz" where the SESSION CUBE label goes
  *   data-target="_blank"               link target (default _blank)
  *   data-log="3"                       event log lines shown (0 hides it)
  *
@@ -16,8 +16,8 @@
  * frosted red wall panes (brighter where they line the walked path), the
  * blue path and event nodes along it. Like the Session Cube's play mode, a
  * traveler walks the path on a loop, lighting its trail and logging each
- * analytics event as it passes. Slow turntable; clicking opens the full
- * Session Cube.
+ * analytics event as it passes. Slow turntable; drag to turn it, scroll or
+ * pinch to zoom. The SESSION CUBE label under the log opens the web app.
  */
 (function () {
   "use strict";
@@ -210,11 +210,7 @@
     var logLines = Math.max(0, parseInt(el.getAttribute("data-log") || "3", 10) || 0);
 
     if (getComputedStyle(el).position === "static") el.style.position = "relative";
-    el.style.cursor = "pointer";
-    el.setAttribute("role", "link");
-    el.setAttribute("tabindex", "0");
-    el.setAttribute("aria-label", "Open the LEATR Session Cube");
-    el.title = "Open the LEATR Session Cube";
+    el.style.cursor = "grab";
 
     var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
@@ -222,6 +218,7 @@
     renderer.domElement.style.display = "block";
     renderer.domElement.style.width = "100%";
     renderer.domElement.style.height = "100%";
+    renderer.domElement.style.touchAction = "none";
     el.appendChild(renderer.domElement);
 
     var hud = document.createElement("div");
@@ -238,8 +235,19 @@
     label.textContent = "SESSION CUBE";
     badge.appendChild(dot);
     badge.appendChild(label);
+    var link = document.createElement("a");
+    link.href = href;
+    link.target = target;
+    if (target === "_blank") link.rel = "noopener";
+    link.textContent = "SESSION CUBE \u2197";
+    link.title = "Open the LEATR Session Cube";
+    link.style.cssText =
+      "display:inline-block;margin-top:4px;padding:3px 9px;border:1px solid rgba(58,168,255,.7);border-radius:4px;" +
+      "background:rgba(7,16,20,.55);color:#e6f6ff;text-decoration:none;font-weight:700;letter-spacing:.12em;" +
+      "pointer-events:auto;cursor:pointer";
     hud.appendChild(log);
     hud.appendChild(badge);
+    hud.appendChild(link);
     el.appendChild(hud);
 
     var scene = new THREE.Scene();
@@ -309,13 +317,80 @@
       head = null;
     }
 
+    // Orbit: drag turns the cube, wheel or pinch zooms. The turntable
+    // resumes a moment after the viewer lets go.
+    var baseCam = new THREE.Vector3(0, 11, 29);
+    var zoom = 1;
+    var idleAt = 0;
+    function placeCamera() {
+      camera.position.copy(baseCam).multiplyScalar(zoom);
+      camera.lookAt(0, 0, 0);
+    }
+    var pointers = {};
+    var pinch = 0;
+    function pinchDistance() {
+      var ids = Object.keys(pointers);
+      if (ids.length < 2) return 0;
+      var a = pointers[ids[0]];
+      var b = pointers[ids[1]];
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+    var canvas = renderer.domElement;
+    canvas.addEventListener("pointerdown", function (e) {
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      pinch = pinchDistance();
+      idleAt = Infinity;
+      el.style.cursor = "grabbing";
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch (err) {}
+    });
+    canvas.addEventListener("pointermove", function (e) {
+      var p = pointers[e.pointerId];
+      if (!p) return;
+      var dx = e.clientX - p.x;
+      var dy = e.clientY - p.y;
+      p.x = e.clientX;
+      p.y = e.clientY;
+      var ids = Object.keys(pointers);
+      if (ids.length >= 2) {
+        var d = pinchDistance();
+        if (pinch && d) zoom = Math.max(0.45, Math.min(2.2, zoom * (pinch / d)));
+        pinch = d;
+        placeCamera();
+        return;
+      }
+      turntable.rotation.y += dx * 0.008;
+      turntable.rotation.x = Math.max(-1.3, Math.min(1.3, turntable.rotation.x + dy * 0.008));
+    });
+    function release(e) {
+      delete pointers[e.pointerId];
+      pinch = pinchDistance();
+      if (!Object.keys(pointers).length) {
+        idleAt = performance.now() + 2500;
+        el.style.cursor = "grab";
+      }
+    }
+    canvas.addEventListener("pointerup", release);
+    canvas.addEventListener("pointercancel", release);
+    canvas.addEventListener(
+      "wheel",
+      function (e) {
+        e.preventDefault();
+        zoom = Math.max(0.45, Math.min(2.2, zoom * Math.exp(e.deltaY * 0.001)));
+        placeCamera();
+        idleAt = performance.now() + 2500;
+      },
+      { passive: false },
+    );
+
     function frame(model) {
       var dims = model.width + "x" + model.height + "x" + model.depth;
       if (dims === lastDims) return;
       lastDims = dims;
       var span = Math.max(model.width, model.height, model.depth);
-      camera.position.set(0, span * 1.1, span * 2.9);
-      camera.lookAt(0, 0, 0);
+      baseCam.set(0, span * 1.1, span * 2.9);
+      placeCamera();
     }
 
     function build(raw) {
@@ -484,7 +559,7 @@
       var dt = Math.max(0, Math.min(0.1, (now - prev) / 1000));
       prev = now;
       if (visible && !document.hidden) {
-        turntable.rotation.y += SPIN * dt;
+        if (now >= idleAt) turntable.rotation.y += SPIN * dt;
         advance(dt);
         halo.scale.setScalar(1 + walk.flare * 0.9 + Math.sin(now / 310) * 0.1);
         if (head) {
@@ -497,16 +572,6 @@
     }
     requestAnimationFrame(tick);
 
-    function go() {
-      window.open(href, target, target === "_blank" ? "noopener" : undefined);
-    }
-    el.addEventListener("click", go);
-    el.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        go();
-      }
-    });
   }
 
   function start() {
