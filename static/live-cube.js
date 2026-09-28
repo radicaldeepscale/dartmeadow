@@ -14,8 +14,10 @@
  * active maze's latest-export.json) and draws it the way the Session Cube's
  * buildModel() does, at the broadcast dimensions, with no layer spread:
  * frosted red wall panes (brighter where they line the walked path), the
- * blue path, event nodes marked along it, and the newest analytics events
- * in a small log. Slow turntable; clicking opens the full Session Cube.
+ * blue path and event nodes along it. Like the Session Cube's play mode, a
+ * traveler walks the path on a loop, lighting its trail and logging each
+ * analytics event as it passes. Slow turntable; clicking opens the full
+ * Session Cube.
  */
 (function () {
   "use strict";
@@ -25,6 +27,7 @@
   var THREE_URL = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js";
   var POLL_MS = 5000;
   var SPIN = 0.12; // rad/s turntable
+  var WALK_SPEED = 28; // path steps/s, same as the Session Cube's play
   var COLORS = {
     corridor: "#ff5446",
     shell: "#d23c32",
@@ -267,13 +270,33 @@
     var pathMat = new THREE.MeshStandardMaterial({ color: COLORS.path, emissive: COLORS.path, emissiveIntensity: 0.55, roughness: 0.4 });
     var eventMat = new THREE.MeshStandardMaterial({ color: COLORS.event, emissive: COLORS.path, emissiveIntensity: 1.0 });
     var headMat = new THREE.MeshStandardMaterial({ color: COLORS.head, emissive: COLORS.path, emissiveIntensity: 1.4 });
-    var linkMat = new THREE.LineBasicMaterial({ color: COLORS.path, transparent: true, opacity: 0.75 });
+    var linkMat = new THREE.LineBasicMaterial({ color: COLORS.path, transparent: true, opacity: 0.35 });
+    var trailMat = new THREE.LineBasicMaterial({ color: COLORS.event, transparent: true, opacity: 0.95 });
+    var travelerMat = new THREE.MeshBasicMaterial({ color: COLORS.head, depthTest: false });
+    var haloMat = new THREE.MeshBasicMaterial({
+      color: COLORS.path,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: false,
+    });
     var wallGeo = new THREE.PlaneGeometry(0.92, 0.92);
     var nodeGeo = new THREE.BoxGeometry(0.26, 0.26, 0.26);
     var eventGeo = new THREE.BoxGeometry(0.44, 0.44, 0.44);
     var headGeo = new THREE.BoxGeometry(0.56, 0.56, 0.56);
-    var shared = [wallGeo, nodeGeo, eventGeo, headGeo];
+    var travelerGeo = new THREE.SphereGeometry(0.3, 16, 12);
+    var haloGeo = new THREE.SphereGeometry(0.62, 16, 12);
+    var shared = [wallGeo, nodeGeo, eventGeo, headGeo, travelerGeo, haloGeo];
     var head = null;
+    var traveler = new THREE.Mesh(travelerGeo, travelerMat);
+    var halo = new THREE.Mesh(haloGeo, haloMat);
+    traveler.renderOrder = 10;
+    halo.renderOrder = 11;
+    // The walk: a traveler glides along the path at the Session Cube's play
+    // speed and loops, lighting the trail behind it and logging each
+    // event node as it passes.
+    var walk = { pts: [], events: [], trail: null, step: 0, index: -1, flare: 0 };
     var lastKey = "";
     var lastDims = "";
 
@@ -349,19 +372,60 @@
           pts.push(new THREE.Vector3(a.x - cx, a.y - cy, a.z - cz), new THREE.Vector3(b.x - cx, b.y - cy, b.z - cz));
         }
         if (pts.length) content.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), linkMat));
+        walk.pts = path.map(function (n) {
+          return new THREE.Vector3(n.x - cx, n.y - cy, n.z - cz);
+        });
+        walk.events = path.map(function (n) {
+          return n.events || [];
+        });
+        walk.trail = new THREE.Line(new THREE.BufferGeometry().setFromPoints(walk.pts), trailMat);
+        walk.trail.geometry.setDrawRange(0, 0);
+        content.add(walk.trail);
+        if (walk.step >= walk.pts.length - 1) walk.step = 0;
+        walk.index = Math.floor(walk.step) - 1;
+        content.add(halo);
+        content.add(traveler);
         var last = path[path.length - 1];
         head = new THREE.Mesh(headGeo, headMat);
         head.position.set(last.x - cx, last.y - cy, last.z - cz);
         content.add(head);
       }
 
-      log.innerHTML = "";
-      if (logLines)
-        model.events.slice(-logLines).forEach(function (e) {
-          var line = document.createElement("div");
-          line.textContent = eventLine(e);
-          log.appendChild(line);
-        });
+    }
+
+    function logEvent(e) {
+      if (!logLines) return;
+      var line = document.createElement("div");
+      line.textContent = eventLine(e);
+      log.appendChild(line);
+      while (log.childNodes.length > logLines) log.removeChild(log.firstChild);
+    }
+
+    function advance(dt) {
+      var pts = walk.pts;
+      if (pts.length < 2) return;
+      var limit = pts.length - 1;
+      walk.step += dt * WALK_SPEED;
+      if (walk.step >= limit) {
+        walk.step = 0;
+        walk.index = -1;
+        log.innerHTML = "";
+      }
+      var i = Math.floor(walk.step);
+      var f = walk.step - i;
+      for (var k = walk.index + 1; k <= i; k++) {
+        if (walk.events[k].length) {
+          walk.events[k].forEach(logEvent);
+          walk.flare = 1;
+        }
+      }
+      walk.index = i;
+      traveler.position.lerpVectors(pts[i], pts[Math.min(i + 1, limit)], f);
+      halo.position.copy(traveler.position);
+      walk.trail.geometry.setDrawRange(0, i + 2);
+      walk.flare = Math.max(0, walk.flare - dt * 2.5);
+      travelerMat.color.set(walk.flare > 0.05 ? COLORS.head : COLORS.event);
+      haloMat.color.set(walk.flare > 0.05 ? COLORS.head : COLORS.path);
     }
 
     function setStatus(live, text) {
@@ -417,10 +481,12 @@
 
     var prev = performance.now();
     function tick(now) {
-      var dt = Math.min(0.1, (now - prev) / 1000);
+      var dt = Math.max(0, Math.min(0.1, (now - prev) / 1000));
       prev = now;
       if (visible && !document.hidden) {
         turntable.rotation.y += SPIN * dt;
+        advance(dt);
+        halo.scale.setScalar(1 + walk.flare * 0.9 + Math.sin(now / 310) * 0.1);
         if (head) {
           var s = 1 + Math.sin(now / 320) * 0.14;
           head.scale.set(s, s, s);
