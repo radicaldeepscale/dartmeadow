@@ -27,7 +27,7 @@
   var GAS =
     "https://script.google.com/macros/s/AKfycbyzkQxLR5miUXP6oDw-1AR1GIjgpzlw9iLw0gO_ZTeLfL849LWbNX7WVz_kf7yLWBKA_w/exec";
   var THREE_URL = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js";
-  var POLL_MS = 5000;
+  var POLL_MS = 30000; // between live reads; data-poll="seconds" overrides (min 10)
   var SPIN = 0.12; // rad/s turntable
   var WALK_SPEED = 28; // path steps/s, same as the Session Cube's play
   var CUBE_SCALE_BACKOFF = 1.33; // camera pulled back so the cube reads ~25% smaller
@@ -60,9 +60,9 @@
     document.head.appendChild(s);
   }
 
-  function readLive(path) {
+  function readLive(path, signal) {
     var url = GAS + "?action=ashread&path=" + encodeURIComponent(path) + "&t=" + Date.now();
-    return fetch(url, { cache: "no-store" })
+    return fetch(url, { cache: "no-store", signal: signal })
       .then(function (res) {
         if (!res.ok) throw new Error("proxy");
         return res.json();
@@ -75,11 +75,26 @@
       });
   }
 
-  function fetchLive() {
-    return readLive("ashtree/analytics-live/config.json").then(function (config) {
-      if (!config || !config.enabled || !config.mazeId) return null;
-      return readLive("ashtree/analytics-live/" + config.mazeId + "/latest-export.json").then(function (raw) {
-        return raw && typeof raw === "object" && raw.cube && raw.cube.cells ? raw : null;
+  var feed = { mazeId: "", tick: 0 };
+
+  // The config is big (it carries the whole maze grid) and rarely changes, so
+  // it is re-read only every few polls, or right away when the export it points
+  // at is missing (the maze may have rolled over).
+  function fetchLive(signal) {
+    var needConfig = !feed.mazeId || feed.tick % 4 === 0;
+    feed.tick += 1;
+    var step = needConfig
+      ? readLive("ashtree/analytics-live/config.json", signal).then(function (config) {
+          feed.mazeId = config && config.enabled && config.mazeId ? String(config.mazeId) : "";
+          return feed.mazeId;
+        })
+      : Promise.resolve(feed.mazeId);
+    return step.then(function (mazeId) {
+      if (!mazeId) return null;
+      return readLive("ashtree/analytics-live/" + mazeId + "/latest-export.json", signal).then(function (raw) {
+        var ok = raw && typeof raw === "object" && raw.cube && raw.cube.cells ? raw : null;
+        if (!ok) feed.mazeId = "";
+        return ok;
       });
     });
   }
@@ -521,9 +536,32 @@
     }
 
     var hasLive = false;
+    var pollMs = Math.max(10000, (parseFloat(el.dataset.poll) || POLL_MS / 1000) * 1000);
+    var fails = 0;
+    var startedAt = Date.now();
+    var pollTimer = 0;
+    // One request chain at a time (the next poll is only scheduled once the last
+    // one settles), backing off when nothing comes back and slowing down once a
+    // page has been left open for a long while. It is a decorative view, so it
+    // should be gentle on the shared backend.
+    function schedule() {
+      var ms = pollMs * Math.pow(2, Math.min(fails, 3));
+      if (Date.now() - startedAt > 20 * 60000) ms = Math.max(ms, 120000);
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(poll, Math.min(ms, 300000) + Math.random() * 3000);
+    }
     function poll() {
-      fetchLive()
+      if (document.hidden) {
+        schedule();
+        return;
+      }
+      var ctl = window.AbortController ? new AbortController() : null;
+      var guard = setTimeout(function () {
+        if (ctl) ctl.abort();
+      }, 20000);
+      fetchLive(ctl ? ctl.signal : undefined)
         .then(function (raw) {
+          fails = raw ? 0 : fails + 1;
           if (!raw) {
             setStatus(false, hasLive ? "SESSION CUBE \u00b7 PAUSED" : "SESSION CUBE");
             return;
@@ -538,14 +576,16 @@
           build(raw);
         })
         .catch(function () {
+          fails += 1;
           setStatus(false, hasLive ? "SESSION CUBE \u00b7 RECONNECTING" : "SESSION CUBE");
+        })
+        .then(function () {
+          clearTimeout(guard);
+          schedule();
         });
     }
     build(demoRaw(5));
     poll();
-    setInterval(function () {
-      if (!document.hidden) poll();
-    }, POLL_MS);
 
     function resize() {
       var r = el.getBoundingClientRect();
