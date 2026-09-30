@@ -35,7 +35,7 @@
   var GAS =
     "https://script.google.com/macros/s/AKfycbyzkQxLR5miUXP6oDw-1AR1GIjgpzlw9iLw0gO_ZTeLfL849LWbNX7WVz_kf7yLWBKA_w/exec";
   var THREE_URL = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js";
-  var POLL_MS = 5000;
+  var POLL_MS = 30000; // the feed changes at most every minute or two; each poll is a GitHub read through the Apps Script bridge
   var SPIN = 0.12; // rad/s turntable
   var WALK_SPEED = 28; // path steps/s, same as the Session Cube's play
   var CUBE_SCALE_BACKOFF = 1.33; // camera pulled back so the cube reads ~25% smaller
