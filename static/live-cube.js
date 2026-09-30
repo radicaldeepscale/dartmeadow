@@ -20,6 +20,14 @@
  * traveler walks the path on a loop, lighting its trail and logging each
  * analytics event as it passes. Slow turntable; drag to turn it, scroll or
  * pinch to zoom. The SESSION CUBE label under the log opens the web app.
+ *
+ * Journey of the Skyboard cube: a small blue cube (15% of the red one, the
+ * same maze) floats out from the red cube's front-right-top corner and turns
+ * with it. Its gold path lights the nodes carrying the game's own events
+ * (category jots_game), and a stemmed label above it counts the players in
+ * DART Meadow: Journey of the Skyboard right now (their live heartbeat on
+ * the game's MQTT channel; names only for players in multiplayer, who
+ * already share their pilot name). data-jots-mqtt overrides the broker.
  */
 (function () {
   "use strict";
@@ -39,6 +47,19 @@
     event: "#9fdcff",
     head: "#e6f6ff",
   };
+
+  // Journey of the Skyboard cube: deep transparent blue walls, soft 18k gold path.
+  var MINI_SCALE = 0.15;
+  var MINI = {
+    corridor: "#2f5dff",
+    shell: "#1c3fbf",
+    quiet: "#12297d",
+    path: "#e9cc8c",
+    event: "#fff0cf",
+    head: "#fffaf0",
+  };
+  var JOTS_MQTT_LIB = "https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js";
+  var JOTS_ROOT = "dartmeadow/jots/v1/world";
 
   var FACE_STEP = {
     left: [-1, 0, 0],
@@ -273,6 +294,35 @@
     scene.add(turntable);
     var content = new THREE.Group();
     turntable.add(content);
+    var mini = new THREE.Group();          // the Journey of the Skyboard cube
+    turntable.add(mini);
+    var miniInfo = { top: new THREE.Vector3(), center: new THREE.Vector3(), m: 1 };
+
+    // Its label: a small tag on a stem pointing down at the blue cube,
+    // always facing the viewer (it's HTML, placed from the cube each frame).
+    var tag = document.createElement("div");
+    tag.style.cssText =
+      "position:absolute;left:0;top:0;pointer-events:none;transform:translate(-50%,-100%);text-align:center;" +
+      "font:600 9px/1.35 ui-monospace,Menlo,monospace;letter-spacing:.08em;color:#fff4d6;text-shadow:0 1px 3px #000;white-space:nowrap";
+    var tagBox = document.createElement("div");
+    tagBox.style.cssText =
+      "padding:4px 8px;border:1px solid rgba(233,204,140,.75);border-radius:4px;background:rgba(8,14,40,.72);" +
+      "box-shadow:0 0 10px rgba(233,204,140,.25)";
+    var tagTitle = document.createElement("div");
+    tagTitle.textContent = "DART MEADOW \u00b7 JOURNEY OF THE SKYBOARD";
+    tagTitle.style.cssText = "font-weight:700;color:#e9cc8c;letter-spacing:.12em";
+    var tagCount = document.createElement("div");
+    tagCount.textContent = "ACTIVE GAMERS ONLINE \u00b7 \u2014";
+    var tagNames = document.createElement("div");
+    tagNames.style.cssText = "font-weight:500;opacity:.8";
+    tagBox.appendChild(tagTitle);
+    tagBox.appendChild(tagCount);
+    tagBox.appendChild(tagNames);
+    var tagStem = document.createElement("div");
+    tagStem.style.cssText = "margin:0 auto;width:1px;height:40px;background:linear-gradient(#e9cc8c,rgba(233,204,140,.15))";
+    tag.appendChild(tagBox);
+    tag.appendChild(tagStem);
+    el.appendChild(tag);
 
     var dither = ditherTexture(THREE);
     function paneMat(color, opacity) {
@@ -331,11 +381,12 @@
     // Orbit: drag turns the cube, wheel or pinch zooms. The turntable
     // resumes a moment after the viewer lets go.
     var baseCam = new THREE.Vector3(0, 11, 29);
+    var camTarget = new THREE.Vector3(0, 0, 0);
     var zoom = 1;
     var idleAt = 0;
     function placeCamera() {
-      camera.position.copy(baseCam).multiplyScalar(zoom);
-      camera.lookAt(0, 0, 0);
+      camera.position.copy(baseCam).multiplyScalar(zoom).add(camTarget);
+      camera.lookAt(camTarget);
     }
     var pointers = {};
     var pinch = 0;
@@ -400,7 +451,13 @@
       if (dims === lastDims) return;
       lastDims = dims;
       var span = Math.max(model.width, model.height, model.depth);
-      baseCam.set(0, span * 1.1, span * 2.9).multiplyScalar(CUBE_SCALE_BACKOFF);
+      // Fit the red cube and the blue one out at its corner (plus room for
+      // the blue cube's label above it) in view as the page loads.
+      var m = span * MINI_SCALE;
+      var reach = Math.max(span * 0.87, Math.hypot(model.width / 2 + 1.5 * m, model.height / 2 + 1.5 * m, model.depth / 2 + 1.5 * m) + m * 0.87);
+      var R = reach * 1.08;
+      camTarget.set(span * 0.1, span * 0.16, 0);
+      baseCam.set(0, R * 1.27, R * 3.35).multiplyScalar(CUBE_SCALE_BACKOFF);
       placeCamera();
     }
 
@@ -476,8 +533,153 @@
         head.position.set(last.x - cx, last.y - cy, last.z - cz);
         content.add(head);
       }
+      buildMini(model, cx, cy, cz);
 
     }
+
+    var miniMats = { corridor: paneMat(MINI.corridor, 0.45), shell: paneMat(MINI.shell, 0.24), quiet: paneMat(MINI.quiet, 0.12) };
+    var miniPathMat = new THREE.MeshBasicMaterial({ color: MINI.path });
+    var miniEventMat = new THREE.MeshBasicMaterial({ color: MINI.event });
+    var miniLinkMat = new THREE.LineBasicMaterial({ color: MINI.path, transparent: true, opacity: 0.4 });
+    var miniTrailMat = new THREE.LineBasicMaterial({ color: MINI.event, transparent: true, opacity: 0.95 });
+    var miniTravelerMat = new THREE.MeshBasicMaterial({ color: MINI.head, depthTest: false });
+    var miniHaloMat = new THREE.MeshBasicMaterial({ color: MINI.path, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false });
+    var miniTraveler = new THREE.Mesh(travelerGeo, miniTravelerMat);
+    var miniHalo = new THREE.Mesh(haloGeo, miniHaloMat);
+    miniTraveler.renderOrder = 12;
+    miniHalo.renderOrder = 13;
+    var miniTrail = null;
+    var isGame = function (e) { return e && e.category === "jots_game"; };
+
+    // Same maze, same units, at 15%: out from the red cube's front-right-top
+    // corner by one blue-cube size on every axis, so it floats clear of it.
+    function buildMini(model, cx, cy, cz) {
+      while (mini.children.length) {
+        var ch = mini.children.pop();
+        if (ch.geometry && shared.indexOf(ch.geometry) === -1) ch.geometry.dispose();
+        if (ch.dispose) ch.dispose();
+      }
+      var span = Math.max(model.width, model.height, model.depth);
+      var m = span * MINI_SCALE;
+      mini.scale.setScalar(MINI_SCALE);
+      mini.position.set(model.width / 2 + 1.5 * m, model.height / 2 + 1.5 * m, model.depth / 2 + 1.5 * m);
+      miniInfo.m = m;
+      miniInfo.top.set(0, model.height / 2 + 0.8, 0);
+      var o = new THREE.Object3D();
+      ["quiet", "shell", "corridor"].forEach(function (kind) {
+        var list = model.walls[kind];
+        if (!list.length) return;
+        var mesh = new THREE.InstancedMesh(wallGeo, miniMats[kind], list.length);
+        list.forEach(function (f, i) {
+          var st = f[3];
+          o.position.set(f[0] - cx + st[0] * 0.5, f[1] - cy + st[1] * 0.5, f[2] - cz + st[2] * 0.5);
+          o.rotation.set(0, 0, 0);
+          if (st[0]) o.rotation.y = Math.PI / 2;
+          else if (st[1]) o.rotation.x = Math.PI / 2;
+          o.updateMatrix();
+          mesh.setMatrixAt(i, o.matrix);
+        });
+        mini.add(mesh);
+      });
+      var path = model.path;
+      if (!path.length) return;
+      var plain = [];
+      var marked = [];
+      path.forEach(function (n) {
+        ((n.events || []).some(isGame) ? marked : plain).push(n);
+      });
+      [[plain, nodeGeo, miniPathMat], [marked, eventGeo, miniEventMat]].forEach(function (set) {
+        if (!set[0].length) return;
+        var mesh = new THREE.InstancedMesh(set[1], set[2], set[0].length);
+        set[0].forEach(function (n, i) {
+          o.position.set(n.x - cx, n.y - cy, n.z - cz);
+          o.rotation.set(0, 0, 0);
+          o.updateMatrix();
+          mesh.setMatrixAt(i, o.matrix);
+        });
+        mini.add(mesh);
+      });
+      var pts = [];
+      for (var i = 1; i < path.length; i++) {
+        var a = path[i - 1];
+        var b = path[i];
+        if (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z) !== 1) continue;
+        pts.push(new THREE.Vector3(a.x - cx, a.y - cy, a.z - cz), new THREE.Vector3(b.x - cx, b.y - cy, b.z - cz));
+      }
+      if (pts.length) mini.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), miniLinkMat));
+      miniTrail = new THREE.Line(new THREE.BufferGeometry().setFromPoints(walk.pts), miniTrailMat);
+      miniTrail.geometry.setDrawRange(0, 0);
+      mini.add(miniTrail);
+      mini.add(miniHalo);
+      mini.add(miniTraveler);
+    }
+
+    // The label follows the blue cube on screen, stem pointing down at it.
+    var tagV = new THREE.Vector3();
+    function placeTag() {
+      if (!mini.children.length) { tag.style.display = "none"; return; }
+      tag.style.display = "";
+      tagV.copy(miniInfo.top);
+      mini.localToWorld(tagV);
+      tagV.project(camera);
+      var r = el.getBoundingClientRect();
+      var x = (tagV.x * 0.5 + 0.5) * r.width;
+      var y = (-tagV.y * 0.5 + 0.5) * r.height;
+      var w = tagBox.offsetWidth || 180;
+      var h = tagBox.offsetHeight || 40;
+      var stem = Math.max(10, Math.min(40, y - h - 4));
+      tagStem.style.height = stem + "px";
+      x = Math.max(w / 2 + 4, Math.min(r.width - w / 2 - 4, x));
+      tag.style.transform = "translate(" + (x - w / 2) + "px," + (y - h - stem) + "px)";
+      tag.style.left = "0";
+      tag.style.top = "0";
+    }
+
+    // Gamers online: the game's heartbeat on its MQTT channel (every 15 s).
+    var gamers = {};
+    function refreshGamers() {
+      var now = Date.now();
+      var names = [];
+      var n = 0;
+      for (var id in gamers) {
+        if (now - gamers[id].seen > 45000) { delete gamers[id]; continue; }
+        n++;
+        if (gamers[id].n) names.push(gamers[id].n);
+      }
+      tagCount.textContent = "ACTIVE GAMERS ONLINE \u00b7 " + (gamersLive ? n : "\u2014");
+      tagNames.textContent = names.slice(0, 4).join(" \u00b7 ") + (names.length > 4 ? " +" + (names.length - 4) : "");
+      tagNames.style.display = names.length ? "" : "none";
+    }
+    var gamersLive = false;
+    function watchGamers() {
+      var url = el.getAttribute("data-jots-mqtt") || window.JOTS_MQTT_URL || "wss://broker.emqx.io:8084/mqtt";
+      var go = function () {
+        try {
+          var client = window.mqtt.connect(url, { clientId: "dmweb_" + Math.random().toString(16).slice(2, 10), clean: true, reconnectPeriod: 5000, connectTimeout: 10000 });
+          client.on("connect", function () {
+            gamersLive = true;
+            client.subscribe([JOTS_ROOT + "/presence", JOTS_ROOT + "/presence-leave"]);
+            refreshGamers();
+          });
+          client.on("offline", function () { gamersLive = false; refreshGamers(); });
+          client.on("message", function (topic, buf) {
+            var msg;
+            try { msg = JSON.parse(buf.toString()); } catch (e) { return; }
+            if (!msg || !msg.id) return;
+            if (/presence-leave$/.test(topic)) delete gamers[msg.id];
+            else gamers[msg.id] = { seen: Date.now(), n: msg.m === "multiplayer" && msg.n ? String(msg.n).slice(0, 24) : "" };
+            refreshGamers();
+          });
+        } catch (e) {}
+      };
+      if (window.mqtt) return go();
+      var sc = document.createElement("script");
+      sc.src = JOTS_MQTT_LIB;
+      sc.onload = go;
+      document.head.appendChild(sc);
+    }
+    watchGamers();
+    setInterval(refreshGamers, 5000);
 
     function logEvent(e) {
       if (!logLines) return;
@@ -509,6 +711,9 @@
       traveler.position.lerpVectors(pts[i], pts[Math.min(i + 1, limit)], f);
       halo.position.copy(traveler.position);
       walk.trail.geometry.setDrawRange(0, i + 2);
+      miniTraveler.position.copy(traveler.position);
+      miniHalo.position.copy(traveler.position);
+      if (miniTrail) miniTrail.geometry.setDrawRange(0, i + 2);
       walk.flare = Math.max(0, walk.flare - dt * 2.5);
       travelerMat.color.set(walk.flare > 0.05 ? COLORS.head : COLORS.event);
       haloMat.color.set(walk.flare > 0.05 ? COLORS.head : COLORS.path);
@@ -573,11 +778,13 @@
         if (now >= idleAt) turntable.rotation.y += SPIN * dt;
         advance(dt);
         halo.scale.setScalar(1 + walk.flare * 0.9 + Math.sin(now / 310) * 0.1);
+        miniHalo.scale.copy(halo.scale);
         if (head) {
           var s = 1 + Math.sin(now / 320) * 0.14;
           head.scale.set(s, s, s);
         }
         renderer.render(scene, camera);
+        placeTag();
       }
       requestAnimationFrame(tick);
     }
