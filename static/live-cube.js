@@ -26,8 +26,8 @@
  * with it. Its gold path lights the nodes carrying the game's own events
  * (category jots_game), and a stemmed label above it counts the players in
  * DART Meadow: Journey of the Skyboard right now (their live heartbeat on
- * the game's MQTT channel; names only for players in multiplayer, who
- * already share their pilot name). data-jots-mqtt overrides the broker.
+ * the LEATR node bus, the Apps Script writenode / readnodes bus; names only
+ * for players in multiplayer, who already share their pilot name).
  */
 (function () {
   "use strict";
@@ -58,8 +58,7 @@
     event: "#fff0cf",
     head: "#fffaf0",
   };
-  var JOTS_MQTT_LIB = "https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js";
-  var JOTS_ROOT = "dartmeadow/jots/v1/world";
+  var JOTS_NODE_PREFIX = "jots_"; // the game's sessions on the LEATR node bus
 
   var FACE_STEP = {
     left: [-1, 0, 0],
@@ -635,14 +634,15 @@
       tag.style.top = "0";
     }
 
-    // Gamers online: the game's heartbeat on its MQTT channel (every 15 s).
+    // Gamers online: the game's heartbeat on the LEATR node bus (every
+    // player writes a "jots_" node through the Apps Script bridge, every 15 s
+    // in story, every ~2 s in multiplayer). Read here every 20 s while the
+    // page is visible.
     var gamers = {};
     function refreshGamers() {
-      var now = Date.now();
       var names = [];
       var n = 0;
       for (var id in gamers) {
-        if (now - gamers[id].seen > 45000) { delete gamers[id]; continue; }
         n++;
         if (gamers[id].n) names.push(gamers[id].n);
       }
@@ -651,35 +651,34 @@
       tagNames.style.display = names.length ? "" : "none";
     }
     var gamersLive = false;
+    var gamersBusy = false;
+    function pollGamers() {
+      if (gamersBusy || document.hidden) return;
+      gamersBusy = true;
+      fetch(GAS + "?action=readnodes&scope=jots&t=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (b) {
+          var next = {};
+          ((b && b.nodes) || []).forEach(function (nd) {
+            if (!nd || typeof nd.sid !== "string" || nd.sid.indexOf(JOTS_NODE_PREFIX) !== 0) return;
+            var m = null;
+            try { m = typeof nd.bezier === "string" ? JSON.parse(nd.bezier) : nd.bezier; } catch (e) {}
+            if (!m || m.t === "bye") return;
+            // a name only for players in multiplayer, who already share it there
+            next[nd.sid] = { n: m.t === "state" && nd.label ? String(nd.label).slice(0, 24) : "" };
+          });
+          gamers = next;
+          gamersLive = true;
+        })
+        .catch(function () { gamersLive = false; })
+        .then(function () { gamersBusy = false; refreshGamers(); });
+    }
     function watchGamers() {
-      var url = el.getAttribute("data-jots-mqtt") || window.JOTS_MQTT_URL || "wss://broker.emqx.io:8084/mqtt";
-      var go = function () {
-        try {
-          var client = window.mqtt.connect(url, { clientId: "dmweb_" + Math.random().toString(16).slice(2, 10), clean: true, reconnectPeriod: 5000, connectTimeout: 10000 });
-          client.on("connect", function () {
-            gamersLive = true;
-            client.subscribe([JOTS_ROOT + "/presence", JOTS_ROOT + "/presence-leave"]);
-            refreshGamers();
-          });
-          client.on("offline", function () { gamersLive = false; refreshGamers(); });
-          client.on("message", function (topic, buf) {
-            var msg;
-            try { msg = JSON.parse(buf.toString()); } catch (e) { return; }
-            if (!msg || !msg.id) return;
-            if (/presence-leave$/.test(topic)) delete gamers[msg.id];
-            else gamers[msg.id] = { seen: Date.now(), n: msg.m === "multiplayer" && msg.n ? String(msg.n).slice(0, 24) : "" };
-            refreshGamers();
-          });
-        } catch (e) {}
-      };
-      if (window.mqtt) return go();
-      var sc = document.createElement("script");
-      sc.src = JOTS_MQTT_LIB;
-      sc.onload = go;
-      document.head.appendChild(sc);
+      pollGamers();
+      setInterval(pollGamers, 20000);
+      document.addEventListener("visibilitychange", function () { if (!document.hidden) pollGamers(); });
     }
     watchGamers();
-    setInterval(refreshGamers, 5000);
 
     function logEvent(e) {
       if (!logLines) return;
