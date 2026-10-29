@@ -2,7 +2,7 @@
   "name": "DART Meadow",
   "short_name": "DART Meadow",
   "description": "Speed of Light³ · Interstellar Zero-G Skyboard Flight",
-  "start_url": "/dartmeadow.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
