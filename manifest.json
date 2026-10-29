@@ -1,10 +1,10 @@
 {
   "name": "DART Meadow",
   "short_name": "DART Meadow",
-  "description": "Speed of Light\u00b3 \u00b7 Interstellar Zero-G Skyboard Flight",
+  "description": "Speed of Light³ · Interstellar Zero-G Skyboard Flight",
   "start_url": "/dartmeadow.html",
   "scope": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "any",
   "background_color": "#000308",
   "theme_color": "#000308",
