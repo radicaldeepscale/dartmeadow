@@ -1816,5 +1816,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+<script>
+document.getElementById('githubSignInModal')?.addEventListener('click', () => {
+  const clientId = 'YOUR_GITHUB_CLIENT_ID';
+  const redirectUri = encodeURIComponent(window.location.origin + '/auth/github/callback');
+  const scope = 'read:user user:email';
+  window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`;
+});
+</script>
+
 </body>
 </html>
