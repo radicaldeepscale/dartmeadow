@@ -1207,11 +1207,11 @@ function startScrollObserver() {
 
     policyObserver = new IntersectionObserver((entries, obs) => {
         if (entries[0].isIntersecting) {
-            formInputs.forEach(i => i.disabled = false);
-            buttons.forEach(b => {
-                b.disabled = false;
-                b.classList.add('enabled');
-            });
+            const continueBtn = document.getElementById('continueBtn');
+            if (continueBtn) {
+                continueBtn.disabled = false;
+                continueBtn.classList.add('enabled');
+            }
             obs.disconnect(); // Stop observing once enabled
         }
     }, {
