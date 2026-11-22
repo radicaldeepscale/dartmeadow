@@ -853,44 +853,7 @@ button, a, [role="button"], input[type="submit"], input[type="button"] {
 
         <p><em>Scroll to the bottom of the policy to enable the buttons</em></p>
 
-        <!-- Create Account Form -->
-        <div id="signupSection">
-          <h5>Create Account</h5>
-          <div class="row">
-            <div class="col">
-              <label>Username
-                <input id="signupUsername" type="text" placeholder="Pick a username" disabled>
-              </label>
-            </div>
-            <div class="col">
-              <label>Name
-                <input id="signupName" type="text" placeholder="Your name" disabled>
-              </label>
-            </div>
-          </div>
-          <div class="row mt-2">
-            <div class="col">
-              <label>Email
-                <input id="signupEmail" type="email" placeholder="you@example.com" disabled>
-              </label>
-            </div>
-            <div class="col">
-              <label>Password
-                <input id="signupPassword" type="password" placeholder="Pick a password" disabled>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Login Form -->
-        <div id="loginSection" class="mt-4">
-          <h5>Login</h5>
-          <div class="row">
-            <div class="col">
-              <label>Username
-                <input id="loginUsername" type="text" placeholder="Your username" disabled>
-              </label>
-            </div>
+        
             <div class="col">
               <label>Password
                 <input id="loginPassword" type="password" placeholder="Your password" disabled>
@@ -901,8 +864,7 @@ button, a, [role="button"], input[type="submit"], input[type="button"] {
 
       </div>
       <div class="modal-footer">
-        <button id="createBtn" disabled>Create Account</button>
-        <button id="loginBtn" disabled>Login</button>
+        
         <button id="continueBtn" disabled>Continue as Guest</button>
       </div>
     </div>
@@ -942,9 +904,12 @@ button, a, [role="button"], input[type="submit"], input[type="button"] {
 
           
 <!-- LOGIN / CREATE SECTION (hidden until “Log In” clicked) -->
-<button id="userLoginToggle">
-  Credentials
-</button>
+<button id="githubSignInBtn" style="display:none;">Sign in with GitHub</button>
+<div id="signedInMenu" style="display:none;">
+  <span id="githubLoginDisplay"></span>
+  <button id="logoutBtn">Log Out</button>
+</div>
+<button id="continueGuestBtn" style="display:none;">Continue as Guest</button>
 <button
   id="btnhercules"
   onclick="location.href='https://dartmeadow.com/hercules.html'"
@@ -1809,5 +1774,53 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
 </script>
+
+<script>
+// LEATR GitHub session + policy (network-wide)
+const POLICY_KEY = 'dart-policy-accepted';
+const SESSION_KEY = 'leatr-session';
+function hasPolicy() { return localStorage.getItem(POLICY_KEY) === '1'; }
+function showAccountUI() {
+  const signedIn = localStorage.getItem(SESSION_KEY);
+  const signInBtn = document.getElementById('githubSignInBtn');
+  const signedDiv = document.getElementById('signedInMenu');
+  const guestBtn = document.getElementById('continueGuestBtn');
+  if (signInBtn) signInBtn.style.display = hasPolicy() && !signedIn ? 'block' : 'none';
+  if (signedDiv) signedDiv.style.display = signedIn ? 'block' : 'none';
+  if (guestBtn) guestBtn.style.display = hasPolicy() && !signedIn ? 'block' : 'none';
+  if (signedIn) {
+    try {
+      const session = JSON.parse(atob(signedIn.split('.')[0]));
+      const disp = document.getElementById('githubLoginDisplay');
+      if (disp) disp.textContent = session.github_login || 'Signed in';
+    } catch(e){}
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('session')) {
+    localStorage.setItem(SESSION_KEY, params.get('session'));
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  showAccountUI();
+  const accept = document.querySelector('#privacyModal button');
+  if (accept) accept.addEventListener('click', () => {
+    localStorage.setItem(POLICY_KEY, '1');
+    showAccountUI();
+  });
+  const ghBtn = document.getElementById('githubSignInBtn');
+  if (ghBtn) ghBtn.addEventListener('click', () => {
+    const worker = 'https://your-worker.workers.dev';
+    const redirect = encodeURIComponent(window.location.origin);
+    window.location.href = worker + '/auth/github/callback?redirect=' + redirect;
+  });
+  const logout = document.getElementById('logoutBtn');
+  if (logout) logout.addEventListener('click', () => {
+    localStorage.removeItem(SESSION_KEY);
+    showAccountUI();
+  });
+});
+</script>
+
 </body>
 </html>
