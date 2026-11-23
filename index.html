@@ -452,7 +452,24 @@
     }
     #chat-header { text-align: center; margin-bottom: 30px; }
     #chat-header .chat-logo { width: 400px; margin-top: 150px; object-fit: contain;}
-    #chat-header3 .chat-logo3 { width: 400px; margin-top: 150px; object-fit: contain;}
+    #chat-header3 .chat-logo3 { width: 400px; margin-top: 28px; object-fit: contain;}
+    .shell64-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 220px;
+      height: 220px;
+      margin: 36px auto 0;
+      text-decoration: none;
+      color: #e7e2d8;
+      background: rgba(8, 16, 24, 0.88);
+      border: 1px solid rgba(215, 178, 122, 0.5);
+      border-radius: 22px;
+    }
+    .shell64-card img { width: 112px; height: 112px; border-radius: 24px; display: block; }
+    .shell64-card span { letter-spacing: 0.16em; font-size: 13px; color: #d7b27a; }
     #messageWindow {
       height: 300px; border: 1px solid var(--theme-input-border); padding: 8px;
       overflow-y: auto; background: var(--theme-input-bg); width: 80%; border-radius: 5px;
@@ -1184,6 +1201,10 @@ Radical Deepscale
      <div data-live-cube data-link2-href="https://extensions.blender.org/author/6230/" data-link2-label="BLENDER EXTENSIONS" style="width:min(506px,90vw);aspect-ratio:1/1;margin:150px auto 0"></div>
    </div>
    <script src="static/live-cube.js?v=8" defer></script>
+   <a class="shell64-card" href="https://shell64.dartmeadow.com">
+     <img src="static/shell64.png" alt="">
+     <span>SHELL 64</span>
+   </a>
    <div id="chat-header3">
   <a href="https://radicaldeepscale.com/" target="_blank">
     <img
